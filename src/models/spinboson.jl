@@ -1,21 +1,22 @@
 struct BosonicImpurity{M<:AbstractMatrix} <: AbstractBosonicImpurityHamiltonian
 	m::M
 end
-propagator(h::BosonicImpurity, lat::AbstractFockLattice, b::Symbol) = _get_propagator(h.m, lat, b)
+propagator(h::BosonicImpurity, lat::AbstractADTLattice, b::Symbol) = _get_propagator(h.m, lat, b)
+propagator(h::BosonicImpurity, lat::AbstractADTLattice; branch::Symbol=:τ) = propagator(h, lat, branch)
 phydim(h::BosonicImpurity) = size(h.m, 1)
 
-# Ĥ = Ωσ̂ₓ
-spinboson(;Ω::Real=0) = BosonicImpurity(Ω .* pauli_x())
+# # Ĥ = Ωσ̂ₓ
+# spinboson(;Ω::Real=0) = BosonicImpurity(Ω .* pauli_x())
 
 
-sysdynamics_forward!(mps::FockMPS, lattice::AbstractFockLattice, model::BosonicImpurity; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+sysdynamics_forward!(mps::ADT, lattice::AbstractADTLattice, model::BosonicImpurity; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
 						mps, lattice, model, :+, lattice.Nt, trunc=trunc)
-sysdynamics_backward!(mps::FockMPS, lattice::AbstractFockLattice, model::BosonicImpurity; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+sysdynamics_backward!(mps::ADT, lattice::AbstractADTLattice, model::BosonicImpurity; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
 						mps, lattice, model, :-, lattice.Nt, trunc=trunc)
-sysdynamics_imaginary!(mps::FockMPS, lattice::AbstractFockLattice, model::BosonicImpurity; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+sysdynamics_imaginary!(mps::ADT, lattice::AbstractADTLattice, model::BosonicImpurity; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
 						mps, lattice, model, :τ, lattice.Nτ, trunc=trunc)
 
-function _sysdynamics_util!(gmps::FockMPS, lattice::AbstractFockLattice, model::BosonicImpurity, branch::Symbol, N::Int; trunc::TruncationScheme=DefaultKTruncation)
+function _sysdynamics_util!(gmps::ADT, lattice::AbstractADTLattice, model::BosonicImpurity, branch::Symbol, N::Int; trunc::TruncationScheme=DefaultKTruncation)
 	# free dynamics
 	U = propagator(model, lattice, branch)
 	# data = decompose_to_mps(U)
@@ -23,7 +24,7 @@ function _sysdynamics_util!(gmps::FockMPS, lattice::AbstractFockLattice, model::
 	for j in 1:N
 		a, b = (branch == :-) ? (j, j+1) : (j+1, j)
         pos1, pos2 = index(lattice, a, branch=branch), index(lattice, b, branch=branch)
-        t = FockTerm((pos1, pos2), U)
+        t = ADTTerm((pos1, pos2), U)
         apply!(t, gmps)
         canonicalize!(gmps, alg=alg)			
 	end
@@ -31,7 +32,7 @@ function _sysdynamics_util!(gmps::FockMPS, lattice::AbstractFockLattice, model::
 end
 
 
-function _get_propagator(h, lattice::AbstractFockLattice, b::Symbol)
+function _get_propagator(h, lattice::AbstractADTLattice, b::Symbol)
 	if b == :τ
 		return exp(-lattice.δτ .* h)
 	elseif b == :+

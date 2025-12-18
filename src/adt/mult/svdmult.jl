@@ -1,4 +1,4 @@
-function mult!(x::FockMPS, y::FockMPS; trunc::TruncationScheme=DefaultTruncation, verbosity::Int=0)
+function mult!(x::ADT, y::ADT; trunc::TruncationScheme=DefaultTruncation, verbosity::Int=0)
     (length(x) == length(y)) || throw(DimensionMismatch())
     T = promote_type(scalartype(x), scalartype(y))
     L = length(x)
@@ -19,4 +19,4 @@ function mult!(x::FockMPS, y::FockMPS; trunc::TruncationScheme=DefaultTruncation
     setscaling!(x, scaling(x) * scaling(y))
     return x
 end
-mult(x::FockMPS, y::FockMPS; kwargs...) = mult!(copy(x), y; kwargs...)
+mult(x::ADT, y::ADT; kwargs...) = mult!(copy(x), y; kwargs...)

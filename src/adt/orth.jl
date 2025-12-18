@@ -15,8 +15,8 @@ Orthogonalize(a::Union{QR, SVD}; trunc::TruncationScheme=NoTruncation(), normali
 Orthogonalize(; alg::Union{QR, SVD} = SVD(), trunc::TruncationScheme=NoTruncation(), normalize::Bool=false, verbosity::Int=0) = Orthogonalize(alg, trunc, normalize, verbosity)
 
 
-leftorth!(psi::FockMPS; alg::Orthogonalize = Orthogonalize()) = _leftorth!(psi, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
-function _leftorth!(psi::FockMPS, alg::QR, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
+leftorth!(psi::ADT; alg::Orthogonalize = Orthogonalize()) = _leftorth!(psi, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
+function _leftorth!(psi::ADT, alg::QR, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
 	!isa(trunc, NoTruncation) &&  @warn "truncation has no effect with QR"
 	L = length(psi)
 	for i in 1:L-1
@@ -31,7 +31,7 @@ function _leftorth!(psi::FockMPS, alg::QR, trunc::TruncationScheme, normalize::B
 	return psi
 end
 
-function _leftorth!(psi::FockMPS, alg::SVD, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
+function _leftorth!(psi::ADT, alg::SVD, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
 	L = length(psi)
 	# errs = Float64[]
 	maxerr = 0.
@@ -54,8 +54,8 @@ function _leftorth!(psi::FockMPS, alg::SVD, trunc::TruncationScheme, normalize::
 	return psi
 end
 
-rightorth!(psi::FockMPS; alg::Orthogonalize = Orthogonalize()) = _rightorth!(psi, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
-function _rightorth!(psi::FockMPS, alg::QR, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
+rightorth!(psi::ADT; alg::Orthogonalize = Orthogonalize()) = _rightorth!(psi, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
+function _rightorth!(psi::ADT, alg::QR, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
 	!isa(trunc, NoTruncation) &&  @warn "truncation has no effect with QR"
 	L = length(psi)
 	for i in L:-1:2
@@ -70,7 +70,7 @@ function _rightorth!(psi::FockMPS, alg::QR, trunc::TruncationScheme, normalize::
 	return psi
 end
 
-function _rightorth!(psi::FockMPS, alg::SVD, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
+function _rightorth!(psi::ADT, alg::SVD, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
 	L = length(psi)
 	maxerr = 0.
 	for i in L:-1:2
@@ -91,8 +91,8 @@ function _rightorth!(psi::FockMPS, alg::SVD, trunc::TruncationScheme, normalize:
 	return psi
 end
 
-function canonicalize!(psi::FockMPS; alg::Orthogonalize = Orthogonalize(trunc=DefaultTruncation, normalize=false))
-	alg.normalize && @warn "canonicalize with renormalization not recommanded for FockMPS"
+function canonicalize!(psi::ADT; alg::Orthogonalize = Orthogonalize(trunc=DefaultTruncation, normalize=false))
+	alg.normalize && @warn "canonicalize with renormalization not recommanded for ADT"
 	L = length(psi)
 	_leftorth!(psi, QR(), NoTruncation(), alg.normalize, alg.verbosity)
 	_rightorth!(psi, alg.orth, alg.trunc, alg.normalize, alg.verbosity)

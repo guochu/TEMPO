@@ -1,31 +1,31 @@
-abstract type AbstractFockTerm end
+abstract type AbstractADTTerm end
 
-struct FockTerm{N, T <: Number} <: AbstractFockTerm
+struct ADTTerm{N, T <: Number} <: AbstractADTTerm
 	positions::NTuple{N, Int}
 	data::Vector{Array{T, 3}}
 end
 
-function FockTerm(positions::NTuple{N, Int}, data::AbstractArray{T, N}) where {N, T<:Number}
+function ADTTerm(positions::NTuple{N, Int}, data::AbstractArray{T, N}) where {N, T<:Number}
 	(length(Set(positions)) == N) || throw(ArgumentError("multiple n̂ on the same position not allowed"))
 	# iseven(N) || throw(ArgumentError("even number of variables expected"))
 	p = TupleTools.sortperm(positions)
 	positions = TupleTools.getindices(positions, p)
 	data = permute(data, p)
-	return FockTerm(positions, decompose_to_mps(data))
+	return ADTTerm(positions, decompose_to_mps(data))
 end
-FockTerm(p::Int, data::AbstractVector) = FockTerm((p,), data)
+ADTTerm(p::Int, data::AbstractVector) = ADTTerm((p,), data)
 
-function FockTerm(positions::NTuple{N, Int}, data::NTuple{N, <:AbstractVector{T}}) where {N, T<:Number}
+function ADTTerm(positions::NTuple{N, Int}, data::NTuple{N, <:AbstractVector{T}}) where {N, T<:Number}
 	(length(Set(positions)) == N) || throw(ArgumentError("multiple n̂ on the same position not allowed"))
 	p = TupleTools.sortperm(positions)
 	positions = TupleTools.getindices(positions, p)
 	data = TupleTools.getindices(data, p)
-	return FockTerm(positions, [reshape(x, 1, length(x), 1) for x in data])
+	return ADTTerm(positions, [reshape(x, 1, length(x), 1) for x in data])
 end
 
-TO.scalartype(::Type{FockTerm{N, T}}) where {N, T} = T
+TO.scalartype(::Type{ADTTerm{N, T}}) where {N, T} = T
 
-function apply!(x::FockTerm{N, T}, mps::FockMPS) where {N, T}
+function apply!(x::ADTTerm{N, T}, mps::ADT) where {N, T}
 	data = x.data
 	pos = x.positions
 	pos_first = pos[1]

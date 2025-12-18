@@ -1,22 +1,24 @@
 abstract type HybridizationStyle end
 
 
-struct AdditiveBath{T<:Number} <: HybridizationStyle
-	op::Vector{T}
+struct AdditiveHyb <: HybridizationStyle
+	op::Vector{Float64}
 end
 
-phydim(b::AdditiveBath) = length(b.op)
+AdditiveHyb(x::AbstractVector{<:Real}) = AdditiveHyb(float(x))
 
-struct NonAdditiveBath{T<:Number} <: HybridizationStyle
+phydim(b::AdditiveHyb) = length(b.op)
+
+struct NonAdditiveHyb{T<:Number} <: HybridizationStyle
 	op::Matrix{T}
 
-function NonAdditiveBath{T}(op::AbstractMatrix) where {T<:Number}
+function NonAdditiveHyb{T}(op::AbstractMatrix) where {T<:Number}
 	(size(op, 1) == size(op, 2)) || throw(ArgumentError("square matrix expected"))
 	new{T}(convert(Matrix{T}, op))
 end
 end
-NonAdditiveBath(a::AbstractMatrix{T}) where {T<:Number} = NonAdditiveBath{T}(a)
+NonAdditiveHyb(a::AbstractMatrix{T}) where {T<:Number} = NonAdditiveHyb{T}(a)
 
-phydim(b::NonAdditiveBath) = size(b.op, 1)
+phydim(b::NonAdditiveHyb) = size(b.op, 1)
 
 include("partialif/partialif.jl")

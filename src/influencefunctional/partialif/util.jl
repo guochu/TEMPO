@@ -120,7 +120,7 @@ function _fit_to_full(ds::Vector{Int}, pos, mpsdata)
 			leftspace = space_r(mpsdata[posj])
 		end
 	end
-	return FockMPS(r)
+	return ADT(r)
 end
 
 

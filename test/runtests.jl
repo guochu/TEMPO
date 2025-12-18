@@ -2,4 +2,8 @@ include("../src/includes.jl")
 
 using Test
 
-include("focklattice.jl")
+include("adtlattice.jl")
+
+include("adt.jl")
+
+include("pt.jl")

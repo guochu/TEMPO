@@ -1,4 +1,4 @@
-# function hybriddynamics!(gmps::FockMPS, lattice::RealFockLattice, corr::RealCorrelationFunction, hyb::AdditiveBath; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+# function hybriddynamics!(gmps::ADT, lattice::RealADTLattice, corr::RealCorrelationFunction, hyb::AdditiveHyb; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
 # 	for i in 1:lattice.Nt, b1 in branches(lattice), band1 in 1:lattice.bands
 # 		pos1 = index(lattice, i, band=band1, branch=b1)
 # 		pos2s = Int[]

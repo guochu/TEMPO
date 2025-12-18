@@ -1,12 +1,12 @@
 println("------------------------------------")
-println("|             FockLattice          |")
+println("|             ADTLattice           |")
 println("------------------------------------")
 
 
-@testset "FockLattice: imaginary time M1N1" begin
-	lattice = FockLattice(N=2, δτ=0.1, d=3, contour=:imag, ordering=M2M1())
+@testset "ADTLattice: imaginary time M1N1" begin
+	lattice = ADTLattice(N=2, δτ=0.1, d=3, contour=:imag, ordering=M2M1())
 	@test isa(LayoutStyle(lattice), TimeLocalLayout)
-	@test isa(lattice, ImagFockLattice)
+	@test isa(lattice, ImagADTLattice)
 	@test lattice.ordering == M2M1()
 	@test scalartype(lattice) == Float64
 	@test length(lattice) == 3
@@ -26,10 +26,10 @@ println("------------------------------------")
 
 end
 
-@testset "FockLattice: real time M2m2M1m1" begin
-	lattice = FockLattice(N=1, δt=0.1, contour=:real, ordering=M2m2M1m1())
+@testset "ADTLattice: real time M2m2M1m1" begin
+	lattice = ADTLattice(N=1, δt=0.1, contour=:real, ordering=M2m2M1m1())
 	@test isa(LayoutStyle(lattice), TimeLocalLayout)
-	@test isa(lattice, RealFockLattice)
+	@test isa(lattice, RealADTLattice)
 	@test lattice.ordering == M2m2M1m1()
 	@test scalartype(lattice) == ComplexF64
 	@test length(lattice) == 4
@@ -49,11 +49,11 @@ end
 
 end
 
-@testset "FockLattice: mixed time M2M1_m1M1m2M2" begin
+@testset "ADTLattice: mixed time M2M1_m1M1m2M2" begin
 	# one band
-	lattice = FockLattice(Nt=1, δt=0.05, Nτ=2, δτ=0.1, contour=:mixed, ordering=M2M1_m1M1m2M2())
+	lattice = ADTLattice(Nt=1, δt=0.05, Nτ=2, δτ=0.1, contour=:mixed, ordering=M2M1_m1M1m2M2())
 	@test isa(LayoutStyle(lattice), TimeLocalLayout)
-	@test isa(lattice, MixedFockLattice)
+	@test isa(lattice, MixedADTLattice)
 	@test lattice.ordering == M2M1_m1M1m2M2()
 	@test scalartype(lattice) == ComplexF64
 	@test length(lattice) == 7

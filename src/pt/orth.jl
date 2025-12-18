@@ -1,7 +1,7 @@
 # orthogonalize mps to be left-canonical or right-canonical
 
-leftorth!(psi::FockMPO; alg::Orthogonalize = Orthogonalize()) = _leftorth!(h, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
-function _leftorth!(psi::FockMPO, alg::QR, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
+leftorth!(h::ProcessTensor; alg::Orthogonalize = Orthogonalize()) = _leftorth!(h, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
+function _leftorth!(psi::ProcessTensor, alg::QR, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
 	!isa(trunc, NoTruncation) &&  @warn "truncation has no effect with QR"
 	L = length(psi)
 	workspace = scalartype(psi)[]
@@ -16,7 +16,7 @@ function _leftorth!(psi::FockMPO, alg::QR, trunc::TruncationScheme, normalize::B
 	return psi
 end
 
-function _leftorth!(psi::FockMPO, alg::SVD, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
+function _leftorth!(psi::ProcessTensor, alg::SVD, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
 	L = length(psi)
 	workspace = scalartype(psi)[]
 	maxerr = 0.
@@ -36,8 +36,8 @@ function _leftorth!(psi::FockMPO, alg::SVD, trunc::TruncationScheme, normalize::
 	return psi
 end
 
-rightorth!(h::FockMPO; alg::Orthogonalize = Orthogonalize()) = _rightorth!(h, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
-function _rightorth!(psi::FockMPO, alg::QR, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
+rightorth!(h::ProcessTensor; alg::Orthogonalize = Orthogonalize()) = _rightorth!(h, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
+function _rightorth!(psi::ProcessTensor, alg::QR, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
 	!isa(trunc, NoTruncation) &&  @warn "truncation has no effect with QR"
 	L = length(psi)
 	workspace = scalartype(psi)[]
@@ -51,7 +51,7 @@ function _rightorth!(psi::FockMPO, alg::QR, trunc::TruncationScheme, normalize::
 	_renormalize_coeff!(psi, normalize)
 	return psi
 end
-function _rightorth!(psi::FockMPO, alg::SVD, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
+function _rightorth!(psi::ProcessTensor, alg::SVD, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
 	L = length(psi)
 	workspace = scalartype(psi)[]
 	maxerr = 0.
@@ -71,8 +71,8 @@ function _rightorth!(psi::FockMPO, alg::SVD, trunc::TruncationScheme, normalize:
 	return psi
 end
 
-function canonicalize!(psi::FockMPO; alg::Orthogonalize = Orthogonalize(trunc=DefaultTruncation, normalize=false))
-	alg.normalize && @warn "canonicalize with renormalization not recommanded for FockMPO"
+function canonicalize!(psi::ProcessTensor; alg::Orthogonalize = Orthogonalize(trunc=DefaultTruncation, normalize=false))
+	alg.normalize && @warn "canonicalize with renormalization not recommanded for ProcessTensor"
 	L = length(psi)
 	_leftorth!(psi, QR(), NoTruncation(), alg.normalize, alg.verbosity)
 	_rightorth!(psi, alg.orth, alg.trunc, alg.normalize, alg.verbosity)

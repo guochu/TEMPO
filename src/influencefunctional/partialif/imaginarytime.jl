@@ -1,4 +1,4 @@
-function hybriddynamics!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr::ImagCorrelationFunction, hyb::AdditiveBath; trunc::TruncationScheme=DefaultITruncation)
+function hybriddynamics!(gmps::ADT, lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
 	k = lattice.N
 	op = hyb.op
 	(lattice.d == length(op)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
@@ -22,7 +22,7 @@ end
 
 
 # naive implementation with N^2 gate operations
-function hybriddynamics_naive!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr::ImagCorrelationFunction, hyb::AdditiveBath; trunc::TruncationScheme=DefaultITruncation)
+function hybriddynamics_naive!(gmps::ADT, lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
 	k = lattice.N
 	z = hyb.op
 	(lattice.d == length(z)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
@@ -35,10 +35,10 @@ function hybriddynamics_naive!(gmps::FockMPS, lattice::ImagFockLattice1Order, co
 		coef = index(corr, i, j)
 		if pos1 == pos2
 			m = exp.(coef .* z2)
-			t = FockTerm((pos1, ), (m, ))
+			t = ADTTerm((pos1, ), (m, ))
 		else
 			m = exp.(coef .* zz)
-			t = FockTerm((pos1, pos2), m)
+			t = ADTTerm((pos1, pos2), m)
 		end
 		apply!(t, gmps)
 		canonicalize!(gmps, alg=alg)

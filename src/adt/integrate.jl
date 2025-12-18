@@ -1,5 +1,5 @@
 
-function integrate(x::FockMPS)
+function integrate(x::ADT)
 	L = length(x)
 	sca = scaling(x)
 	v = dropdims(sum(x[L], dims=2), dims=(2,3)) * sca

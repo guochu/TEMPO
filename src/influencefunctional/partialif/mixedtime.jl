@@ -1,4 +1,4 @@
-# function hybriddynamics!(gmps::FockMPS, lattice::MixedFockLattice1Order, corr::AbstractMixedCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+# function hybriddynamics!(gmps::ADT, lattice::MixedADTLattice1Order, corr::AbstractMixedCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
 # 	for b1 in branches(lattice)
 # 		k1 = ifelse(b1==:τ, lattice.Nτ, lattice.Nt)
 # 		for i in 1:k1, band1 in 1:lattice.bands

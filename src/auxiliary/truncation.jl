@@ -54,4 +54,4 @@ function _truncate!(v::AbstractVector{<:Real}, trunc::TruncationDimCutoff, p::Re
 end
 
 
-# const DefaultTruncation = TruncationDimCutoff(D=200, ϵ=1.0e-6)
+const DefaultTruncation = truncdimcutoff(D=200, ϵ=1.0e-6)

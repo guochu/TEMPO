@@ -1,9 +1,9 @@
 
 """
-	FockMPO{A <: MPOTensor}
+	ProcessTensor{A <: MPOTensor}
 Finite Matrix Product Operator which stores a chain of rank-4 site tensors.
 """
-struct FockMPO{T<:Number} <: Dense1DTN{T}
+struct ProcessTensor{T<:Number} <: Dense1DTN{T}
 	data::Vector{Array{T, 4}}
 	scaling::Ref{Float64}
 """
@@ -23,13 +23,20 @@ The left and right boundaries are always vacuum.
 The case that the right boundary is not vacuum corresponds to operators which do not conserve quantum number, 
 such as a†, this case is implemented with another MPO object.
 """
-function FockMPO{T}(mpotensors::AbstractVector, scaling::Ref{Float64}) where {T<:Number}
+function ProcessTensor{T}(mpotensors::AbstractVector, scaling::Ref{Float64}) where {T<:Number}
 	_check_mpo_space(mpotensors)
 	return new{T}(convert(Vector{Array{T, 4}}, mpotensors), scaling)
 end
 
 end
-FockMPO(data::AbstractVector{<:DenseMPOTensor{T}}; scaling::Real=1) where {T <: Number} = MPO{T}(data, Ref(float(scaling)))
+ProcessTensor(data::AbstractVector{<:DenseMPOTensor{T}}; scaling::Real=1) where {T <: Number} = ProcessTensor{T}(data, Ref(float(scaling)))
+
+
+Base.copy(psi::ProcessTensor) = ProcessTensor(copy(psi.data), scaling=scaling(psi))
+
+
+isleftcanonical(a::ProcessTensor; kwargs...) = all(x->isleftcanonical(x; kwargs...), a.data)
+isrightcanonical(a::ProcessTensor; kwargs...) = all(x->isrightcanonical(x; kwargs...), a.data)
 
 
 # attributes
@@ -53,23 +60,21 @@ end
 # initializers
 
 """
-	randomfockmpo(::Type{T}, ds::Vector{Int}; D::Int) where {T<:Number}
+	randompt(::Type{T}, ds::Vector{Int}; D::Int) where {T<:Number}
 	dy are the input dimensions, dx are the output dimensions
 """
-function randomfockmpo(::Type{T}, ds::Vector{Int}; D::Int) where {T<:Number}
-	L = length(dx)
+function randompt(::Type{T}, ds::Vector{Int}; D::Int) where {T<:Number}
+	L = length(ds)
 	r = Vector{Array{T, 4}}(undef, L)
 	r[1] = randn(T, 1, ds[1], D, ds[1])
 	r[L] = randn(T, D, ds[L], 1, ds[L])
 	for i in 2:L-1
 		r[i] = randn(T, D, ds[i], D, ds[i])
 	end
-	return FockMPO(r)
+	return ProcessTensor(r)
 end 
-randomfockmpo(::Type{T}, L::Int; d::Int, D::Int) where {T<:Number} = randomfockmpo(T, [d for i in 1:L], D=D)
-randomfockmpo(L::Int; kwargs...) = randomfockmpo(Float64, L; kwargs...)
+randompt(::Type{T}, L::Int; d::Int=2, D::Int) where {T<:Number} = randompt(T, [d for i in 1:L], D=D)
+randompt(L::Int; kwargs...) = randompt(Float64, L; kwargs...)
 
 
-include("linalg.jl")
-include("orth.jl")
-include("integrate.jl")
+
