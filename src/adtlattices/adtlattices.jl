@@ -30,5 +30,6 @@ function ADTLattice(; contour::Symbol, kwargs...)
 	end
 end
 
+Base.getindex(lat::AbstractADTLattice, a::ContourIndex) = index(lat, a.j, branch=branch(a))
 
 vacuumstate(x::AbstractADTLattice) = ADT(scalartype(x), length(x), d=x.d)

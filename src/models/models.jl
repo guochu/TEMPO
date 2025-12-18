@@ -52,3 +52,4 @@ sysdynamics_imaginary!(gmps::ADT, lattice::AbstractADTLattice, model::AbstractBo
 
 
 include("spinboson.jl")
+include("offdiagobs.jl")
