@@ -9,12 +9,12 @@ phydim(h::BosonicImpurity) = size(h.m, 1)
 # spinboson(;Ω::Real=0) = BosonicImpurity(Ω .* pauli_x())
 
 
-sysdynamics_forward!(mps::ADT, lattice::AbstractADTLattice, model::BosonicImpurity; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
-						mps, lattice, model, :+, lattice.Nt, trunc=trunc)
-sysdynamics_backward!(mps::ADT, lattice::AbstractADTLattice, model::BosonicImpurity; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
-						mps, lattice, model, :-, lattice.Nt, trunc=trunc)
-sysdynamics_imaginary!(mps::ADT, lattice::AbstractADTLattice, model::BosonicImpurity; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
-						mps, lattice, model, :τ, lattice.Nτ, trunc=trunc)
+sysdynamics_forward!(mps::ADT, lattice::AbstractADTLattice, model::BosonicImpurity, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+						mps, lattice, model, :+, lattice.Nt, args...; trunc=trunc)
+sysdynamics_backward!(mps::ADT, lattice::AbstractADTLattice, model::BosonicImpurity, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+						mps, lattice, model, :-, lattice.Nt, args...; trunc=trunc)
+sysdynamics_imaginary!(mps::ADT, lattice::AbstractADTLattice, model::BosonicImpurity, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+						mps, lattice, model, :τ, lattice.Nτ, args...; trunc=trunc)
 
 function _sysdynamics_util!(gmps::ADT, lattice::AbstractADTLattice, model::BosonicImpurity, branch::Symbol, N::Int; trunc::TruncationScheme=DefaultKTruncation)
 	# free dynamics
