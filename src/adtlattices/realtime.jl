@@ -22,7 +22,7 @@ struct RealADTLattice1Order{O<:RealFockOrdering} <: RealADTLattice{O}
 end
 
 # the default is that the system starts from 0 temperature (state 0)
-RealADTLattice1Order(; δt::Real, N::Int, d::Int=2, ordering::RealFockOrdering=M1m1N1n1()) = RealADTLattice1Order(δt, d, N, ordering)
+RealADTLattice1Order(; δt::Real, N::Int, d::Int=2, ordering::RealFockOrdering=M2m2M1m1()) = RealADTLattice1Order(δt, d, N, ordering)
 Base.similar(x::RealADTLattice1Order; δt::Real=x.δt, d::Int=x.d, N::Int=x.N, ordering::RealFockOrdering=x.ordering) = RealADTLattice1Order(δt, d, N, ordering)
 # similargrassmannlattice(x::RealADTLattice1Order, δt::Real=x.δt, bands::Int=x.bands, N::Int=x.N, 
 # 						ordering::RealGrassmannOrdering=similargrassmannordering(x.ordering)) = GrassmannLattice(contour=:real, δt=δt, N=N, bands=bands, ordering=ordering)
