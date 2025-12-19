@@ -82,7 +82,7 @@ end
 # key is timestep, conj, branch, band
 function indexmappings(lattice::MixedADTLattice1Order)
 	r = Dict{Tuple{Int, Symbol}, Int}()
-	for i in 1:lattice.Nτ
+	for i in 1:lattice.kτ
 		f = :τ
 		r[(i, f)] = index(lattice, i, branch=f)
 	end

@@ -2,7 +2,7 @@ include("fockordering.jl")
 
 abstract type AbstractADTLattice{O <: FockOrdering} end
 
-index(x::AbstractADTLattice, args...; kwargs...) = error("index not implemented for grassmann lattice type $(typeof(x))")
+index(x::AbstractADTLattice, args...; kwargs...) = error("index not implemented for fock lattice type $(typeof(x))")
 OrderingStyle(::Type{<:AbstractADTLattice{O}}) where O = O()
 LayoutStyle(::Type{<:AbstractADTLattice{O}}) where O = LayoutStyle(O)
 ImaginaryTimeOrderingStyle(::Type{<:AbstractADTLattice{O}}) where O = ImaginaryTimeOrderingStyle(O)

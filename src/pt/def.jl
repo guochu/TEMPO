@@ -31,6 +31,13 @@ end
 end
 ProcessTensor(data::AbstractVector{<:DenseMPOTensor{T}}; scaling::Real=1) where {T <: Number} = ProcessTensor{T}(data, Ref(float(scaling)))
 
+function ProcessTensor(::Type{T}, ds::AbstractVector{Int}) where {T <: Number}
+	data = [reshape(_eye(T, d), 1, d, 1, d) for d in ds]
+	return ProcessTensor(data, scaling=1)
+end
+ProcessTensor(ds::AbstractVector{Int}) = ProcessTensor(Float64, ds)
+ProcessTensor(::Type{T}, L::Int; d::Int=2) where {T <: Number} = ProcessTensor(T, [d for i in 1:L])
+ProcessTensor(L::Int; d::Int=2) = ProcessTensor(Float64, L, d=d)
 
 Base.copy(psi::ProcessTensor) = ProcessTensor(copy(psi.data), scaling=scaling(psi))
 

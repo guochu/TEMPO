@@ -34,6 +34,9 @@ include("fockterms.jl")
 # adtlattices
 include("adtlattices/adtlattices.jl")
 
+# ptlattices
+include("ptlattices/ptlattices.jl")
+
 # correlation function
 include("correlationfunction.jl")
 
