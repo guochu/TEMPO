@@ -26,9 +26,9 @@ function _get_U_prime(lattice, U, j::Int, bh::Symbol, cts::ContourOperator)
 	U′ = U
 	if !isnothing(k)
 		if bh == :-
-			U′ = ops[k] * U 
+			U′ = ops[k] * U
 		else
-			U′ = U * ops[k]
+			U′ = U * ops[k]  
 		end
 	end
 

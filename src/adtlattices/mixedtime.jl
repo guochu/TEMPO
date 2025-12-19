@@ -20,7 +20,7 @@ struct MixedADTLattice1Order{O<:MixedFockOrdering} <: MixedADTLattice{O}
 end
 
 # the default is that the system starts from 0 temperature (state 0)
-MixedADTLattice1Order(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, d::Int=2, ordering::MixedFockOrdering=M1N1_m1M1n1N1m2M2n2N2()) = MixedADTLattice1Order(
+MixedADTLattice1Order(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, d::Int=2, ordering::MixedFockOrdering=M2M1_m1M1m2M2()) = MixedADTLattice1Order(
 							δt, Nt, δτ, Nτ, d, ordering)
 Base.similar(x::MixedADTLattice1Order; δt::Real=x.δt, Nt::Int=x.Nt, δτ::Real=x.δτ, Nτ::Int=x.Nτ, d::Int=x.d, ordering::MixedFockOrdering=x.ordering) = MixedADTLattice1Order(
 			δt, Nt, δτ, Nτ, d, ordering)

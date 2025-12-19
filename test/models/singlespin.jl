@@ -189,3 +189,85 @@ end
 	end
 
 end
+
+
+@testset "Single spin: mixed-time" begin
+	Ω = 0.5
+	Nt = 5
+	δt = 0.05
+	t = Nt * δt
+	Nτ = 10
+	δτ = 0.1
+	β = Nτ * δτ
+	chi = 100
+	tol = 1.0e-6
+	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
+
+	lattice = ADTLattice(Nτ = Nτ, δτ=δτ, Nt=Nt, δt=δt, contour=:mixed)
+
+	
+	xop = Ω .* [0 1; 1 0]
+	model = BosonicImpurity(xop)
+	ρ = exp(-β .* xop)
+
+
+	mps = sysdynamics(lattice, model, trunc=trunc)
+	mps = boundarycondition!(mps, lattice, trunc=trunc)
+
+
+	# off-diagonal observables
+	op1 = [0 0.8; 0 0]
+	op2 = [0 0; 0.7 0]
+
+	c1 = ContourIndex(1, branch=:+)
+
+	ct = ContourOperator(c1, op1 * op2)
+	mps2 = sysdynamics(lattice, model, ct, trunc=trunc)
+	mps2 = boundarycondition!(mps2, lattice, trunc=trunc)
+	v = integrate(mps2) / integrate(mps)
+
+	corrs = [v]
+	c2 = ContourIndex(1, branch=:+)
+	for i in 2:Nt
+		c1 = ContourIndex(i, branch=:+)
+		ct = ContourOperator([c1, c2], [op1, op2])
+
+		mps2 = sysdynamics(lattice, model, ct, trunc=trunc)
+		mps2 = boundarycondition!(mps2, lattice, trunc=trunc)
+		v = integrate(mps2) / integrate(mps)
+
+		push!(corrs, v)
+	end
+
+	corrs2 = correlation_2op_1t(xop, op1, op2, ρ, 0:δt:t, reverse = false)
+	corrs2 = corrs2[1:length(corrs)]
+
+	@test norm(corrs - corrs2) / norm(corrs2) < tol
+
+
+	c1 = ContourIndex(1, branch=:-)
+
+	ct = ContourOperator(c1, op1 * op2)
+	mps2 = sysdynamics(lattice, model, ct, trunc=trunc)
+	mps2 = boundarycondition!(mps2, lattice, trunc=trunc)
+	v = integrate(mps2) / integrate(mps)
+
+	corrs = [v]
+	for i in 2:Nt
+		c2 = ContourIndex(i, branch=:+)
+		ct = ContourOperator([c1, c2], [op1, op2])
+
+		mps2 = sysdynamics(lattice, model, ct, trunc=trunc)
+		mps2 = boundarycondition!(mps2, lattice, trunc=trunc)
+		v = integrate(mps2) / integrate(mps)
+
+		push!(corrs, v)
+	end
+
+	corrs2 = correlation_2op_1t(xop, op1, op2, ρ, 0:δt:t, reverse = true)
+	corrs2 = corrs2[1:length(corrs)]
+
+	@test norm(corrs - corrs2) / norm(corrs2) < tol
+
+
+end

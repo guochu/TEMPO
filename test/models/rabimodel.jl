@@ -262,3 +262,112 @@ end
 	end
 
 end
+
+
+
+@testset "Rabi model: mixed-time" begin
+
+	Ω = 0.5
+	Nt = 5
+	δt = 0.03
+	t = Nt * δt
+	Nτ = 10
+	δτ = 0.05
+	β = Nτ * δτ
+	chi = 100
+	d = 50
+	tol = 1.0e-2
+	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
+
+	lattice = ADTLattice(Nt = Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed)
+
+	x = [0 1; 1 0]
+	xop = Ω .* x
+	z = [-1 0; 0 1]
+	Is = one(x)
+	Ib = one(zeros(d, d))
+	model = BosonicImpurity(xop)
+
+	op1 = [0 0.8; 0 0]
+	op2 = [0 0; 0.7 0]
+
+
+	A1 = kron(op1, Ib)
+	A2 = kron(op2, Ib)
+
+
+	bs = AdditiveHyb([z[i,i] for i in 1:size(z,1)])
+	spec = DiracDelta(1)
+	bath = bosonicbath(spec, β=β)
+	corr = correlationfunction(bath, lattice)
+	mpsI = hybriddynamics(lattice, corr, bs, trunc=trunc)
+	mpsI′ = hybriddynamics_naive(lattice, corr, bs, trunc=trunc)
+	@test distance(mpsI, mpsI′) / norm(mpsI′) < tol
+
+	mpsK = sysdynamics(lattice, model, trunc=trunc)
+	mpsK = boundarycondition!(mpsK, lattice, trunc=trunc)
+	mps = mult!(mpsK, mpsI, trunc=trunc)
+
+
+	H, Hbarebath = rabi_ham(Ω, d=d)
+
+
+	ρ = exp(-β .* H)
+
+	# off-diagonal observables
+
+	c1 = ContourIndex(1, branch=:+)
+
+	ct = ContourOperator(c1, op1 * op2)
+	mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
+	mpsK = boundarycondition!(mpsK, lattice, trunc=trunc)
+	mps2 = mult!(mpsK, mpsI, trunc=trunc)
+	v = integrate(mps2) / integrate(mps)
+
+	corrs = [v]
+	c2 = ContourIndex(1, branch=:+)
+	for i in 2:Nt
+		c1 = ContourIndex(i, branch=:+)
+		ct = ContourOperator([c1, c2], [op1, op2])
+
+		mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
+		mpsK = boundarycondition!(mpsK, lattice, trunc=trunc)
+		mps2 = mult!(mpsK, mpsI, trunc=trunc)
+		v = integrate(mps2) / integrate(mps)
+
+		push!(corrs, v)
+	end
+
+	corrs2 = correlation_2op_1t(H, A1, A2, ρ, 0:δt:t, reverse = false)
+	corrs2 = corrs2[1:length(corrs)]
+
+	@test norm(corrs - corrs2) / norm(corrs2) < tol
+
+
+	c1 = ContourIndex(1, branch=:-)
+
+	ct = ContourOperator(c1, op2 * op1)
+	mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
+	mpsK = boundarycondition!(mpsK, lattice, trunc=trunc)
+	mps2 = mult!(mpsK, mpsI, trunc=trunc)
+	v = integrate(mps2) / integrate(mps)
+
+	corrs = [v]
+	for i in 2:Nt
+		c2 = ContourIndex(i, branch=:+)
+		ct = ContourOperator([c1, c2], [op2, op1])
+
+		mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
+		mpsK = boundarycondition!(mpsK, lattice, trunc=trunc)
+		mps2 = mult!(mpsK, mpsI, trunc=trunc)
+		v = integrate(mps2) / integrate(mps)
+
+		push!(corrs, v)
+	end
+
+	corrs2 = correlation_2op_1t(H, A2, A1, ρ, 0:δt:t, reverse = true)
+	corrs2 = corrs2[1:length(corrs)]
+
+	@test norm(corrs - corrs2) / norm(corrs2) < tol
+
+end
