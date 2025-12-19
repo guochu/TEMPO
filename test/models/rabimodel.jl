@@ -142,19 +142,17 @@ end
 
 	lattice = ADTLattice(N = N, δt=δt, contour=:real)
 
-	x = [0 1; 1 0]
-	xop = Ω .* x
+	# x = [0 1; 1 0]
+	x = Matrix{ComplexF64}([0 im; -im 0])
+	hop = Ω .* x
 	z = [-1 0; 0 1]
 	Is = one(x)
 	Ib = one(zeros(d, d))
-	model = BosonicImpurity(xop)
+	model = BosonicImpurity(hop)
 
-	op1 = [0 0.8; 0 0]
-	op2 = [0 0; 0.7 0]
-
-
-	A1 = kron(op1, Ib)
-	A2 = kron(op2, Ib)
+	Hbarebath = bosondensityoperator(d=d)
+	a = bosonaoperator(d=d)
+	H = kron(hop, Ib) + kron(Is, Hbarebath) + kron(z, a' + a)
 
 
 	bs = AdditiveHyb([z[i,i] for i in 1:size(z,1)])
@@ -170,13 +168,13 @@ end
 	ρ1[1,1] = 1
 	ρ2 = 0.5 .* one(ρ1)
 
-	for ρimp in [ρ1, ρ2]
+	for ρimp in [ρ1,ρ2]
 
 		mpsK = sysdynamics(lattice, model, trunc=trunc)
 		mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp, trunc=trunc)
 		mps = mult!(mpsK, mpsI, trunc=trunc)
 
-		H, Hbarebath = rabi_ham(Ω, d=d)
+		
 		ρ = kron(ρimp, exp(-β * Hbarebath)) 
 
 		## diagonal observables
@@ -205,6 +203,13 @@ end
 
 		# off-diagonal observables
 
+		op1 = [0 0.8; 0 0]
+		op2 = [0 0; 0.7*im 0]
+
+		A1 = kron(op1, Ib)
+		A2 = kron(op2, Ib)
+
+
 		c1 = ContourIndex(1, branch=:+)
 
 		ct = ContourOperator(c1, op1 * op2)
@@ -232,6 +237,12 @@ end
 
 		@test norm(corrs - corrs2) / norm(corrs2) < tol
 
+		op1 = [0 0.8*im; 0 0]
+		op2 = [0 0; 0.7 0]
+
+
+		A1 = kron(op1, Ib)
+		A2 = kron(op2, Ib)
 
 		c1 = ContourIndex(1, branch=:-)
 

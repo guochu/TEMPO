@@ -38,7 +38,7 @@ function _get_propagator(h, lattice::AbstractADTLattice, b::Symbol)
 	elseif b == :+
 		return exp(-im*lattice.δt .* h)
 	else
-		return exp(im*lattice.δt .* transpose(h))
+		return exp(im*lattice.δt .* h)
 	end
 end
 
