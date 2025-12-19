@@ -2,7 +2,7 @@
 
 
 function _sysdynamics_util!(gmps::ADT, lattice::AbstractADTLattice, model::BosonicImpurity, branch::Symbol, 
-							N::Int, cts::ContourTerm; trunc::TruncationScheme=DefaultKTruncation)
+							N::Int, cts::ContourOperator; trunc::TruncationScheme=DefaultKTruncation)
 	# free dynamics
 	U = propagator(model, lattice, branch)
 	# data = decompose_to_mps(U)
@@ -18,7 +18,7 @@ function _sysdynamics_util!(gmps::ADT, lattice::AbstractADTLattice, model::Boson
 	return gmps
 end
 
-function _get_U_prime(lattice, U, j::Int, bh::Symbol, cts::ContourTerm)
+function _get_U_prime(lattice, U, j::Int, bh::Symbol, cts::ContourOperator)
 	idx, ops = cts.indices, cts.ops
 	a = ContourIndex(j, bh)
 	k = findfirst(x->x==a, idx)

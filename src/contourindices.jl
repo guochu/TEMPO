@@ -43,17 +43,17 @@ function Base.:<(a::ContourIndex, b::ContourIndex)
 end
 
 
-struct ContourTerm{T<:Number}
+struct ContourOperator{T<:Number}
 	indices::Vector{ContourIndex}
 	ops::Vector{Matrix{T}}
 end
 
-function ContourTerm(idx::AbstractVector{ContourIndex}, data::AbstractVector{<:AbstractMatrix}) 
+function ContourOperator(idx::AbstractVector{ContourIndex}, data::AbstractVector{<:AbstractMatrix}) 
 	(length(Set(idx)) == length(idx)) || throw(ArgumentError("multiple op with the same ContourIndex not allowed"))
 	(length(idx) == length(data)) || throw(DimensionMismatch("op size mismatch with number of ContourIndexes"))
-	return ContourTerm(idx, data)
+	return ContourOperator(idx, data)
 end
-ContourTerm(p::Int, data::AbstractMatrix) = ContourTerm([p], [data])
+ContourOperator(p::ContourIndex, data::AbstractMatrix) = ContourOperator([p], [data])
 
-TO.scalartype(::Type{ContourTerm{T}}) where {T} = T
+TO.scalartype(::Type{ContourOperator{T}}) where {T} = T
 
