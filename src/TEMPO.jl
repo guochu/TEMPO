@@ -24,8 +24,6 @@ include("adt/adt.jl")
 include("pt/pt.jl")
 
 
-include("contourindices.jl")
-
 # adtterms
 include("adtterms.jl")
 
@@ -34,6 +32,8 @@ include("adtlattices/adtlattices.jl")
 
 # ptlattices
 include("ptlattices/ptlattices.jl")
+
+include("contourindices.jl")
 
 # correlation function
 include("correlationfunction.jl")

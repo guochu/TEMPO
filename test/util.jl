@@ -10,3 +10,23 @@ function spin_half_matrices()
 	n = Array{Float64, 2}([0 0; 0 1])
 	return Dict("x"=>s_x, "y"=>s_y, "z"=>s_Z, "+"=>s_SP, "-"=>s_SM, "n"=>n)
 end
+
+
+function rabi_ham(Ω; d)
+	x = pauli_x()
+	z = pauli_z()
+	# sp = Array{Float64, 2}([0 0; 1 0])
+	# ns = [0 0; 0 1.]
+	Is = one(x)
+	a = bosonaoperator(d=d)
+	adag = a'
+	n = bosondensityoperator(d=d)
+	Ib = one(n)
+
+	Himp = Ω * kron(x, Ib)
+	Hbath = kron(Is, n)
+	Hhyb = kron(z, adag+a)
+
+	H = Himp + Hhyb + Hbath
+	return H, n
+end

@@ -5,6 +5,10 @@ include("mixedtime.jl")
 
 
 
+hybriddynamics_naive(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, bs::NonAdditiveHyb; kwargs...) = hybriddynamics_naive!(copy(gmps), lattice, corr, bs; kwargs...)
+hybriddynamics_naive(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, bs::NonAdditiveHyb; kwargs...) = hybriddynamics_naive!(vacuumstate(lattice), lattice, corr, bs; kwargs...)
+
+
 # naive implementation with N^2 gate operations
 function hybriddynamics_naive!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
 	z = hyb.op
@@ -24,7 +28,7 @@ function hybriddynamics_naive!(gmps::ProcessTensor, lattice::AbstractPTLattice, 
 					coef = index(corr, i, j, b1=b1, b2=b2)
 					ind2 = ContourIndex(j, b2) 
 					if ind1 == ind2
-						m = exp.(coef .* z2)
+						m = exp(coef .* z2)
 						t = ContourOperator(ind1, m)
 					else
 						m = exp.(coef .* zz)
