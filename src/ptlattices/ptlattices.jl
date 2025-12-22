@@ -31,3 +31,6 @@ end
 Base.getindex(lat::AbstractPTLattice, a::ContourIndex) = index(lat, a.j, branch=branch(a))
 
 vacuumstate(x::AbstractPTLattice) = ProcessTensor(scalartype(x), length(x), d=x.d)
+
+
+include("integrate.jl")

@@ -36,7 +36,7 @@ function Base.getproperty(x::RealPTLattice, s::Symbol)
 		getfield(x, s)
 	end
 end
-Base.length(x::RealPTLattice) = 2*x.k
+Base.length(x::RealPTLattice) = 2*x.N
 
 function RealPTLattice(; order::Int=1, kwargs...)
 	(order in (1, 2)) || throw(ArgumentError("order must be 1 or 2"))
