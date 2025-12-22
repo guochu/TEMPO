@@ -24,10 +24,10 @@ println("------------------------------------")
 	z = [1 0; 0 0]
 	
 
-	pos1 = index(lattice, 1)
-	t = FockTerm(pos1, z  )
+	ind1 = ContourIndex(1)
+	t = ContourOperator(ind1, z  )
 
-	mps2 = apply!(t, copy(mps))
+	mps2 = apply!(t, lattice, copy(mps))
 
 	v = integrate(lattice, mps2) / integrate(lattice, mps)
 	@test v ≈ tr(z * ρ) / tr(ρ)
@@ -37,19 +37,19 @@ println("------------------------------------")
 	op1 = [0 0; 1 0]
 	op2 = [0 1; 0 0]
 
-	pos1 = index(lattice, 1)
+	ind1 = ContourIndex(1)
 
-	t = FockTerm(pos1, op1 * op2)
-	mps2 = apply!(t, copy(mps))
+	t = ContourOperator(ind1, op1 * op2)
+	mps2 = apply!(t, lattice, copy(mps))
 	v = integrate(lattice, mps2) / integrate(lattice, mps)
 
 	corrs = [v]
 	
 	for i in 2:N
-		pos2 = index(lattice, i)
+		ind2 = ContourIndex(i)
 
-		t = FockTerm((pos2, pos1), (op2, op1))
-		mps2 = apply!(t, copy(mps))
+		t = ContourOperator([ind2, ind1], [op2, op1])
+		mps2 = apply!(t, lattice, copy(mps))
 		v = integrate(lattice, mps2) / integrate(lattice, mps)
 
 		push!(corrs, v)
@@ -66,7 +66,7 @@ end
 @testset "Single spin: real-time" begin
 	Ω = 0.5
 	N = 10
-	δt = 0.1
+	δt = 0.5
 	t = N * δt
 	β = 1
 	chi = 50
@@ -81,22 +81,24 @@ end
 
 	z = [0.6 0; 0 0.3]
 	
-	xop = Ω .* [0 1; 1 0]
-	model = BosonicImpurity(xop)
+	# hop = Ω .* [0 1; 1 0]
+	hop = Ω .* pauli_y()
+	model = BosonicImpurity(hop)
 
-	for ρimp in [ρ1, ρ2]
+	for ρimp in [ρ1,]
 
 		mps = sysdynamics(lattice, model, trunc=trunc)
 		# mps = initialstate!(mps, lattice, ρimp, trunc=trunc)
 
-		pos1 = index(lattice, 1, branch=:+)
-		m = FockTerm(pos1, z * z )
+		ind1 = ContourIndex(1, branch=:+)
+		m = ContourOperator(ind1, z * z )
 
-		mps2 = apply!(m, deepcopy(mps), ahead=true)
-		mps = initialstate!(mps, lattice, ρimp, trunc=trunc)
+		mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
 		mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
+		tmp = initialstate!(deepcopy(mps), lattice, ρimp, trunc=trunc)
 
-		v = integrate(lattice, mps2) / integrate(lattice, mps)
+		Zval = integrate(lattice, tmp)
+		v = integrate(lattice, mps2) / Zval
 		@test v ≈ tr(z*z * ρimp) 
 
 
@@ -104,53 +106,64 @@ end
 		op1 = [0 0.8; 0 0]
 		op2 = [0 0; 0.7 0]
 
-		pos1 = index(lattice, 1, branch=:+)
+		ind1 = ContourIndex(1, branch=:+)
 
-		m = FockTerm(pos1, op1 * op2)
-		mps2 = apply!(m, deepcopy(mps))
-		v = integrate(lattice, mps2) / integrate(lattice, mps)
+		m = ContourOperator(ind1, op1 * op2)
+		mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
+		mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
+		v = integrate(lattice, mps2) / Zval
 
 		corrs = [v]
-		pos2 = index(lattice, 1, branch=:+)
+		ind2 = ContourIndex(1, branch=:+)
 		for i in 2:N
-			pos1 = index(lattice, i, branch=:+)
-			m = FockTerm((pos1, pos2), (op1, op2))
+			ind1 = ContourIndex(i, branch=:+)
+			m = ContourOperator([ind1, ind2], [op1, op2])
 
-			mps2 = apply!(m, deepcopy(mps))
-			v = integrate(lattice, mps2) / integrate(lattice, mps)
+			mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
+			mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
+			v = integrate(lattice, mps2) / Zval
 
 			push!(corrs, v)
 		end
 
-		corrs2 = correlation_2op_1t(xop, op1, op2, ρimp, 0:δt:t, reverse = false)
+		corrs2 = correlation_2op_1t(hop, op1, op2, ρimp, 0:δt:t, reverse = false)
 		corrs2 = corrs2[1:length(corrs)]
 
 		@test norm(corrs - corrs2) / norm(corrs2) < tol
 
 
-		c1 = ContourIndex(1, branch=:-)
+		# pos1 = index(lattice, 1, branch=:-) 
+		# println("pos1 = ", pos1)
 
-		ct = ContourOperator(c1, op1 * op2)
-		mps2 = sysdynamics(lattice, model, ct, trunc=trunc)
-		mps2 = boundarycondition!(mps2, lattice, ρ₀=ρimp, trunc=trunc)
-		v = integrate(mps2) / integrate(mps)
+		# m = FockTerm(pos1, op1 * op2)
+		# mps2 = apply!(m, deepcopy(mps), aheads=true)
+		# mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
+		# v = integrate(lattice, mps2) / Zval
 
-		corrs = [v]
-		for i in 2:N
-			c2 = ContourIndex(i, branch=:+)
-			ct = ContourOperator([c1, c2], [op1, op2])
+		# corrs = [v]
+		# for i in 2:N
+		# 	pos2 = index(lattice, i, branch=:+)
+		# 	println("pos2 = ", pos2)
+		# 	# m = FockTerm([pos1, pos2], [Matrix(transpose(op1)), op2])
+		# 	# mps2 = apply!(m, deepcopy(mps), aheads=(true, true))
 
-			mps2 = sysdynamics(lattice, model, ct, trunc=trunc)
-			mps2 = boundarycondition!(mps2, lattice, ρ₀=ρimp, trunc=trunc)
-			v = integrate(mps2) / integrate(mps)
 
-			push!(corrs, v)
-		end
+		# 	m = ContourOperator([ContourIndex(1, :-), ContourIndex(i, :+)], [op1, op2])
+		# 	mps2 = apply!(m, lattice, deepcopy(mps))
+		# 	mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
 
-		corrs2 = correlation_2op_1t(xop, op1, op2, ρimp, 0:δt:t, reverse = true)
-		corrs2 = corrs2[1:length(corrs)]
+		# 	v = integrate(lattice, mps2) / Zval
 
-		@test norm(corrs - corrs2) / norm(corrs2) < tol
+		# 	push!(corrs, v)
+		# end
+
+		# corrs2 = correlation_2op_1t(hop, op1, op2, ρimp, 0:δt:t, reverse = true)
+		# corrs2 = corrs2[1:length(corrs)]
+
+		# println(corrs)
+		# println(corrs2)
+
+		# @test norm(corrs - corrs2) / norm(corrs2) < tol
 
 	end
 

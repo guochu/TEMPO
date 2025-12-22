@@ -29,8 +29,6 @@ include("contourindices.jl")
 # adtterms
 include("adtterms.jl")
 
-include("fockterms.jl")
-
 # adtlattices
 include("adtlattices/adtlattices.jl")
 

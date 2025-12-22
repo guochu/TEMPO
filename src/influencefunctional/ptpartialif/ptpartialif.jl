@@ -17,20 +17,20 @@ function hybriddynamics_naive!(gmps::ProcessTensor, lattice::AbstractPTLattice, 
 		k1 = (b1 == :τ) ? lattice.Nτ : lattice.Nt
 		for i in 1:k1
 			tmp = vacuumstate(lattice)
-			pos1 = index(lattice, i, branch=b1)
+			ind1 = ContourIndex(i, b1) 
 			for b2 in branches(lattice)
 				k2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt
 				for j in 1:k2
 					coef = index(corr, i, j, b1=b1, b2=b2)
-					pos2 = index(lattice, j, branch=b2)
-					if pos1 == pos2
+					ind2 = ContourIndex(j, b2) 
+					if ind1 == ind2
 						m = exp.(coef .* z2)
-						t = FockTerm(pos1, m)
+						t = ContourOperator(ind1, m)
 					else
 						m = exp.(coef .* zz)
-						t = FockTerm((pos1, pos2), (z, z))
+						t = ContourOperator([ind1, ind2], [z, z])
 					end
-					apply!(t, tmp)
+					apply!(t, lattice, tmp)
 					canonicalize!(tmp, alg=orth)
 				end
 			end
