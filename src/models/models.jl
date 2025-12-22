@@ -4,6 +4,11 @@ abstract type AbstractBosonicImpurityHamiltonian end
 sysdynamics(gmps::ADT, lattice::AbstractADTLattice, model::AbstractBosonicImpurityHamiltonian, args...; kwargs...) = sysdynamics!(copy(gmps), lattice, model, args...; kwargs...)
 sysdynamics(lattice::AbstractADTLattice, model::AbstractBosonicImpurityHamiltonian, args...; kwargs...) = sysdynamics!(vacuumstate(lattice), lattice, model, args...; kwargs...)
 
+
+sysdynamics(gmps::ProcessTensor, lattice::AbstractPTLattice, model::AbstractBosonicImpurityHamiltonian; kwargs...) = sysdynamics!(copy(gmps), lattice, model; kwargs...)
+sysdynamics(lattice::AbstractPTLattice, model::AbstractBosonicImpurityHamiltonian; kwargs...) = sysdynamics!(vacuumstate(lattice), lattice, model; kwargs...)
+
+
 """
 	sysdynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::AbstractBosonicImpurityHamiltonian; kwargs...)
 
@@ -49,6 +54,48 @@ sysdynamics_forward!(gmps::ADT, lattice::AbstractADTLattice, model::AbstractBoso
 sysdynamics_backward!(gmps::ADT, lattice::AbstractADTLattice, model::AbstractBosonicImpurityHamiltonian, args...; kwargs...) = error("sysdynamics_backward! not implemented for model $(typeof(model))")
 sysdynamics_imaginary!(gmps::ADT, lattice::AbstractADTLattice, model::AbstractBosonicImpurityHamiltonian, args...; kwargs...) = error("sysdynamics_imaginary! not implemented for model $(typeof(model))")
 
+
+
+# process tensor (nonadditive baths)
+function sysdynamics!(gmps::ProcessTensor, lattice::ImagPTLattice, model::AbstractBosonicImpurityHamiltonian; trunc::TruncationScheme=DefaultKTruncation)
+	return sysdynamics_imaginary!(gmps, lattice, model; trunc=trunc)
+end 
+
+
+function sysdynamics!(gmps::ProcessTensor, lattice::RealPTLattice, model::AbstractBosonicImpurityHamiltonian; 
+						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+	if isnothing(branch)
+		sysdynamics_forward!(gmps, lattice, model; trunc=trunc)
+		return sysdynamics_backward!(gmps, lattice, model; trunc=trunc)
+	else
+		(branch in (:+, :-)) || throw(ArgumentError("branch must be one of :+ or :-"))
+		return (branch == :+) ? sysdynamics_forward!(gmps, lattice, model; trunc=trunc) : sysdynamics_backward!(gmps, lattice, model; trunc=trunc)
+	end
+end 
+
+function sysdynamics!(gmps::ProcessTensor, lattice::MixedPTLattice, model::AbstractBosonicImpurityHamiltonian; 
+						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+	if isnothing(branch)
+		sysdynamics_forward!(gmps, lattice, model; trunc=trunc)
+		sysdynamics_backward!(gmps, lattice, model; trunc=trunc)
+		return sysdynamics_imaginary!(gmps, lattice, model; trunc=trunc)
+	else
+		if branch == :+
+			return sysdynamics_forward!(gmps, lattice, model; trunc=trunc)
+		elseif branch == :-
+			return sysdynamics_backward!(gmps, lattice, model; trunc=trunc)
+		else
+			(branch == :τ) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
+			return sysdynamics_imaginary!(gmps, lattice, model; trunc=trunc)
+		end
+	end
+end 
+
+
+
+sysdynamics_forward!(gmps::ProcessTensor, lattice::AbstractPTLattice, model::AbstractBosonicImpurityHamiltonian; kwargs...) = error("sysdynamics_forward! not implemented for model $(typeof(model))")
+sysdynamics_backward!(gmps::ProcessTensor, lattice::AbstractPTLattice, model::AbstractBosonicImpurityHamiltonian; kwargs...) = error("sysdynamics_backward! not implemented for model $(typeof(model))")
+sysdynamics_imaginary!(gmps::ProcessTensor, lattice::AbstractPTLattice, model::AbstractBosonicImpurityHamiltonian; kwargs...) = error("sysdynamics_imaginary! not implemented for model $(typeof(model))")
 
 
 include("sysdynamics.jl")

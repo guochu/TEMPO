@@ -19,31 +19,6 @@ hybriddynamics_naive(lattice::AbstractADTLattice, corr::AbstractCorrelationFunct
 
 
 
-
-# function hybriddynamics_naive!(gmps::ADT, lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
-# 	k = lattice.N
-# 	z = hyb.op
-# 	(lattice.d == length(z)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
-# 	d = lattice.d
-# 	z2 = z .* z
-# 	zz = reshape(kron(z, z), d, d)
-# 	alg = Orthogonalize(SVD(), trunc)
-# 	for i in 1:k, j in 1:k
-# 		pos1, pos2 = index(lattice, i+1), index(lattice, j+1)
-# 		coef = index(corr, i, j)
-# 		if pos1 == pos2
-# 			m = exp.(coef .* z2)
-# 			t = ADTTerm((pos1, ), (m, ))
-# 		else
-# 			m = exp.(coef .* zz)
-# 			t = ADTTerm((pos1, pos2), m)
-# 		end
-# 		apply!(t, gmps)
-# 		canonicalize!(gmps, alg=alg)
-# 	end	
-# 	return gmps
-# end
-
 # naive implementation with N^2 gate operations
 function hybriddynamics_naive!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
 	z = hyb.op

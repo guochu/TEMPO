@@ -1,8 +1,8 @@
 struct BosonicImpurity{M<:AbstractMatrix} <: AbstractBosonicImpurityHamiltonian
 	m::M
 end
-propagator(h::BosonicImpurity, lat::AbstractADTLattice, b::Symbol) = _get_propagator(h.m, lat, b)
-propagator(h::BosonicImpurity, lat::AbstractADTLattice; branch::Symbol=:τ) = propagator(h, lat, branch)
+propagator(h::BosonicImpurity, lat, b::Symbol) = _get_propagator(h.m, lat, b)
+propagator(h::BosonicImpurity, lat; branch::Symbol=:τ) = propagator(h, lat, branch)
 phydim(h::BosonicImpurity) = size(h.m, 1)
 
 # # Ĥ = Ωσ̂ₓ
@@ -32,7 +32,7 @@ function _sysdynamics_util!(gmps::ADT, lattice::AbstractADTLattice, model::Boson
 end
 
 
-function _get_propagator(h, lattice::AbstractADTLattice, b::Symbol)
+function _get_propagator(h, lattice, b::Symbol)
 	if b == :τ
 		return exp(-lattice.δτ .* h)
 	elseif b == :+
@@ -40,6 +40,29 @@ function _get_propagator(h, lattice::AbstractADTLattice, b::Symbol)
 	else
 		return exp(im*lattice.δt .* h)
 	end
+end
+
+
+sysdynamics_forward!(mps::ProcessTensor, lattice::AbstractPTLattice, model::BosonicImpurity, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+						mps, lattice, model, :+, lattice.Nt, args...; trunc=trunc)
+sysdynamics_backward!(mps::ProcessTensor, lattice::AbstractPTLattice, model::BosonicImpurity, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+						mps, lattice, model, :-, lattice.Nt, args...; trunc=trunc)
+sysdynamics_imaginary!(mps::ProcessTensor, lattice::AbstractPTLattice, model::BosonicImpurity, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+						mps, lattice, model, :τ, lattice.Nτ, args...; trunc=trunc)
+
+
+function _sysdynamics_util!(gmps::ProcessTensor, lattice::AbstractPTLattice, model::BosonicImpurity, branch::Symbol, N::Int; trunc::TruncationScheme=DefaultKTruncation)
+	# free dynamics
+	U = propagator(model, lattice, branch)
+	# data = decompose_to_mps(U)
+	alg = Orthogonalize(SVD(), trunc)
+	for j in 1:N
+        pos = index(lattice, j, branch=branch)
+        t = PTTerm(pos, U)
+        apply!(t, gmps)			
+	end
+	canonicalize!(gmps, alg=alg)
+	return gmps
 end
 
 
