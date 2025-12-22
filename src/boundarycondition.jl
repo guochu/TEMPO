@@ -39,6 +39,22 @@ function initialstate!(x::ADT, lattice::RealADTLattice1Order, ρ0::AbstractMatri
 end
 
 
+function initialstate!(x::ProcessTensor, lattice::RealPTLattice1Order, ρ0::AbstractMatrix; trunc::TruncationScheme=DefaultIntegrationTruncation)
+	(size(ρ0, 1) == size(ρ0, 2) == lattice.d) || throw(DimensionMismatch("diagonal element size mismatch with phydim"))
+	pos1, pos2 = index(lattice, 1, branch=:+), index(lattice, 1, branch=:-)
+	@assert pos1 + 1 == pos2
+	@tensor tmp[3,4,6,7] := ρ0[1,2] * x[pos1][3,4,5,1] * x[pos2][5,6,7,2] 
+	u, s, v = tsvd!(tmp, (1,2), (3,4), trunc=trunc)
+
+	I2 = one(ρ0)
+	@tensor a[1,2,4,5,6] := u[1,2,3] * Diagonal(s)[3,4] * I2[5,6]
+	@tensor b[1,4,2,3,5] := v[1,2,3] * I2[4,5]
+	x[pos1] = tie(a, (1,1,2,1))
+	x[pos2] = tie(b, (2,1,1,1))
+	canonicalize!(x, alg=Orthogonalize(trunc=trunc))
+	return x
+end
+
 
 function boundarycondition!(x::ADT, lattice::MixedADTLattice1Order; trunc::TruncationScheme=DefaultIntegrationTruncation)
 	d = lattice.d

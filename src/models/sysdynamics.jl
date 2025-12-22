@@ -58,7 +58,7 @@ function _sysdynamics_util!(gmps::ProcessTensor, lattice::AbstractPTLattice, mod
 	alg = Orthogonalize(SVD(), trunc)
 	for j in 1:N
         pos = index(lattice, j, branch=branch)
-        t = PTTerm(pos, U)
+        t = FockTerm(pos, U)
         apply!(t, gmps)			
 	end
 	canonicalize!(gmps, alg=alg)

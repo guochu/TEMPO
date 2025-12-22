@@ -28,6 +28,7 @@ function _leftorth!(psi::ProcessTensor, alg::SVD, trunc::TruncationScheme, norma
 		psi[i] = permute(u, (1,2,4,3))
 		v = Diagonal(s) * v
 		psi[i+1] = @tensor tmp[1,3,4,5] := v[1,2] * psi[i+1][2,3,4,5]
+		psi.s[i+1] = s
 		maxerr = max(maxerr, rerror)
 	end
 	(verbosity > 0) && println("Max SVD truncerror in leftorth: ", maxerr)
@@ -63,6 +64,7 @@ function _rightorth!(psi::ProcessTensor, alg::SVD, trunc::TruncationScheme, norm
 		(verbosity > 1) && println("SVD truncerror at bond $(i): ", rerror)
 		u = u * Diagonal(s)
 		psi[i-1] = @tensor tmp[1,2,5,4] := psi[i-1][1,2,3,4] * u[3,5]
+		psi.s[i] = s
 		maxerr = max(maxerr, err)
 	end
 	(verbosity > 0) && println("Max SVD truncerror in rightorth: ", maxerr)

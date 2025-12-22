@@ -22,3 +22,4 @@ NonAdditiveHyb(a::AbstractMatrix{T}) where {T<:Number} = NonAdditiveHyb{T}(a)
 phydim(b::NonAdditiveHyb) = size(b.op, 1)
 
 include("partialif/partialif.jl")
+include("ptpartialif/ptpartialif.jl")

@@ -26,7 +26,7 @@ println("------------------------------------")
 		psi1 = rightorth!(deepcopy(psi), alg = Orthogonalize(SVD(), normalize=true))
 		@test isrightcanonical(psi1)
 		psi1 = canonicalize!(deepcopy(psi), alg = Orthogonalize(SVD(), normalize=true))
-		@test isrightcanonical(psi1)
+		@test iscanonical(psi1)
 		@test norm(2 * psi1) ≈ 2
 		@test norm(psi1 / 2) ≈ 0.5
 		@test norm(psi1 - psi1) ≈ 0. atol = tol
