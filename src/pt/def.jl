@@ -59,7 +59,6 @@ function _check_mpo_space(mpotensors::Vector)
 	# boundaries should be dimension 
 	(space_l(mpotensors[1]) == 1) || throw(DimensionMismatch())
 	(space_r(mpotensors[L]) == 1) || throw(DimensionMismatch())
-	all(x->size(x, 2)==size(x,4)==2, mpotensors) || throw(ArgumentError("physical dimension of site tensors must be 2"))
 	return true
 end
 

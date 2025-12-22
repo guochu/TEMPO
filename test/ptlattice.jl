@@ -19,8 +19,8 @@ println("------------------------------------")
 	@test index(lattice, 2) == 1
 	@test index(lattice, 1) == 2
 
-	# mps = vacuumstate(lattice)
-	# @test integrate(lattice, mps) ≈ 27 atol = 1.0e-6
+	mps = vacuumstate(lattice)
+	@test integrate(lattice, mps) ≈ lattice.d atol = 1.0e-6
 
 end
 
@@ -39,8 +39,8 @@ end
 	@test index(lattice, 1, branch=:+) == 1
 	@test index(lattice, 1, branch=:-) == 2
 
-	# mps = vacuumstate(lattice)
-	# @test integrate(lattice, mps) ≈ 16 atol = 1.0e-6
+	mps = vacuumstate(lattice)
+	@test integrate(lattice, mps) ≈ lattice.d atol = 1.0e-6
 
 end
 
@@ -69,7 +69,7 @@ end
 	@test index(lattice, 1, branch=:-) == 3
 	@test index(lattice, 1, branch=:+) == 4
 
-	# mps = vacuumstate(lattice)
-	# @test integrate(lattice, mps) ≈ 2^7 atol = 1.0e-6
+	mps = vacuumstate(lattice)
+	@test integrate(lattice, mps) ≈ lattice.d atol = 1.0e-6
 end
 
