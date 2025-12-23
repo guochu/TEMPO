@@ -85,7 +85,7 @@ end
 	hop = Ω .* pauli_y()
 	model = BosonicImpurity(hop)
 
-	for ρimp in [ρ1,]
+	for ρimp in [ρ1,ρ2]
 
 		mps = sysdynamics(lattice, model, trunc=trunc)
 		# mps = initialstate!(mps, lattice, ρimp, trunc=trunc)

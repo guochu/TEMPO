@@ -1,9 +1,9 @@
 println("------------------------------------")
-println("|            Rabi Model            |")
+println("|           Rabi Model 2           |")
 println("------------------------------------")
 
 
-@testset "Rabi model: imaginary-time" begin
+@testset "Rabi model 2: imaginary-time" begin
 
 	Ω = 0.5
 	N = 20
@@ -16,8 +16,9 @@ println("------------------------------------")
 
 	lattice = PTLattice(N = N, δτ=δτ, contour=:imag)
 
+	z = Array{Float64, 2}([-1 0; 0 1])
 	x = [0 1; 1 0]
-	hop = Ω .* x
+	hop = Ω .* z
 	z = [-1 0; 0 1]
 	Is = one(x)
 	Ib = one(zeros(d, d))
@@ -25,7 +26,7 @@ println("------------------------------------")
 
 	mpsK = sysdynamics(lattice, model, trunc=trunc)
 	
-	bs = NonAdditiveHyb(z)
+	bs = NonAdditiveHyb(x)
 
 	spec = DiracDelta(1)
 
@@ -40,11 +41,12 @@ println("------------------------------------")
 	mps = mult!(mpsK, mpsI, trunc=trunc)
 
 
-	H, Hbarebath = rabi_ham(Ω, d=d)
+	H, Hbarebath = rabi_ham_2(Ω, d=d)
 
 	ρ = exp(-β * H)
 	Zval = integrate(lattice, mps)
-	@test abs(Zval - tr(ρ) / tr(exp(-β .* Hbarebath))) / abs(Zval) < tol
+	Zval2 = tr(ρ) / tr(exp(-β .* Hbarebath))
+	@test abs(Zval - Zval2) / abs(Zval) < tol
 
 
 	## diagonal observables
@@ -105,7 +107,7 @@ println("------------------------------------")
 
 end
 
-@testset "Rabi model: real-time" begin
+@testset "Rabi model 2: real-time" begin
 
 	Ω = 0.5
 	N = 10
@@ -119,20 +121,19 @@ end
 
 	lattice = PTLattice(N = N, δt=δt, contour=:real)
 
-	# x = [0 1; 1 0]
-	x = Matrix{ComplexF64}([0 im; -im 0])
-	hop = Ω .* x
-	z = [-1 0; 0 1]
+	p = spin_half_matrices()
+	x, y, z = p["x"], p["y"], p["z"]
+	hop = Ω .* z
 	Is = one(x)
 	Ib = one(zeros(d, d))
 	model = BosonicImpurity(hop)
 
 	Hbarebath = bosondensityoperator(d=d)
 	a = bosonaoperator(d=d)
-	H = kron(hop, Ib) + kron(Is, Hbarebath) + kron(z, a' + a)
+	H = kron(hop, Ib) + kron(Is, Hbarebath) + kron(x, a' + a)
 
 
-	bs = NonAdditiveHyb(z)
+	bs = NonAdditiveHyb(x)
 	spec = DiracDelta(1)
 	bath = bosonicbath(spec, β=β)
 	corr = correlationfunction(bath, lattice)
@@ -146,7 +147,7 @@ end
 	ρ1[1,1] = 1
 	ρ2 = 0.5 .* one(ρ1)
 
-	for ρimp in [ρ1, ρ2]
+	for ρimp in [ρ1, _rand_dm(2)]
 
 		tmp = initialstate!(deepcopy(mps), lattice, ρimp, trunc=trunc)
 		Zval = integrate(lattice, tmp)
@@ -267,9 +268,9 @@ end
 
 	lattice = PTLattice(Nt = Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed)
 
-	x = [0 1; 1 0]
-	hop = Ω .* x
-	z = [-1 0; 0 1]
+	p = spin_half_matrices()
+	x, y, z = p["x"], p["y"], p["z"]
+	hop = Ω .* z
 	Is = one(x)
 	Ib = one(zeros(d, d))
 	model = BosonicImpurity(hop)
@@ -282,7 +283,7 @@ end
 	A2 = kron(op2, Ib)
 
 
-	bs = NonAdditiveHyb(z)
+	bs = NonAdditiveHyb(x)
 	spec = DiracDelta(1)
 	bath = bosonicbath(spec, β=β)
 	corr = correlationfunction(bath, lattice)
@@ -295,7 +296,7 @@ end
 	Zval = integrate(lattice, mps)
 
 
-	H, Hbarebath = rabi_ham(Ω, d=d)
+	H, Hbarebath = rabi_ham_2(Ω, d=d)
 
 
 	ρ = exp(-β .* H)

@@ -30,3 +30,28 @@ function rabi_ham(Ω; d)
 	H = Himp + Hhyb + Hbath
 	return H, n
 end
+
+function rabi_ham_2(Ω; d)
+	x = pauli_x()
+	z = pauli_z()
+	# sp = Array{Float64, 2}([0 0; 1 0])
+	# ns = [0 0; 0 1.]
+	Is = one(x)
+	a = bosonaoperator(d=d)
+	adag = a'
+	n = bosondensityoperator(d=d)
+	Ib = one(n)
+
+	Himp = Ω * kron(z, Ib)
+	Hbath = kron(Is, n)
+	Hhyb = kron(x, adag+a)
+
+	H = Himp + Hhyb + Hbath
+	return H, n
+end
+
+function _rand_dm(d)
+	x = randn(ComplexF64, d, d)
+	x = x' * x
+	return x / tr(x)
+end
