@@ -12,7 +12,6 @@ include("pt.jl")
 
 include("adtpartialif.jl")
 
-# include("ptpartialif.jl")
 
 include("models/models.jl")
 

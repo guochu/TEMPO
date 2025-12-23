@@ -10,11 +10,17 @@ include("mixedtime.jl")
 
 
 hybriddynamics(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, bs::AdditiveHyb; kwargs...) = hybriddynamics!(copy(gmps), lattice, corr, bs; kwargs...)
-hybriddynamics(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, bs::AdditiveHyb; kwargs...) = hybriddynamics!(vacuumstate(lattice), lattice, corr, bs; kwargs...)
+function hybriddynamics(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, bs::AdditiveHyb; kwargs...)
+	T = promote_type(scalartype(lattice), scalartype(bs), scalartype(corr))
+	return hybriddynamics!(vacuumstate(lattice), lattice, corr, bs; kwargs...)
+end 
 
 
 hybriddynamics_naive(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, bs::AdditiveHyb; kwargs...) = hybriddynamics_naive!(copy(gmps), lattice, corr, bs; kwargs...)
-hybriddynamics_naive(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, bs::AdditiveHyb; kwargs...) = hybriddynamics_naive!(vacuumstate(lattice), lattice, corr, bs; kwargs...)
+function hybriddynamics_naive(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, bs::AdditiveHyb; kwargs...)
+	T = promote_type(scalartype(lattice), scalartype(bs), scalartype(corr))
+	hybriddynamics_naive!(vacuumstate(T, lattice), lattice, corr, bs; kwargs...)
+end 
 
 
 

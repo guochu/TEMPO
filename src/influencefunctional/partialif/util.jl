@@ -10,7 +10,8 @@ function partialif_naive(lattice::AbstractADTLattice, rowind::ContourIndex, corr
 	(lattice.d == length(z)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
 	z2 = z .* z
 	zz = reshape(kron(z, z), lattice.d, lattice.d)
-	tmp = vacuumstate(lattice)
+	T = promote_type(scalartype(lattice), scalartype(hyb), scalartype(corr))
+	tmp = vacuumstate(T, lattice)
 	orth = Orthogonalize(SVD(), trunc)
 	for b2 in branches(lattice)
 		k2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt

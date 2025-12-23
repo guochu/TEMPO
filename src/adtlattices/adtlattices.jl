@@ -32,4 +32,5 @@ end
 
 Base.getindex(lat::AbstractADTLattice, a::ContourIndex) = index(lat, a.j, branch=branch(a))
 
-vacuumstate(x::AbstractADTLattice) = ADT(scalartype(x), length(x), d=x.d)
+vacuumstate(::Type{T}, x::AbstractADTLattice) where {T<:Number} = ADT(T, length(x), d=x.d)
+vacuumstate(x::AbstractADTLattice) = vacuumstate(scalartype(x), x)

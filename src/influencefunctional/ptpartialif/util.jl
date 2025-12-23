@@ -9,8 +9,9 @@ function partialif_naive(lattice::AbstractPTLattice, rowind::ContourIndex, corr:
 	b1 = branch(rowind)
 	i = rowind.j
 	pos1 = index(lattice, i, branch=b1)
-	
-	tmp = vacuumstate(lattice)
+		
+	T = promote_type(scalartype(lattice), scalartype(hyb), scalartype(corr))
+	tmp = vacuumstate(T, lattice)
 	orth = Orthogonalize(SVD(), trunc)
 	for b2 in branches(lattice)
 		k2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt

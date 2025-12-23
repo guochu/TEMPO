@@ -4,11 +4,17 @@ include("realtime.jl")
 include("mixedtime.jl")
 
 hybriddynamics(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, bs::NonAdditiveHyb; kwargs...) = hybriddynamics!(copy(gmps), lattice, corr, bs; kwargs...)
-hybriddynamics(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, bs::NonAdditiveHyb; kwargs...) = hybriddynamics!(vacuumstate(lattice), lattice, corr, bs; kwargs...)
+function hybriddynamics(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, bs::NonAdditiveHyb; kwargs...)
+	T = promote_type(scalartype(lattice), scalartype(bs), scalartype(corr))
+	return hybriddynamics!(vacuumstate(T, lattice), lattice, corr, bs; kwargs...)
+end 
 
 
 hybriddynamics_naive(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, bs::NonAdditiveHyb; kwargs...) = hybriddynamics_naive!(copy(gmps), lattice, corr, bs; kwargs...)
-hybriddynamics_naive(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, bs::NonAdditiveHyb; kwargs...) = hybriddynamics_naive!(vacuumstate(lattice), lattice, corr, bs; kwargs...)
+function hybriddynamics_naive(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, bs::NonAdditiveHyb; kwargs...) 
+	T = promote_type(scalartype(lattice), scalartype(bs), scalartype(corr))
+	hybriddynamics_naive!(vacuumstate(T, lattice), lattice, corr, bs; kwargs...)
+end
 
 
 # naive implementation with N^2 gate operations

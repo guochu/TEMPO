@@ -9,6 +9,8 @@ AdditiveHyb(x::AbstractVector{<:Real}) = AdditiveHyb(float(x))
 
 phydim(b::AdditiveHyb) = length(b.op)
 
+TO.scalartype(::Type{AdditiveHyb}) = Float64
+
 struct NonAdditiveHyb{T<:Number} <: HybridizationStyle
 	op::Matrix{T}
 
@@ -20,6 +22,8 @@ end
 NonAdditiveHyb(a::AbstractMatrix{T}) where {T<:Number} = NonAdditiveHyb{T}(a)
 
 phydim(b::NonAdditiveHyb) = size(b.op, 1)
+
+TO.scalartype(::Type{NonAdditiveHyb{T}}) where T = T
 
 include("partialif/partialif.jl")
 include("ptpartialif/ptpartialif.jl")
