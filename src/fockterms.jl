@@ -1,25 +1,18 @@
 # abstract type AbstractFockTerm end
 
 # struct FockTerm{N, T <: Number} <: AbstractFockTerm
-# 	data::NTuple{N, Array{T, 2}}
+# 	data::NTuple{N, Array{T, 4}}
 # 	positions::NTuple{N, Int}
-
-
-
 # end
 
-# # function FockTerm(positions::NTuple{N, Int}, data::NTuple{N, <:AbstractMatrix}) where {N}
-# # 	(length(Set(positions)) == N) || throw(ArgumentError("multiple n̂ on the same position not allowed"))
-# # 	p = TupleTools.sortperm(positions)
-# # 	positions = TupleTools.getindices(positions, p)
-# # 	data = TupleTools.getindices(data, p)
-# # 	return FockTerm(positions, data)
-# # end
-
-# function FockTerm(positions::NTuple{N, Int}, data::NTuple{N, Matrix{T}}) where {N, T}
+# function FockTerm(positions::NTuple{N, Int}, data::NTuple{N, <:AbstractMatrix}) where {N}
 # 	(length(Set(positions)) == N) || throw(ArgumentError("multiple n̂ on the same position not allowed"))
-# 	return FockTerm(data, positions)
+# 	p = TupleTools.sortperm(positions)
+# 	positions = TupleTools.getindices(positions, p)
+# 	data = TupleTools.getindices(data, p)
+# 	return FockTerm(positions, data)
 # end
+
 
 
 # FockTerm(p::Int, data::AbstractMatrix) = FockTerm((p,), (data,))

@@ -27,13 +27,15 @@ include("pt/pt.jl")
 # adtterms
 include("adtterms.jl")
 
+include("contourindices.jl")
+
 # adtlattices
 include("adtlattices/adtlattices.jl")
 
 # ptlattices
 include("ptlattices/ptlattices.jl")
 
-include("contourindices.jl")
+include("contouroperators.jl")
 
 # correlation function
 include("correlationfunction.jl")
