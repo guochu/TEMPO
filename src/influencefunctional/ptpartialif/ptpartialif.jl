@@ -14,7 +14,8 @@ function hybriddynamics_naive!(gmps::ProcessTensor, lattice::AbstractPTLattice, 
 	z = hyb.op
 	(lattice.d == size(z, 1) == size(z, 2)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
 	d = lattice.d
-	z2 = kron(z, z)
+	z2 = z * z
+	zz = kron(z, z)
 	orth = Orthogonalize(SVD(), trunc)
 
 	for b1 in branches(lattice)

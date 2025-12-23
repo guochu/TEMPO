@@ -25,7 +25,7 @@ function FockTerm(positions::NTuple{N, Int}, data::NTuple{N, <:AbstractMatrix{T}
 	p = TupleTools.sortperm(positions)
 	positions = TupleTools.getindices(positions, p)
 	data = TupleTools.getindices(data, p)
-	return FockTerm(ntuple(j->_to4(j), data), positions)
+	return FockTerm(ntuple(j->_to4(data[j]), N), positions)
 end
 
 
@@ -42,6 +42,7 @@ function apply!(x::FockTerm{N, T}, mps::ProcessTensor) where {N, T}
 	pos_last = pos[end]
 
 	ml = dropdims(data[1], dims=1)
+	# println(size(ml), " ", size(mps[pos_first]))
 	@tensor tmp[4,1,2,5,6] := ml[1,2,3] * mps[pos_first][4,3,5,6]
 	mps[pos_first] = tie(tmp, (1,1,2,1))
 	if N == 1
@@ -63,9 +64,10 @@ function apply!(x::FockTerm{N, T}, mps::ProcessTensor) where {N, T}
 		mps[j] = tie(tmp, (2,1,2,1))
 	end
 	mr = dropdims(data[end], dims=3)
-	@tensor tmp[4,1,2,5,6] := mr[1,2,3] * mps[pos_last][4,3,5,6] 
-	mps[pos_last] = tie(tmp, (1,1,2,1))
+	@tensor tmp[1,4,2,5,6] := mr[1,2,3] * mps[pos_last][4,3,5,6] 
+	mps[pos_last] = tie(tmp, (2,1,1,1))
 	for site in pos_first:pos_last-1
+		# println(size(mps[site]), " ", size( mps[site+1]))
 		@assert space_r(mps[site]) == space_l(mps[site+1])
 	end
 	return mps
