@@ -1,8 +1,8 @@
 abstract type AbstractADTTerm end
 
 struct ADTTerm{N, T <: Number} <: AbstractADTTerm
-	positions::NTuple{N, Int}
 	data::Vector{Array{T, 3}}
+	positions::NTuple{N, Int}
 end
 
 function ADTTerm(positions::NTuple{N, Int}, data::AbstractArray{T, N}) where {N, T<:Number}
@@ -11,7 +11,7 @@ function ADTTerm(positions::NTuple{N, Int}, data::AbstractArray{T, N}) where {N,
 	p = TupleTools.sortperm(positions)
 	positions = TupleTools.getindices(positions, p)
 	data = permute(data, p)
-	return ADTTerm(positions, decompose_to_mps(data))
+	return ADTTerm(decompose_to_mps(data), positions)
 end
 ADTTerm(p::Int, data::AbstractVector) = ADTTerm((p,), data)
 
@@ -20,7 +20,7 @@ function ADTTerm(positions::NTuple{N, Int}, data::NTuple{N, <:AbstractVector{T}}
 	p = TupleTools.sortperm(positions)
 	positions = TupleTools.getindices(positions, p)
 	data = TupleTools.getindices(data, p)
-	return ADTTerm(positions, [reshape(x, 1, length(x), 1) for x in data])
+	return ADTTerm([reshape(x, 1, length(x), 1) for x in data], positions)
 end
 
 TO.scalartype(::Type{ADTTerm{N, T}}) where {N, T} = T
