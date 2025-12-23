@@ -3,6 +3,8 @@ include("imaginarytime.jl")
 include("realtime.jl")
 include("mixedtime.jl")
 
+hybriddynamics(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, bs::NonAdditiveHyb; kwargs...) = hybriddynamics!(copy(gmps), lattice, corr, bs; kwargs...)
+hybriddynamics(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, bs::NonAdditiveHyb; kwargs...) = hybriddynamics!(vacuumstate(lattice), lattice, corr, bs; kwargs...)
 
 
 hybriddynamics_naive(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, bs::NonAdditiveHyb; kwargs...) = hybriddynamics_naive!(copy(gmps), lattice, corr, bs; kwargs...)
@@ -31,11 +33,11 @@ function hybriddynamics_naive!(gmps::ProcessTensor, lattice::AbstractPTLattice, 
 					if ind1 == ind2
 						m = exp(coef .* z2)
 						# t = ContourOperator(ind1, m)
-						t = FockTerm(lattice[ind1], m)
+						t = FockTermS(lattice[ind1], m)
 					else
 						m = exp(coef .* zz)
 						# t = ContourOperator([ind1, ind2], [z, z])
-						t = FockTerm((lattice[ind1], lattice[ind2]), reshape(m, (d,d,d,d)))
+						t = FockTermS((lattice[ind1], lattice[ind2]), reshape(m, (d,d,d,d)))
 					end
 					apply!(t, tmp)
 					canonicalize!(tmp, alg=orth)

@@ -1,11 +1,13 @@
-abstract type AbstractFockTerm end
+abstract type AbstractFockTerm{T<:Number} end
+TO.scalartype(::Type{<:AbstractFockTerm{T}}) where {T} = T
+# num_terms(t::AbstractFockTerm) = length(t.positions)
 
-struct FockTerm{N, T <: Number} <: AbstractFockTerm
+struct FockTermS{N, T <: Number} <: AbstractFockTerm{T}
 	data::NTuple{N, Array{T, 4}}
 	positions::NTuple{N, Int}
 end
 
-function FockTerm(positions::NTuple{N, Int}, data::AbstractArray{T, M}) where {N, T, M}
+function FockTermS(positions::NTuple{N, Int}, data::AbstractArray{T, M}) where {N, T, M}
 	(length(Set(positions)) == N) || throw(ArgumentError("multiple n̂ on the same position not allowed"))
 	(2*N == M) || throw(DimensionMismatch("n positions mismatch with rank of data"))
 	p = TupleTools.sortperm(positions)
@@ -17,27 +19,48 @@ function FockTerm(positions::NTuple{N, Int}, data::AbstractArray{T, M}) where {N
 	end
 	data = permute(data, p2)
 	r = decompose_to_mpo(data)
-	return FockTerm(ntuple(j->r[j], N), positions)
+	return FockTermS(ntuple(j->r[j], N), positions)
 end
 
-function FockTerm(positions::NTuple{N, Int}, data::NTuple{N, <:AbstractMatrix{T}}) where {N, T<:Number}
+# function FockTermS(positions::NTuple{N, Int}, data::NTuple{N, <:AbstractMatrix{T}}) where {N, T<:Number}
+# 	for i in 1:N-1
+# 		(positions[i] < positions[i+1]) || throw(ArgumentError("positions must be sorted"))
+# 		(space_r(data[i]) == space_l(data[i+1])) || throw(DimensionMismatch("MPO Tensor auxiliary space mismatch"))
+# 	end
+# 	return FockTermS(data, positions)
+# end
+
+function FockTermS(positions::NTuple{N, Int}, data::NTuple{N, <:AbstractMatrix{T}}) where {N, T<:Number}
 	(length(Set(positions)) == N) || throw(ArgumentError("multiple n̂ on the same position not allowed"))
 	p = TupleTools.sortperm(positions)
 	positions = TupleTools.getindices(positions, p)
 	data = TupleTools.getindices(data, p)
-	return FockTerm(ntuple(j->_to4(data[j]), N), positions)
+	return FockTermS(ntuple(j->_to4(data[j]), N), positions)
 end
 
 
-FockTerm(p::Int, data::AbstractMatrix) = FockTerm((p,), (data,))
+FockTermS(p::Int, data::AbstractMatrix) = FockTermS((p,), (data,))
 
 
-TO.scalartype(::Type{FockTerm{N, T}}) where {N, T} = T
+struct FockTerm{T <: Number} <: AbstractFockTerm{T}
+	data::Vector{Array{T, 4}}
+	positions::Vector{Int}
+end
 
+function FockTerm(positions::AbstractVector{Int}, data::AbstractVector{<:AbstractMatrix{T}}) where {T<:Number}
+	(length(positions) == length(data)) || throw(DimensionMismatch("n positions mismatch with n data"))
+	N = length(positions)
+	for i in 1:N-1
+		(positions[i] < positions[i+1]) || throw(ArgumentError("positions must be sorted"))
+		(space_r(data[i]) == space_l(data[i+1])) || throw(DimensionMismatch("MPO Tensor auxiliary space mismatch"))
+	end
+	return FockTerm(data, positions)
+end
 
-function apply!(x::FockTerm{N, T}, mps::ProcessTensor) where {N, T}
+function apply!(x::AbstractFockTerm{T}, mps::ProcessTensor) where {T}
 	data = x.data
 	pos = x.positions
+	N = length(data)
 	pos_first = pos[1]
 	pos_last = pos[end]
 
