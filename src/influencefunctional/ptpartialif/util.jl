@@ -8,8 +8,7 @@ function partialif_naive(lattice::AbstractPTLattice, rowind::ContourIndex, corr:
 
 	b1 = branch(rowind)
 	i = rowind.j
-	i′ = (b1 == :τ) ? i+1 : i
-	pos1 = index(lattice, i′, branch=b1)
+	pos1 = index(lattice, i, branch=b1)
 	
 	tmp = vacuumstate(lattice)
 	orth = Orthogonalize(SVD(), trunc)
@@ -32,6 +31,30 @@ function partialif_naive(lattice::AbstractPTLattice, rowind::ContourIndex, corr:
 		end
 	end
 	return tmp
+end
+
+function partialif(lattice::AbstractPTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb)
+	k = lattice.N
+	(lattice.d == size(hyb.op, 1)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
+
+	b1 = branch(rowind)
+	i = rowind.j
+	pos1 = index(lattice, i, branch=b1)
+
+	pos2s = Int[]
+	coefs = scalartype(lattice)[]
+
+	for b2 in branches(lattice)
+		k2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt
+		for j in 1:k2
+			pos2 = index(lattice, j, branch=b2)
+			coef = index(corr, i, j, b1=b1, b2=b2)
+			push!(pos2s, pos2)
+			push!(coefs, coef)			
+		end
+	end
+	mpsdata = partialif_densempo(pos1, pos2s, hyb.op, coefs)
+	return _fit_to_full(length(lattice), lattice.d, pos2s, mpsdata)
 end
 
 
@@ -156,7 +179,32 @@ function partialif_densempo(row::Int, cols::Vector{Int}, op::Matrix{<:Number}, c
 		mpsdata[L] = tmp
 	end
 	# return mpsdata
-	return FockTerm(cols, mpsdata) 
+	return mpsdata
+end
+
+function _fit_to_full(L::Int, d::Int, pos, mpsdata)
+	r = similar(mpsdata, L)
+	I2 = _eye(d)
+	for j in 1:pos[1]-1
+		r[j] = reshape(I2, 1, d, 1, d)
+	end
+	for j in pos[end]+1:L
+		r[j] = reshape(I2, 1, d, 1, d)
+	end
+	leftspace = space_r(mpsdata[1])
+	for j in pos[1]:pos[end]
+		posj = findfirst(x->x==j, pos)
+		if isnothing(posj)
+			Ia = _eye(leftspace, leftspace)
+			@tensor mj[1,3,2,4] := Ia[1,2] * I2[3,4] 
+			
+		else
+			mj = mpsdata[posj]
+			leftspace = space_r(mj)
+		end
+		r[j] = tmp
+	end
+	return ProcessTensor(r)
 end
 
 function _apply2(m::AbstractMatrix, tmp::AbstractArray{<:Number, 4})

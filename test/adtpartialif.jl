@@ -1,5 +1,5 @@
 println("------------------------------------")
-println("|             PartialIF            |")
+println("|          ADT PartialIF           |")
 println("------------------------------------")
 
 

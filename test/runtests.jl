@@ -10,7 +10,8 @@ include("adt.jl")
 include("ptlattice.jl")
 include("pt.jl")
 
-include("partialif.jl")
+include("adtpartialif.jl")
+# include("ptpartialif.jl")
 
 include("models/models.jl")
 
