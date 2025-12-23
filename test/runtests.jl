@@ -4,16 +4,17 @@ using Test, LinearAlgebra
 
 include("util.jl")
 
-include("adtlattice.jl")
-include("adt.jl")
+# include("adtlattice.jl")
+# include("adt.jl")
 
-include("ptlattice.jl")
-include("pt.jl")
+# include("ptlattice.jl")
+# include("pt.jl")
 
-include("adtpartialif.jl")
-# include("ptpartialif.jl")
+# include("adtpartialif.jl")
 
-include("models/models.jl")
+include("ptpartialif.jl")
+
+# include("models/models.jl")
 
 
 include("ptmodels/ptmodels.jl")

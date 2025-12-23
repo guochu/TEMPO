@@ -83,8 +83,8 @@ function partialif_densempo(row::Int, cols::Vector{Int}, op::Matrix{<:Number}, c
 	mpsdata = Vector{Array{T, 4}}(undef, L)
 	pos = findfirst(x->row==x, cols)
 	isnothing(pos) && throw(ArgumentError("$(row) is not a member of $cols"))
-	# println("row = ", row)
-	# println("cols = ", cols)
+	println("row = ", row, " pos = ", pos)
+	println("cols = ", cols)
 	if pos == 1
 		m = onebody(coefs[1])
 		tmp = zeros(T, 1, d, d2, d)
@@ -197,7 +197,6 @@ function _fit_to_full(L::Int, d::Int, pos, mpsdata)
 		if isnothing(posj)
 			Ia = _eye(leftspace, leftspace)
 			@tensor mj[1,3,2,4] := Ia[1,2] * I2[3,4] 
-			
 		else
 			mj = mpsdata[posj]
 			leftspace = space_r(mj)

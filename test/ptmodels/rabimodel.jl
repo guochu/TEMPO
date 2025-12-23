@@ -5,347 +5,347 @@ println("------------------------------------")
 
 @testset "Rabi model: imaginary-time" begin
 
-	# Ω = 0.5
-	# N = 20
-	# δτ = 0.1
-	# β = N * δτ
-	# chi = 100
-	# d = 50
-	# tol = 1.0e-2
-	# trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
+	Ω = 0.5
+	N = 20
+	δτ = 0.1
+	β = N * δτ
+	chi = 100
+	d = 50
+	tol = 1.0e-2
+	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
 
-	# lattice = PTLattice(N = N, δτ=δτ, contour=:imag)
+	lattice = PTLattice(N = N, δτ=δτ, contour=:imag)
 
-	# x = [0 1; 1 0]
-	# hop = Ω .* x
-	# z = [-1 0; 0 1]
-	# Is = one(x)
-	# Ib = one(zeros(d, d))
-	# model = BosonicImpurity(hop)
+	x = [0 1; 1 0]
+	hop = Ω .* x
+	z = [-1 0; 0 1]
+	Is = one(x)
+	Ib = one(zeros(d, d))
+	model = BosonicImpurity(hop)
 
-	# mpsK = sysdynamics(lattice, model, trunc=trunc)
+	mpsK = sysdynamics(lattice, model, trunc=trunc)
 	
-	# bs = NonAdditiveHyb(z)
+	bs = NonAdditiveHyb(z)
 
-	# spec = DiracDelta(1)
+	spec = DiracDelta(1)
 
-	# bath = bosonicbath(spec, β=β)
+	bath = bosonicbath(spec, β=β)
 
-	# corr = correlationfunction(bath, lattice)
+	corr = correlationfunction(bath, lattice)
 
 	# mpsI = hybriddynamics(lattice, corr, bs, trunc=trunc)
-	# mpsI′ = hybriddynamics_naive(lattice, corr, bs, trunc=trunc)
+	mpsI = hybriddynamics_naive(lattice, corr, bs, trunc=trunc)
 	# println(distance(mpsI, mpsI′), " ", norm(mpsI), " ", norm(mpsI′))
 	# @test distance(mpsI, mpsI′) / norm(mpsI′) < tol
-	# mps = mult!(mpsK, mpsI, trunc=trunc)
+	mps = mult!(mpsK, mpsI, trunc=trunc)
 
 
-	# H, Hbarebath = rabi_ham(Ω, d=d)
+	H, Hbarebath = rabi_ham(Ω, d=d)
 
-	# ρ = exp(-β * H)
-	# Zval = integrate(lattice, mps)
-	# @test abs(Zval - tr(ρ) / tr(exp(-β .* Hbarebath))) / abs(Zval) < tol
+	ρ = exp(-β * H)
+	Zval = integrate(lattice, mps)
+	@test abs(Zval - tr(ρ) / tr(exp(-β .* Hbarebath))) / abs(Zval) < tol
 
 
-	# ## diagonal observables
-	# op = [-0.73 0; 0 0.5]
+	## diagonal observables
+	op = [-0.73 0; 0 0.5]
 
-	# pos1 = index(lattice, 1)
-	# t = FockTermS(pos1, op * op )
-	# mps2 = apply!(t, deepcopy(mps))
-	# v = integrate(lattice, mps2) / Zval
+	pos1 = index(lattice, 1)
+	t = FockTermS(pos1, op * op )
+	mps2 = apply!(t, deepcopy(mps))
+	v = integrate(lattice, mps2) / Zval
 
-	# corrs = [v]
-	# for i in 2:N
-	# 	pos2 = index(lattice, i)
-	# 	t = FockTermS((pos2,pos1), (op, op))
-	# 	# t = ADTTerm((i,1), reshape(kron(zdiag, zdiag), 2, 2))
-	# 	mps2 = apply!(t, deepcopy(mps))
-	# 	v = integrate(lattice, mps2) / Zval
-	# 	push!(corrs, v)
-	# end
+	corrs = [v]
+	for i in 2:N
+		pos2 = index(lattice, i)
+		t = FockTermS((pos2,pos1), (op, op))
+		# t = ADTTerm((i,1), reshape(kron(zdiag, zdiag), 2, 2))
+		mps2 = apply!(t, deepcopy(mps))
+		v = integrate(lattice, mps2) / Zval
+		push!(corrs, v)
+	end
 	
 
-	# A = kron(op, Ib)
+	A = kron(op, Ib)
 
-	# corrs2 = correlation_2op_1τ(H, A, A, 0:δτ:β, β=β)
-	# corrs2 = corrs2[1:length(corrs)]
+	corrs2 = correlation_2op_1τ(H, A, A, 0:δτ:β, β=β)
+	corrs2 = corrs2[1:length(corrs)]
 
-	# @test norm(corrs - corrs2) / norm(corrs2) < tol
+	@test norm(corrs - corrs2) / norm(corrs2) < tol
 
 
-	# ## off-diagonal observables
-	# op1 = [0 0; 0.7 0]
-	# op2 = [0 0.8;0 0 ]
+	## off-diagonal observables
+	op1 = [0 0; 0.7 0]
+	op2 = [0 0.8;0 0 ]
 
-	# c1 = ContourIndex(1)
+	c1 = ContourIndex(1)
 
-	# ct = ContourOperator(c1, op1 * op2)
-	# mps2 = apply!(ct, lattice, deepcopy(mps))
-	# v = integrate(lattice, mps2) / Zval
+	ct = ContourOperator(c1, op1 * op2)
+	mps2 = apply!(ct, lattice, deepcopy(mps))
+	v = integrate(lattice, mps2) / Zval
 
-	# corrs = [v]
-	# for i in 2:N
-	# 	c2 = ContourIndex(i)
-	# 	ct = ContourOperator([c2, c1], [op2, op1])
+	corrs = [v]
+	for i in 2:N
+		c2 = ContourIndex(i)
+		ct = ContourOperator([c2, c1], [op2, op1])
 
-	# 	mps2 = apply!(ct, lattice, deepcopy(mps))
-	# 	v = integrate(lattice, mps2) / Zval
-	# 	push!(corrs, v)
-	# end
+		mps2 = apply!(ct, lattice, deepcopy(mps))
+		v = integrate(lattice, mps2) / Zval
+		push!(corrs, v)
+	end
 	
 
-	# A1 = kron(op1, Ib)
-	# A2 = kron(op2, Ib)
+	A1 = kron(op1, Ib)
+	A2 = kron(op2, Ib)
 
-	# corrs2 = correlation_2op_1τ(H, A1, A2, 0:δτ:β, β=β)
-	# corrs2 = corrs2[1:length(corrs)]
+	corrs2 = correlation_2op_1τ(H, A1, A2, 0:δτ:β, β=β)
+	corrs2 = corrs2[1:length(corrs)]
 
-	# @test norm(corrs - corrs2) / norm(corrs2) < tol
+	@test norm(corrs - corrs2) / norm(corrs2) < tol
 
 end
 
-# @testset "Rabi model: real-time" begin
+@testset "Rabi model: real-time" begin
 
-# 	Ω = 0.5
-# 	N = 10
-# 	δt = 0.05
-# 	β = 2
-# 	t = N * δt
-# 	chi = 100
-# 	d = 50
-# 	tol = 1.0e-2
-# 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
+	Ω = 0.5
+	N = 10
+	δt = 0.05
+	β = 2
+	t = N * δt
+	chi = 100
+	d = 50
+	tol = 1.0e-2
+	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
 
-# 	lattice = PTLattice(N = N, δt=δt, contour=:real)
+	lattice = PTLattice(N = N, δt=δt, contour=:real)
 
-# 	# x = [0 1; 1 0]
-# 	x = Matrix{ComplexF64}([0 im; -im 0])
-# 	hop = Ω .* x
-# 	z = [-1 0; 0 1]
-# 	Is = one(x)
-# 	Ib = one(zeros(d, d))
-# 	model = BosonicImpurity(hop)
+	# x = [0 1; 1 0]
+	x = Matrix{ComplexF64}([0 im; -im 0])
+	hop = Ω .* x
+	z = [-1 0; 0 1]
+	Is = one(x)
+	Ib = one(zeros(d, d))
+	model = BosonicImpurity(hop)
 
-# 	Hbarebath = bosondensityoperator(d=d)
-# 	a = bosonaoperator(d=d)
-# 	H = kron(hop, Ib) + kron(Is, Hbarebath) + kron(z, a' + a)
+	Hbarebath = bosondensityoperator(d=d)
+	a = bosonaoperator(d=d)
+	H = kron(hop, Ib) + kron(Is, Hbarebath) + kron(z, a' + a)
 
 
-# 	bs = NonAdditiveHyb(z)
-# 	spec = DiracDelta(1)
-# 	bath = bosonicbath(spec, β=β)
-# 	corr = correlationfunction(bath, lattice)
-# 	# mpsI = hybriddynamics(lattice, corr, bs, trunc=trunc)
-# 	mpsI = hybriddynamics_naive(lattice, corr, bs, trunc=trunc)
-# 	# @test distance(mpsI, mpsI′) / norm(mpsI′) < tol
-# 	mpsK = sysdynamics(lattice, model, trunc=trunc)
-# 	mps = mult!(mpsK, mpsI, trunc=trunc)
+	bs = NonAdditiveHyb(z)
+	spec = DiracDelta(1)
+	bath = bosonicbath(spec, β=β)
+	corr = correlationfunction(bath, lattice)
+	# mpsI = hybriddynamics(lattice, corr, bs, trunc=trunc)
+	mpsI = hybriddynamics_naive(lattice, corr, bs, trunc=trunc)
+	# @test distance(mpsI, mpsI′) / norm(mpsI′) < tol
+	mpsK = sysdynamics(lattice, model, trunc=trunc)
+	mps = mult!(mpsK, mpsI, trunc=trunc)
 
-# 	ρ1 = zeros(2,2)
-# 	ρ1[1,1] = 1
-# 	ρ2 = 0.5 .* one(ρ1)
+	ρ1 = zeros(2,2)
+	ρ1[1,1] = 1
+	ρ2 = 0.5 .* one(ρ1)
 
-# 	for ρimp in [ρ1,]
+	for ρimp in [ρ1,]
 
-# 		tmp = initialstate!(deepcopy(mps), lattice, ρimp, trunc=trunc)
-# 		Zval = integrate(lattice, tmp)
+		tmp = initialstate!(deepcopy(mps), lattice, ρimp, trunc=trunc)
+		Zval = integrate(lattice, tmp)
 		
 
 		
-# 		ρ = kron(ρimp, exp(-β * Hbarebath)) 
+		ρ = kron(ρimp, exp(-β * Hbarebath)) 
 
-# 		## diagonal observables
-# 		op = [-0.73 0; 0 0.5]
+		## diagonal observables
+		op = [-0.73 0; 0 0.5]
 
-# 		ind1 = ContourIndex(1, branch=:+)
-# 		m = ContourOperator(ind1, op * op )
-# 		mps2 = apply!(m, lattice, deepcopy(mps))
-# 		mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
-# 		v = integrate(lattice, mps2) / Zval
+		ind1 = ContourIndex(1, branch=:+)
+		m = ContourOperator(ind1, op * op )
+		mps2 = apply!(m, lattice, deepcopy(mps))
+		mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
+		v = integrate(lattice, mps2) / Zval
 
-# 		corrs = [v]
-# 		for i in 2:N
-# 			ind2 = ContourIndex(i, branch=:+)
-# 			m = ContourOperator([ind2,ind1], [op, op])
-# 			mps2 = apply!(m, lattice, deepcopy(mps))
-# 			mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
-# 			v = integrate(lattice, mps2) / Zval
-# 			push!(corrs, v)
-# 		end
+		corrs = [v]
+		for i in 2:N
+			ind2 = ContourIndex(i, branch=:+)
+			m = ContourOperator([ind2,ind1], [op, op])
+			mps2 = apply!(m, lattice, deepcopy(mps))
+			mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
+			v = integrate(lattice, mps2) / Zval
+			push!(corrs, v)
+		end
 		
-# 		A = kron(op, Ib)
-# 		corrs2 = correlation_2op_1t(H, A, A, ρ, 0:δt:t, reverse = false)
-# 		corrs2 = corrs2[1:length(corrs)]
-# 		@test norm(corrs - corrs2) / norm(corrs2) < tol
+		A = kron(op, Ib)
+		corrs2 = correlation_2op_1t(H, A, A, ρ, 0:δt:t, reverse = false)
+		corrs2 = corrs2[1:length(corrs)]
+		@test norm(corrs - corrs2) / norm(corrs2) < tol
 
 
-# 		# off-diagonal observables
+		# off-diagonal observables
 
-# 		op1 = [0 0.8; 0 0]
-# 		op2 = [0 0; 0.7*im 0]
+		op1 = [0 0.8; 0 0]
+		op2 = [0 0; 0.7*im 0]
 
-# 		A1 = kron(op1, Ib)
-# 		A2 = kron(op2, Ib)
-
-
-# 		c1 = ContourIndex(1, branch=:+)
-
-# 		ct = ContourOperator(c1, op1 * op2)
-# 		mps2 = apply!(ct, lattice, deepcopy(mps))
-# 		mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
-# 		v = integrate(lattice, mps2) / Zval
-
-# 		corrs = [v]
-# 		c2 = ContourIndex(1, branch=:+)
-# 		for i in 2:N
-# 			c1 = ContourIndex(i, branch=:+)
-# 			ct = ContourOperator([c1, c2], [op1, op2])
-
-# 			mps2 = apply!(ct, lattice, deepcopy(mps))
-# 			mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
-# 			v = integrate(lattice, mps2) / Zval
-
-# 			push!(corrs, v)
-# 		end
-
-# 		corrs2 = correlation_2op_1t(H, A1, A2, ρ, 0:δt:t, reverse = false)
-# 		corrs2 = corrs2[1:length(corrs)]
-
-# 		@test norm(corrs - corrs2) / norm(corrs2) < tol
-
-# 		op1 = [0 0.8*im; 0 0]
-# 		op2 = [0 0; 0.7 0]
+		A1 = kron(op1, Ib)
+		A2 = kron(op2, Ib)
 
 
-# 		A1 = kron(op1, Ib)
-# 		A2 = kron(op2, Ib)
+		c1 = ContourIndex(1, branch=:+)
 
-# 		c1 = ContourIndex(1, branch=:-)
+		ct = ContourOperator(c1, op1 * op2)
+		mps2 = apply!(ct, lattice, deepcopy(mps))
+		mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
+		v = integrate(lattice, mps2) / Zval
 
-# 		ct = ContourOperator(c1, op1 * op2)
-# 		mps2 = apply!(ct, lattice, deepcopy(mps))
-# 		mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
-# 		v = integrate(lattice, mps2) / Zval
+		corrs = [v]
+		c2 = ContourIndex(1, branch=:+)
+		for i in 2:N
+			c1 = ContourIndex(i, branch=:+)
+			ct = ContourOperator([c1, c2], [op1, op2])
 
-# 		corrs = [v]
-# 		for i in 2:N
-# 			c2 = ContourIndex(i, branch=:+)
-# 			ct = ContourOperator([c1, c2], [op1, op2])
+			mps2 = apply!(ct, lattice, deepcopy(mps))
+			mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
+			v = integrate(lattice, mps2) / Zval
 
-# 			mps2 = apply!(ct, lattice, deepcopy(mps))
-# 			mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
-# 			v = integrate(lattice, mps2) / Zval
+			push!(corrs, v)
+		end
 
-# 			push!(corrs, v)
-# 		end
+		corrs2 = correlation_2op_1t(H, A1, A2, ρ, 0:δt:t, reverse = false)
+		corrs2 = corrs2[1:length(corrs)]
 
-# 		corrs2 = correlation_2op_1t(H, A1, A2, ρ, 0:δt:t, reverse = true)
-# 		corrs2 = corrs2[1:length(corrs)]
+		@test norm(corrs - corrs2) / norm(corrs2) < tol
 
-# 		@test norm(corrs - corrs2) / norm(corrs2) < tol
-
-# 	end
-
-# end
+		op1 = [0 0.8*im; 0 0]
+		op2 = [0 0; 0.7 0]
 
 
+		A1 = kron(op1, Ib)
+		A2 = kron(op2, Ib)
 
-# @testset "Rabi model: mixed-time" begin
+		c1 = ContourIndex(1, branch=:-)
 
-# 	Ω = 0.5
-# 	Nt = 5
-# 	δt = 0.03
-# 	t = Nt * δt
-# 	Nτ = 10
-# 	δτ = 0.05
-# 	β = Nτ * δτ
-# 	chi = 100
-# 	d = 50
-# 	tol = 1.0e-2
-# 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
+		ct = ContourOperator(c1, op1 * op2)
+		mps2 = apply!(ct, lattice, deepcopy(mps))
+		mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
+		v = integrate(lattice, mps2) / Zval
 
-# 	lattice = PTLattice(Nt = Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed)
+		corrs = [v]
+		for i in 2:N
+			c2 = ContourIndex(i, branch=:+)
+			ct = ContourOperator([c1, c2], [op1, op2])
 
-# 	x = [0 1; 1 0]
-# 	hop = Ω .* x
-# 	z = [-1 0; 0 1]
-# 	Is = one(x)
-# 	Ib = one(zeros(d, d))
-# 	model = BosonicImpurity(hop)
+			mps2 = apply!(ct, lattice, deepcopy(mps))
+			mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
+			v = integrate(lattice, mps2) / Zval
 
-# 	op1 = [0 0.8; 0 0]
-# 	op2 = [0 0; 0.7 0]
+			push!(corrs, v)
+		end
 
+		corrs2 = correlation_2op_1t(H, A1, A2, ρ, 0:δt:t, reverse = true)
+		corrs2 = corrs2[1:length(corrs)]
 
-# 	A1 = kron(op1, Ib)
-# 	A2 = kron(op2, Ib)
+		@test norm(corrs - corrs2) / norm(corrs2) < tol
 
+	end
 
-# 	bs = NonAdditiveHyb(z)
-# 	spec = DiracDelta(1)
-# 	bath = bosonicbath(spec, β=β)
-# 	corr = correlationfunction(bath, lattice)
-# 	# mpsI = hybriddynamics(lattice, corr, bs, trunc=trunc)
-# 	mpsI = hybriddynamics_naive(lattice, corr, bs, trunc=trunc)
-# 	# @test distance(mpsI, mpsI′) / norm(mpsI′) < tol
-
-# 	mpsK = sysdynamics(lattice, model, trunc=trunc)
-# 	mps = mult!(mpsK, mpsI, trunc=trunc)
-# 	Zval = integrate(lattice, mps)
+end
 
 
-# 	H, Hbarebath = rabi_ham(Ω, d=d)
+
+@testset "Rabi model: mixed-time" begin
+
+	Ω = 0.5
+	Nt = 5
+	δt = 0.03
+	t = Nt * δt
+	Nτ = 10
+	δτ = 0.05
+	β = Nτ * δτ
+	chi = 100
+	d = 50
+	tol = 1.0e-2
+	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
+
+	lattice = PTLattice(Nt = Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed)
+
+	x = [0 1; 1 0]
+	hop = Ω .* x
+	z = [-1 0; 0 1]
+	Is = one(x)
+	Ib = one(zeros(d, d))
+	model = BosonicImpurity(hop)
+
+	op1 = [0 0.8; 0 0]
+	op2 = [0 0; 0.7 0]
 
 
-# 	ρ = exp(-β .* H)
-
-# 	# off-diagonal observables
-
-# 	c1 = ContourIndex(1, branch=:+)
-
-# 	ct = ContourOperator(c1, op1 * op2)
-# 	mps2 = apply!(ct, lattice, deepcopy(mps))
-# 	v = integrate(lattice, mps2) / Zval
-
-# 	corrs = [v]
-# 	c2 = ContourIndex(1, branch=:+)
-# 	for i in 2:Nt
-# 		c1 = ContourIndex(i, branch=:+)
-# 		ct = ContourOperator([c1, c2], [op1, op2])
-
-# 		mps2 = apply!(ct, lattice, deepcopy(mps))
-# 		v = integrate(lattice, mps2) / Zval
-
-# 		push!(corrs, v)
-# 	end
-
-# 	corrs2 = correlation_2op_1t(H, A1, A2, ρ, 0:δt:t, reverse = false)
-# 	corrs2 = corrs2[1:length(corrs)]
-
-# 	@test norm(corrs - corrs2) / norm(corrs2) < tol
+	A1 = kron(op1, Ib)
+	A2 = kron(op2, Ib)
 
 
-# 	c1 = ContourIndex(1, branch=:-)
+	bs = NonAdditiveHyb(z)
+	spec = DiracDelta(1)
+	bath = bosonicbath(spec, β=β)
+	corr = correlationfunction(bath, lattice)
+	# mpsI = hybriddynamics(lattice, corr, bs, trunc=trunc)
+	mpsI = hybriddynamics_naive(lattice, corr, bs, trunc=trunc)
+	# @test distance(mpsI, mpsI′) / norm(mpsI′) < tol
 
-# 	ct = ContourOperator(c1, op2 * op1)
-# 	mps2 = apply!(ct, lattice, deepcopy(mps))
-# 	v = integrate(lattice, mps2) / Zval
+	mpsK = sysdynamics(lattice, model, trunc=trunc)
+	mps = mult!(mpsK, mpsI, trunc=trunc)
+	Zval = integrate(lattice, mps)
 
-# 	corrs = [v]
-# 	for i in 2:Nt
-# 		c2 = ContourIndex(i, branch=:+)
-# 		ct = ContourOperator([c1, c2], [op2, op1])
 
-# 		mps2 = apply!(ct, lattice, deepcopy(mps))
-# 		v = integrate(lattice, mps2) / Zval
+	H, Hbarebath = rabi_ham(Ω, d=d)
 
-# 		push!(corrs, v)
-# 	end
 
-# 	corrs2 = correlation_2op_1t(H, A2, A1, ρ, 0:δt:t, reverse = true)
-# 	corrs2 = corrs2[1:length(corrs)]
+	ρ = exp(-β .* H)
 
-# 	@test norm(corrs - corrs2) / norm(corrs2) < tol
+	# off-diagonal observables
 
-# end
+	c1 = ContourIndex(1, branch=:+)
+
+	ct = ContourOperator(c1, op1 * op2)
+	mps2 = apply!(ct, lattice, deepcopy(mps))
+	v = integrate(lattice, mps2) / Zval
+
+	corrs = [v]
+	c2 = ContourIndex(1, branch=:+)
+	for i in 2:Nt
+		c1 = ContourIndex(i, branch=:+)
+		ct = ContourOperator([c1, c2], [op1, op2])
+
+		mps2 = apply!(ct, lattice, deepcopy(mps))
+		v = integrate(lattice, mps2) / Zval
+
+		push!(corrs, v)
+	end
+
+	corrs2 = correlation_2op_1t(H, A1, A2, ρ, 0:δt:t, reverse = false)
+	corrs2 = corrs2[1:length(corrs)]
+
+	@test norm(corrs - corrs2) / norm(corrs2) < tol
+
+
+	c1 = ContourIndex(1, branch=:-)
+
+	ct = ContourOperator(c1, op2 * op1)
+	mps2 = apply!(ct, lattice, deepcopy(mps))
+	v = integrate(lattice, mps2) / Zval
+
+	corrs = [v]
+	for i in 2:Nt
+		c2 = ContourIndex(i, branch=:+)
+		ct = ContourOperator([c1, c2], [op2, op1])
+
+		mps2 = apply!(ct, lattice, deepcopy(mps))
+		v = integrate(lattice, mps2) / Zval
+
+		push!(corrs, v)
+	end
+
+	corrs2 = correlation_2op_1t(H, A2, A1, ρ, 0:δt:t, reverse = true)
+	corrs2 = corrs2[1:length(corrs)]
+
+	@test norm(corrs - corrs2) / norm(corrs2) < tol
+
+end

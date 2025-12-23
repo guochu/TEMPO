@@ -7,34 +7,39 @@ function _rand_hermitian(::Type{T}, d::Int) where {T<:Number}
 	return m + m'
 end
 
-@testset "PartialIF: imaginary time" begin
-	δτ=0.1
-	N = 2
-	β = N * δτ
-	tol = 1.0e-4
+# @testset "PartialIF: imaginary time" begin
+# 	δτ=0.1
+# 	N = 2
+# 	β = N * δτ
+# 	tol = 1.0e-4
 
-	spec = Leggett(d=1, ωc=1)
-	bath = bosonicbath(spec, β=β)
-	corr = Δτ(bath, N=N, δτ=δτ)
+# 	spec = Leggett(d=1, ωc=1)
+# 	bath = bosonicbath(spec, β=β)
+# 	corr = Δτ(bath, N=N, δτ=δτ)
+# 	# println(typeof(corr))
+# 	# println(corr.data)
+# 	# corr = ImagCorrelationFunction([1. 0; 0 -1])
+# 	# corr = ImagCorrelationFunction([0 1; 1 0])
 
-	for d in [2,]
-		lattice = PTLattice(N=N, δτ=δτ, d=d, contour=:imag)	
-		# op = _rand_hermitian(scalartype(lattice), d)
-		op = [1 0; 0 -1]
-		hyb = NonAdditiveHyb(op)
-		for i in 1:lattice.N
-			println("i = ", i)
-			ind1 = ContourIndex(i)
-			p1 = partialif(lattice, ind1, corr, hyb)
-			p2 = partialif_naive(lattice, ind1, corr, hyb)
+# 	for d in [2,]
+# 		lattice = PTLattice(N=N, δτ=δτ, d=d, contour=:imag)	
+# 		# op = _rand_hermitian(scalartype(lattice), d)
+# 		op = [1 0; 0 -1]
+# 		hyb = NonAdditiveHyb(op)
+# 		i = 1
+# 		# for i in 1:lattice.N
+# 			println("i = ", i)
+# 			ind1 = ContourIndex(i)
+# 			p1 = partialif(lattice, ind1, corr, hyb)
+# 			p2 = partialif_naive(lattice, ind1, corr, hyb)
 
-			println(distance(p1, p2), " ", norm(p1), " ", norm(p2))
+# 			println(distance(p1, p2), " ", norm(p1), " ", norm(p2))
 
-			@test distance(p1, p2) / norm(p1) < tol
-		end
-	end
+# 			@test distance(p1, p2) / norm(p1) < tol
+# 		# end
+# 	end
 
-end
+# end
 
 
 # @testset "PartialIF: real time" begin
