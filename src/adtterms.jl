@@ -79,6 +79,7 @@ function decompose_to_mps(m::AbstractArray{T, N}) where {T<:Number, N}
 		q, r = tqr!(m, (1,2), ntuple(i->i+2, L-2), workspace)
 		data[i] = q
 		L -= 1
+		m = r
 	end
 	data[N] = reshape(r, size(r)..., 1)
 	return data

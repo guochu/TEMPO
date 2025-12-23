@@ -14,7 +14,7 @@ function hybriddynamics_naive!(gmps::ProcessTensor, lattice::AbstractPTLattice, 
 	z = hyb.op
 	(lattice.d == size(z, 1) == size(z, 2)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
 	d = lattice.d
-	z2 = z * z
+	z2 = kron(z, z)
 	orth = Orthogonalize(SVD(), trunc)
 
 	for b1 in branches(lattice)
@@ -29,12 +29,14 @@ function hybriddynamics_naive!(gmps::ProcessTensor, lattice::AbstractPTLattice, 
 					ind2 = ContourIndex(j, b2) 
 					if ind1 == ind2
 						m = exp(coef .* z2)
-						t = ContourOperator(ind1, m)
+						# t = ContourOperator(ind1, m)
+						t = FockTerm(lattice[ind1], m)
 					else
-						m = exp.(coef .* zz)
-						t = ContourOperator([ind1, ind2], [z, z])
+						m = exp(coef .* zz)
+						# t = ContourOperator([ind1, ind2], [z, z])
+						t = FockTerm((lattice[ind1], lattice[ind2]), reshape(m, (d,d,d,d)))
 					end
-					apply!(t, lattice, tmp)
+					apply!(t, tmp)
 					canonicalize!(tmp, alg=orth)
 				end
 			end

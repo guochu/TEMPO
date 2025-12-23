@@ -13,6 +13,7 @@ include("auxiliary/auxiliary.jl")
 # default constants
 include("defaults.jl")
 
+include("contourindices.jl")
 
 # adt
 include("adt/adt.jl")
@@ -23,8 +24,8 @@ include("pt/pt.jl")
 
 # adtterms
 include("adtterms.jl")
+include("fockterms.jl")
 
-include("contourindices.jl")
 
 # adtlattices
 include("adtlattices/adtlattices.jl")
