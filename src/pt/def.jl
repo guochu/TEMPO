@@ -60,6 +60,13 @@ ProcessTensor(::Type{T}, L::Int; d::Int=2) where {T <: Number} = ProcessTensor(T
 ProcessTensor(L::Int; d::Int=2) = ProcessTensor(Float64, L, d=d)
 
 Base.copy(psi::ProcessTensor) = ProcessTensor(copy(psi.data), copy(psi.s), scaling=scaling(psi))
+function Base.complex(psi::ProcessTensor)
+	if scalartype(psi) <: Real
+		data = [complex(item) for item in psi.data]
+		return ProcessTensor(data, psi.s, scaling=scaling(psi))
+	end
+	return psi
+end
 
 svectors_uninitialized(psi::ProcessTensor) = any(ismissing, psi.s)
 function unset_svectors!(psi::ProcessTensor)

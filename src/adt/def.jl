@@ -50,6 +50,13 @@ ADT(::Type{T}, L::Int; d::Int=2) where {T <: Number} = ADT(T, [d for i in 1:L])
 ADT(L::Int; d::Int=2) = ADT(Float64, L, d=d)
 
 Base.copy(psi::ADT) = ADT(copy(psi.data), copy(psi.s), scaling=scaling(psi))
+function Base.complex(psi::ADT)
+	if scalartype(psi) <: Real
+		data = [complex(item) for item in psi.data]
+		return ADT(data, psi.s, scaling=scaling(psi))
+	end
+	return psi
+end
 
 svectors_uninitialized(psi::ADT) = any(ismissing, psi.s)
 function unset_svectors!(psi::ADT)

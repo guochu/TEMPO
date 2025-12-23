@@ -2,13 +2,13 @@ function partialif_naive(lattice::AbstractPTLattice, rowind::ContourIndex, corr:
 							trunc::TruncationScheme=DefaultITruncation)
 	z = hyb.op
 	(lattice.d == size(z, 1) == size(z, 2)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
-	d = lattice.d
-	z2 = z * z
-	zz = kron(z, z)
+	# d = lattice.d
+	# z2 = z * z
+	# zz = kron(z, z)
 
 	b1 = branch(rowind)
 	i = rowind.j
-	pos1 = index(lattice, i, branch=b1)
+	# pos1 = index(lattice, i, branch=b1)
 		
 	T = promote_type(scalartype(lattice), scalartype(hyb), scalartype(corr))
 	tmp = vacuumstate(T, lattice)
@@ -18,20 +18,43 @@ function partialif_naive(lattice::AbstractPTLattice, rowind::ContourIndex, corr:
 		for j in 1:k2
 			coef = index(corr, i, j, b1=b1, b2=b2)
 			ind2 = ContourIndex(j, b2) 
-			pos2 = lattice[ind2]
-			if pos1 == pos2
-				m = exp(coef .* z2)
-				# t = ContourOperator(ind1, m)
-				t = FockTermS(pos1, m)
-			else
-				m = exp(coef .* zz)
-				t = FockTermS((pos1, pos2), reshape(m, (d,d,d,d)))
-			end
+			# pos2 = lattice[ind2]
+			# if pos1 == pos2
+			# 	m = exp(coef .* z2)
+			# 	# t = ContourOperator(ind1, m)
+			# 	t = FockTermS(pos1, m)
+			# else
+			# 	m = exp(coef .* zz)
+			# 	t = FockTermS((pos1, pos2), reshape(m, (d,d,d,d)))
+			# end
+			t = _get_contour_op(lattice, rowind, ind2, z, coef)
 			apply!(t, tmp)
 			canonicalize!(tmp, alg=orth)
 		end
 	end
 	return tmp
+end
+
+function _get_contour_op(lattice, ind1::ContourIndex, ind2::ContourIndex, z::AbstractMatrix, coef)
+	d = lattice.d
+	z1 = z
+	z2 = z
+	if branch(ind1) == :-
+		z1 = transpose(z)
+	end
+	if branch(ind2) == :-
+		z2 = transpose(z)
+	end
+	pos1, pos2 = lattice[ind1], lattice[ind2]
+	if pos1 == pos2
+		m = exp(coef .* z1 * z2) 
+		t = FockTermS(pos1, m)
+	else
+		zz = kron(z1, z2)
+		m = exp(coef .* zz)
+		t = FockTermS((pos1, pos2), reshape(m, (d,d,d,d)))
+	end
+	return t
 end
 
 # function partialif(lattice::AbstractPTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb)
