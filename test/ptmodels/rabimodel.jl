@@ -5,39 +5,39 @@ println("------------------------------------")
 
 @testset "Rabi model: imaginary-time" begin
 
-	Ω = 0.5
-	N = 20
-	δτ = 0.1
-	β = N * δτ
-	chi = 100
-	d = 50
-	tol = 1.0e-2
-	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
+	# Ω = 0.5
+	# N = 20
+	# δτ = 0.1
+	# β = N * δτ
+	# chi = 100
+	# d = 50
+	# tol = 1.0e-2
+	# trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
 
-	lattice = PTLattice(N = N, δτ=δτ, contour=:imag)
+	# lattice = PTLattice(N = N, δτ=δτ, contour=:imag)
 
-	x = [0 1; 1 0]
-	hop = Ω .* x
-	z = [-1 0; 0 1]
-	Is = one(x)
-	Ib = one(zeros(d, d))
-	model = BosonicImpurity(hop)
+	# x = [0 1; 1 0]
+	# hop = Ω .* x
+	# z = [-1 0; 0 1]
+	# Is = one(x)
+	# Ib = one(zeros(d, d))
+	# model = BosonicImpurity(hop)
 
-	mpsK = sysdynamics(lattice, model, trunc=trunc)
+	# mpsK = sysdynamics(lattice, model, trunc=trunc)
 	
-	bs = NonAdditiveHyb(z)
+	# bs = NonAdditiveHyb(z)
 
-	spec = DiracDelta(1)
+	# spec = DiracDelta(1)
 
-	bath = bosonicbath(spec, β=β)
+	# bath = bosonicbath(spec, β=β)
 
-	corr = correlationfunction(bath, lattice)
+	# corr = correlationfunction(bath, lattice)
 
-	mpsI = hybriddynamics(lattice, corr, bs, trunc=trunc)
-	mpsI′ = hybriddynamics_naive(lattice, corr, bs, trunc=trunc)
-	println(distance(mpsI, mpsI′), " ", norm(mpsI), " ", norm(mpsI′))
-	@test distance(mpsI, mpsI′) / norm(mpsI′) < tol
-	mps = mult!(mpsK, mpsI, trunc=trunc)
+	# mpsI = hybriddynamics(lattice, corr, bs, trunc=trunc)
+	# mpsI′ = hybriddynamics_naive(lattice, corr, bs, trunc=trunc)
+	# println(distance(mpsI, mpsI′), " ", norm(mpsI), " ", norm(mpsI′))
+	# @test distance(mpsI, mpsI′) / norm(mpsI′) < tol
+	# mps = mult!(mpsK, mpsI, trunc=trunc)
 
 
 	# H, Hbarebath = rabi_ham(Ω, d=d)

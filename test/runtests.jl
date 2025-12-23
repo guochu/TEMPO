@@ -15,4 +15,4 @@ include("partialif.jl")
 include("models/models.jl")
 
 
-# include("ptmodels/ptmodels.jl")
+include("ptmodels/ptmodels.jl")

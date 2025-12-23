@@ -1,3 +1,39 @@
+function partialif_naive(lattice::AbstractPTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; 
+							trunc::TruncationScheme=DefaultITruncation)
+	z = hyb.op
+	(lattice.d == size(z, 1) == size(z, 2)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
+	d = lattice.d
+	z2 = z * z
+	zz = kron(z, z)
+
+	b1 = branch(rowind)
+	i = rowind.j
+	i′ = (b1 == :τ) ? i+1 : i
+	pos1 = index(lattice, i′, branch=b1)
+	
+	tmp = vacuumstate(lattice)
+	orth = Orthogonalize(SVD(), trunc)
+	for b2 in branches(lattice)
+		k2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt
+		for j in 1:k2
+			coef = index(corr, i, j, b1=b1, b2=b2)
+			ind2 = ContourIndex(j, b2) 
+			pos2 = lattice[ind2]
+			if pos1 == pos2
+				m = exp(coef .* z2)
+				# t = ContourOperator(ind1, m)
+				t = FockTermS(pos1, m)
+			else
+				m = exp(coef .* zz)
+				t = FockTermS((pos1, pos2), reshape(m, (d,d,d,d)))
+			end
+			apply!(t, tmp)
+			canonicalize!(tmp, alg=orth)
+		end
+	end
+	return tmp
+end
+
 
 function partialif_densempo(row::Int, cols::Vector{Int}, op::Matrix{<:Number}, coefs::Vector{<:Number})
 	# println("row=", row, " cols ", cols)
