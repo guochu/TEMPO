@@ -13,7 +13,7 @@ function hybriddynamics!(gmps::ProcessTensor, lattice::ImagPTLattice1Order, corr
 			push!(pos2s, pos2)
 			push!(coefs, coef)
 		end
-		mpsdata = partialif_densempo(pos1, pos2s, op, coefs)
+		pos2s, mpsdata = partialif_densempo(pos1, pos2s, op, coefs)
 		# println("bond dimension of $i-th partial IF is ", bond_dimensions(tmp))
 		tmp = _fit_to_full(length(lattice), lattice.d, pos2s, mpsdata)
 		apply!(gmps, tmp)
