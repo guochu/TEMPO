@@ -11,7 +11,7 @@ function partialif_densempo(row::Int, cols::Vector{Int}, op::Matrix{<:Number}, c
 
 	d = size(op, 1)
 	d2 = d * d
-	op2 = op .* op
+	op2 = op * op
 	dim2 = CartesianIndices((d, d))
 	opop = kron(op, op)
 	function onebody(m) 

@@ -3,7 +3,6 @@
 # struct TriangularPartialIF <: PartialIFStyle end
 # struct RectangularPartialIF <: PartialIFStyle end
 
-
 include("util.jl")
 include("imaginarytime.jl")
 include("realtime.jl")
@@ -20,37 +19,13 @@ hybriddynamics_naive(lattice::AbstractADTLattice, corr::AbstractCorrelationFunct
 
 
 # naive implementation with N^2 gate operations
-function hybriddynamics_naive!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
-	z = hyb.op
-	(lattice.d == length(z)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
-	d = lattice.d
-	z2 = z .* z
-	zz = reshape(kron(z, z), d, d)
-	orth = Orthogonalize(SVD(), trunc)
-
+function hybriddynamics_naive!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb; 
+								trunc::TruncationScheme=DefaultITruncation)
 	for b1 in branches(lattice)
 		k1 = (b1 == :τ) ? lattice.Nτ : lattice.Nt
 		for i in 1:k1
-			tmp = vacuumstate(lattice)
-			i′ = (b1 == :τ) ? i+1 : i
-			pos1 = index(lattice, i′, branch=b1)
-			for b2 in branches(lattice)
-				k2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt
-				for j in 1:k2
-					coef = index(corr, i, j, b1=b1, b2=b2)
-					j′ = (b1==:τ) ? j+1 : j
-					pos2 = index(lattice, j′, branch=b2)
-					if pos1 == pos2
-						m = exp.(coef .* z2)
-						t = ADTTerm((pos1, ), (m, ))
-					else
-						m = exp.(coef .* zz)
-						t = ADTTerm((pos1, pos2), m)
-					end
-					apply!(t, tmp)
-					canonicalize!(tmp, alg=orth)
-				end
-			end
+			ind1 = ContourIndex(i, branch=b1)
+			tmp = partialif_naive(lattice, ind1, corr, hyb, trunc=trunc)
 			gmps = mult!(gmps, tmp, trunc=trunc)			
 		end
 	end

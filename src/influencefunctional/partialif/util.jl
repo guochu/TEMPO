@@ -1,4 +1,58 @@
+function partialif_naive(lattice::AbstractADTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::AdditiveHyb; 
+						trunc::TruncationScheme=DefaultITruncation)
+	ds = [lattice.d for i in 1:length(lattice)]
+	b1 = branch(rowind)
+	i = rowind.j
+	i′ = (b1 == :τ) ? i+1 : i
+	pos1 = index(lattice, i′, branch=b1)
 
+	z = hyb.op
+	(lattice.d == length(z)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
+	z2 = z .* z
+	zz = reshape(kron(z, z), lattice.d, lattice.d)
+	tmp = vacuumstate(lattice)
+	orth = Orthogonalize(SVD(), trunc)
+	for b2 in branches(lattice)
+		k2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt
+		for j in 1:k2
+			j′ = (b1==:τ) ? j+1 : j
+			pos2 = index(lattice, j′, branch=b2)
+			coef = index(corr, i, j, b1=b1, b2=b2)
+
+			if pos1 == pos2
+				m = exp.(coef .* z2)
+				t = ADTTerm((pos1, ), (m, ))
+			else
+				m = exp.(coef .* zz)
+				t = ADTTerm((pos1, pos2), m)
+			end
+			apply!(t, tmp)
+			canonicalize!(tmp, alg=orth)
+		end
+	end	
+	return tmp
+end
+
+function partialif(lattice::AbstractADTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::AdditiveHyb)
+	ds = [lattice.d for i in 1:length(lattice)]
+	b1 = branch(rowind)
+	i = rowind.j
+	i′ = (b1 == :τ) ? i+1 : i
+	pos1 = index(lattice, i′, branch=b1)
+	pos2s = Int[]
+	coefs = scalartype(lattice)[]
+	for b2 in branches(lattice)
+		k2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt
+		for j in 1:k2
+			j′ = (b1==:τ) ? j+1 : j
+			pos2 = index(lattice, j′, branch=b2)
+			coef = index(corr, i, j, b1=b1, b2=b2)
+			push!(pos2s, pos2)
+			push!(coefs, coef)			
+		end
+	end
+	return partialif_densemps(ds, pos1, pos2s, hyb.op, coefs)
+end
 
 # the algorithm in StrathearnLovett2018
 function partialif_densemps(ds::Vector{Int}, row::Int, cols::Vector{Int}, op::Vector{<:Number}, coefs::Vector{<:Number})

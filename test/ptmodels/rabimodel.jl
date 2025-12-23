@@ -35,6 +35,7 @@ println("------------------------------------")
 
 	mpsI = hybriddynamics(lattice, corr, bs, trunc=trunc)
 	mpsI′ = hybriddynamics_naive(lattice, corr, bs, trunc=trunc)
+	println(distance(mpsI, mpsI′), " ", norm(mpsI), " ", norm(mpsI′))
 	@test distance(mpsI, mpsI′) / norm(mpsI′) < tol
 	mps = mult!(mpsK, mpsI, trunc=trunc)
 

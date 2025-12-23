@@ -47,14 +47,14 @@ struct FockTerm{T <: Number} <: AbstractFockTerm{T}
 	positions::Vector{Int}
 end
 
-function FockTerm(positions::AbstractVector{Int}, data::AbstractVector{<:AbstractMatrix{T}}) where {T<:Number}
+function FockTerm(positions::AbstractVector{Int}, data::AbstractVector{<:AbstractArray{T, 4}}) where {T}
 	(length(positions) == length(data)) || throw(DimensionMismatch("n positions mismatch with n data"))
 	N = length(positions)
 	for i in 1:N-1
 		(positions[i] < positions[i+1]) || throw(ArgumentError("positions must be sorted"))
 		(space_r(data[i]) == space_l(data[i+1])) || throw(DimensionMismatch("MPO Tensor auxiliary space mismatch"))
 	end
-	return FockTerm(data, positions)
+	return FockTerm(convert(Vector{Array{T, 4}}, data), positions)
 end
 
 function apply!(x::AbstractFockTerm{T}, mps::ProcessTensor) where {T}
