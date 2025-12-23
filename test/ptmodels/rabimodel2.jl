@@ -16,17 +16,22 @@ println("------------------------------------")
 
 	lattice = PTLattice(N = N, δτ=δτ, contour=:imag)
 
-	z = Array{Float64, 2}([-1 0; 0 1])
-	x = [0 1; 1 0]
+	p = spin_half_matrices()
+	x, y, z = p["x"], p["y"], p["z"]
 	hop = Ω .* z
 	z = [-1 0; 0 1]
 	Is = one(x)
 	Ib = one(zeros(d, d))
 	model = BosonicImpurity(hop)
 
+	Hbarebath = bosondensityoperator(d=d)
+	a = bosonaoperator(d=d)
+	H = kron(hop, Ib) + kron(Is, Hbarebath) + kron(y, a' + a)
+
+
 	mpsK = sysdynamics(lattice, model, trunc=trunc)
 	
-	bs = NonAdditiveHyb(x)
+	bs = NonAdditiveHyb(y)
 
 	spec = DiracDelta(1)
 
@@ -40,8 +45,6 @@ println("------------------------------------")
 	# @test distance(mpsI, mpsI′) / norm(mpsI′) < tol
 	mps = mult!(mpsK, mpsI, trunc=trunc)
 
-
-	H, Hbarebath = rabi_ham_2(Ω, d=d)
 
 	ρ = exp(-β * H)
 	Zval = integrate(lattice, mps)
@@ -130,10 +133,10 @@ end
 
 	Hbarebath = bosondensityoperator(d=d)
 	a = bosonaoperator(d=d)
-	H = kron(hop, Ib) + kron(Is, Hbarebath) + kron(x, a' + a)
+	H = kron(hop, Ib) + kron(Is, Hbarebath) + kron(y, a' + a)
 
 
-	bs = NonAdditiveHyb(x)
+	bs = NonAdditiveHyb(y)
 	spec = DiracDelta(1)
 	bath = bosonicbath(spec, β=β)
 	corr = correlationfunction(bath, lattice)
@@ -270,10 +273,15 @@ end
 
 	p = spin_half_matrices()
 	x, y, z = p["x"], p["y"], p["z"]
-	hop = Ω .* z
+	hop = Ω .* y
 	Is = one(x)
 	Ib = one(zeros(d, d))
 	model = BosonicImpurity(hop)
+
+	Hbarebath = bosondensityoperator(d=d)
+	a = bosonaoperator(d=d)
+	H = kron(hop, Ib) + kron(Is, Hbarebath) + kron(x, a' + a)
+
 
 	op1 = [0 0.8; 0 0]
 	op2 = [0 0; 0.7 0]
@@ -296,7 +304,7 @@ end
 	Zval = integrate(lattice, mps)
 
 
-	H, Hbarebath = rabi_ham_2(Ω, d=d)
+	# H, Hbarebath = rabi_ham_2(Ω, d=d)
 
 
 	ρ = exp(-β .* H)

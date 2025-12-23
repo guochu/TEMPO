@@ -8,4 +8,6 @@ include("rabimodel2.jl")
 include("independentbosons.jl")
 
 
-# include("toymodel.jl")
+include("toymodel.jl")
+
+# include("toymodel2.jl")
