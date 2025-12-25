@@ -309,22 +309,34 @@ function _leftnull_svd!(A::StridedMatrix{<:BlasFloat}, atol::Real)
     return U[:, indstart:end]
 end
 
-# function entropy(v::AbstractVector{<:Real}) 
-#     a = v.*v
-#     s = sum(a)
-#     a ./= s
-#     return -dot(a, log.(a))
-# end
+"""
+    renyi_entropy(v::AbstractVector{<:Real}; α::Real=1) 
 
-# function renyi_entropy(v::AbstractVector{<:Real}, n::Int) 
-#     if n==1
-#         return entropy(v)
-#     else
-#         v ./= norm(v)
-#         a = v.^(2*n)
-#         return (1/(1-n)) * log(sum(a))
-#     end
-# end
+Compute the renyi entropy of a vector "v"
+Requirement: sum of v should be 1
+"""
+function renyi_entropy(v::AbstractVector{<:Real}; α::Real=1) 
+    α = convert(eltype(v), α)
+    a = _check_and_filter(v)
+    if α==one(α)
+        return -dot(a, log.(a))
+    else
+        a = v.^(α)
+        return (1/(1-α)) * log(sum(a))
+    end
+end
+
+
+function _check_and_filter(v::AbstractVector{<:Real}; tol::Real=1.0e-12)
+    (abs(sum(v) - 1) <= tol) || throw(ArgumentError("sum of singular values not equal to 1"))
+    oo = zero(eltype(v))
+    # tol = convert(eltype(v), tol)
+    for item in v
+        ((item < oo) && (-item > tol)) && throw(ArgumentError("negative singular values"))
+    end
+    # return [(abs(item) <= tol) ? oo : item for item in v]
+    return [item for item in v if abs(item) > tol] 
+end
 
 # # m must be a square matrix
 # function apply_physical!(m::StridedMatrix{T}, v::StridedArray{T, 3}, workspace::AbstractVector{T}) where T

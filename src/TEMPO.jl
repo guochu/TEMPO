@@ -1,7 +1,7 @@
 module TEMPO
 
 # auxiliary
-export TruncationScheme, NoTruncation, TruncationDimCutoff, truncdimcutoff
+export TruncationScheme, NoTruncation, TruncationDimCutoff, truncdimcutoff, renyi_entropy
 # ContourIndex
 export ContourIndex, branch, scalartype
 # ADT
