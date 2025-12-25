@@ -11,6 +11,12 @@ function spin_half_matrices()
 	return Dict("x"=>s_x, "y"=>s_y, "z"=>s_Z, "+"=>s_SP, "-"=>s_SM, "n"=>n)
 end
 
+pauli_x() = Matrix{Float64}([0 1; 1 0])
+pauli_y() = Matrix{ComplexF64}([0 im; -im 0])
+pauli_z() = Matrix{Float64}([-1 0; 0 1])
+spin_up() = Matrix{Float64}([0 0; 0 1])
+spin_down() = Matrix{Float64}([1 0; 0 0])
+
 
 function rabi_ham(Ω; d)
 	x = pauli_x()

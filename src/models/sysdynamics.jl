@@ -76,8 +76,3 @@ end
 # 	return s_x, s_y, s_Z
 # end
 
-pauli_x() = Matrix{Float64}([0 1; 1 0])
-pauli_y() = Matrix{ComplexF64}([0 im; -im 0])
-pauli_z() = Matrix{Float64}([-1 0; 0 1])
-spin_up() = Matrix{Float64}([0 0; 0 1])
-spin_down() = Matrix{Float64}([1 0; 0 0])

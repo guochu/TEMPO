@@ -56,17 +56,17 @@ println("------------------------------------")
 	## diagonal observables
 	op = [-0.73 0; 0 0.5]
 
-	pos1 = index(lattice, 1)
-	t = FockTermS(pos1, op * op )
-	mps2 = apply!(t, deepcopy(mps))
+	ind1 = ContourIndex(1)
+	t = ContourOperator(ind1, op * op )
+	mps2 = apply!(t, lattice, deepcopy(mps))
 	v = integrate(lattice, mps2) / Zval
 
 	corrs = [v]
 	for i in 2:N
-		pos2 = index(lattice, i)
-		t = FockTermS((pos2,pos1), (op, op))
+		ind2 = ContourIndex(i)
+		t = ContourOperator([ind2,ind1], [op, op])
 		# t = ADTTerm((i,1), reshape(kron(zdiag, zdiag), 2, 2))
-		mps2 = apply!(t, deepcopy(mps))
+		mps2 = apply!(t, lattice, deepcopy(mps))
 		v = integrate(lattice, mps2) / Zval
 		push!(corrs, v)
 	end
