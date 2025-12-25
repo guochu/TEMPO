@@ -5,6 +5,8 @@ propagator(h::BosonicImpurity, lat, b::Symbol) = _get_propagator(h.m, lat, b)
 propagator(h::BosonicImpurity, lat; branch::Symbol=:τ) = propagator(h, lat, branch)
 phydim(h::BosonicImpurity) = size(h.m, 1)
 
+TO.scalartype(::Type{BosonicImpurity{M}}) where {M} = scalartype(M)
+
 # # Ĥ = Ωσ̂ₓ
 # spinboson(;Ω::Real=0) = BosonicImpurity(Ω .* pauli_x())
 

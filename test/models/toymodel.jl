@@ -2,7 +2,7 @@ println("------------------------------------")
 println("|             Toy Model            |")
 println("------------------------------------")
 
-# H = Ω*σx	+ σz(a + a†) + σz(b + b†) + a† a + b† b
+# H = Ω*σy	+ σz(a + a†) + σz(b + b†) + a† a + b† b
 @testset "Toy model: imaginary-time" begin
 
 	Ω = 0.5
@@ -18,7 +18,7 @@ println("------------------------------------")
 
 	p = spin_half_matrices()
 	x, y, z = p["x"], p["y"], p["z"]
-	hop = Ω .* z
+	hop = Ω .* y
 	Is = one(x)
 	Ib = one(zeros(d, d))
 	model = BosonicImpurity(hop)
@@ -115,7 +115,7 @@ println("------------------------------------")
 
 end
 
-# @testset "Rabi model: real-time" begin
+# @testset "Toy model: real-time" begin
 
 # 	Ω = 0.5
 # 	N = 10

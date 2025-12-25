@@ -2,11 +2,17 @@ abstract type AbstractBosonicImpurityHamiltonian end
 
 # interfaces
 sysdynamics(gmps::ADT, lattice::AbstractADTLattice, model::AbstractBosonicImpurityHamiltonian, args...; kwargs...) = sysdynamics!(copy(gmps), lattice, model, args...; kwargs...)
-sysdynamics(lattice::AbstractADTLattice, model::AbstractBosonicImpurityHamiltonian, args...; kwargs...) = sysdynamics!(vacuumstate(lattice), lattice, model, args...; kwargs...)
+function sysdynamics(lattice::AbstractADTLattice, model::AbstractBosonicImpurityHamiltonian, args...; kwargs...)
+	T = promote_type(scalartype(lattice), scalartype(model))
+	sysdynamics!(vacuumstate(T, lattice), lattice, model, args...; kwargs...)
+end 
 
 
 sysdynamics(gmps::ProcessTensor, lattice::AbstractPTLattice, model::AbstractBosonicImpurityHamiltonian; kwargs...) = sysdynamics!(copy(gmps), lattice, model; kwargs...)
-sysdynamics(lattice::AbstractPTLattice, model::AbstractBosonicImpurityHamiltonian; kwargs...) = sysdynamics!(vacuumstate(lattice), lattice, model; kwargs...)
+function sysdynamics(lattice::AbstractPTLattice, model::AbstractBosonicImpurityHamiltonian; kwargs...)
+	T = promote_type(scalartype(lattice), scalartype(model))
+	return sysdynamics!(vacuumstate(T, lattice), lattice, model; kwargs...)
+end 
 
 
 """
