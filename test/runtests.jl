@@ -1,6 +1,6 @@
 # include("../src/includes.jl")
 
-using Test, LinearAlgebra, ImpurityModelBase, QuAPI
+using Test, LinearAlgebra, TensorOperations, ImpurityModelBase, QuAPI
 
 push!(LOAD_PATH, "../src")
 using TEMPO

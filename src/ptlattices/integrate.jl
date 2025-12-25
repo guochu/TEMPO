@@ -11,21 +11,63 @@ function integrate(lat::ImagPTLattice, x::ProcessTensor)
     return tr(v)
 end
 
-function integrate(lat::RealPTLattice, x::ProcessTensor)
+# function integrate(lat::RealPTLattice, x::ProcessTensor)
+# 	(length(lat) == length(x)) || throw(DimensionMismatch("lattice size mismatch with PT size"))
+#     L = lat.N
+#     sca2 = scaling(x)^2
+#     pos1, pos2 = index(lat, L, branch=:+), index(lat, L, branch=:-)
+#     @assert pos1+1 == pos2 == 2
+#     v = dropdims(x[pos1], dims=1)
+#     @tensor tmp[3,5,4] := v[1,2,3] * x[pos2][2,1,4,5] * sca2
+#     for i in L-1:-1:1
+#     	pos1, pos2 = index(lat, i, branch=:+), index(lat, i, branch=:-)
+#     	@assert pos1+1 == pos2
+#     	@tensor v[5,7,6] := tmp[1,2,3] * x[pos1][3,1,4,5] * x[pos2][4,2,6,7] * sca2
+#     	tmp = v
+#     end
+#     return tr(dropdims(tmp, dims=3))
+# end
+integrate(lat::RealPTLattice, x::ProcessTensor) = tr(rdm(lat, x))
+
+
+"""
+	rdm(lat::RealPTLattice, x::ProcessTensor)
+
+The final output quantum state
+"""
+function rdm(lat::RealPTLattice, x::ProcessTensor)
 	(length(lat) == length(x)) || throw(DimensionMismatch("lattice size mismatch with PT size"))
     L = lat.N
     sca2 = scaling(x)^2
-    pos1, pos2 = index(lat, L, branch=:+), index(lat, L, branch=:-)
-    @assert pos1+1 == pos2 == 2
-    v = dropdims(x[pos1], dims=1)
-    @tensor tmp[3,5,4] := v[1,2,3] * x[pos2][2,1,4,5] * sca2
-    for i in L-1:-1:1
+    pos1, pos2 = index(lat, 1, branch=:+), index(lat, 1, branch=:-)
+    @assert pos1+1 == pos2 == length(lat)
+    v = dropdims(x[pos2], dims=3)
+    @tensor tmp[1,2,5] := x[pos1][1,2,3,4] * v[3,5,4] * sca2
+    for i in 2:L
     	pos1, pos2 = index(lat, i, branch=:+), index(lat, i, branch=:-)
     	@assert pos1+1 == pos2
-    	@tensor v[5,7,6] := tmp[1,2,3] * x[pos1][3,1,4,5] * x[pos2][4,2,6,7] * sca2
+    	@tensor v[1,2,5] := sca2 * x[pos1][1,2,3,4] * x[pos2][3,5,6,7] * tmp[6,4,7] 
     	tmp = v
     end
-    return tr(dropdims(tmp, dims=3))
+    return dropdims(tmp, dims=1)
+end
+
+function quantummap(lat::RealPTLattice, x::ProcessTensor)
+	(length(lat) == length(x)) || throw(DimensionMismatch("lattice size mismatch with PT size"))
+    L = lat.N
+    sca2 = scaling(x)^2
+    pos1, pos2 = index(lat, 1, branch=:+), index(lat, 1, branch=:-)
+    @assert pos1+1 == pos2 == length(lat)
+    v = dropdims(x[pos2], dims=3)
+    @tensor tmp[1,2,5,4,6] := x[pos1][1,2,3,4] * v[3,5,6] * sca2
+    for i in 2:L
+    	pos1, pos2 = index(lat, i, branch=:+), index(lat, i, branch=:-)
+    	@assert pos1+1 == pos2
+    	@tensor v[1,2,5,8,9] := sca2 * x[pos1][1,2,3,4] * x[pos2][3,5,6,7] * tmp[6,4,7,8,9] 
+    	tmp = v
+    end
+    return dropdims(tmp, dims=1)
+	
 end
 
 function integrate(lat::MixedPTLattice, x::ProcessTensor)

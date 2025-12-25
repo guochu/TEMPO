@@ -24,6 +24,7 @@ export MixedADTLattice, MixedADTLattice1Order
 export PTLattice, integrate, ContourOperator, correlationfunction
 export ImagPTLattice, ImagPTLattice1Order, RealPTLattice, RealPTLattice1Order
 export MixedPTLattice, MixedPTLattice1Order
+export rdm, quantummap
 # influence functional
 export HybridizationStyle, AdditiveHyb, NonAdditiveHyb
 export hybriddynamics, hybriddynamics!, hybriddynamics_naive, hybriddynamics_naive!

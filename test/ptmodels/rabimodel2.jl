@@ -146,18 +146,42 @@ end
 	mpsK = sysdynamics(lattice, model, trunc=trunc)
 	mps = mult!(mpsK, mpsI, trunc=trunc)
 
+
+	# # compute quantum channel
+	Uop = exp((-im .* t) .* H)
+	ρbath = exp(-β .* Hbarebath)
+	Uop4 = reshape(Uop, (d,2,d,2))
+	Uop4t = reshape(Uop', (d,2,d,2))
+	
+	@tensor map1[2,6,4,5] := Uop4[1,2,3,4] * ρbath[3,7] * Uop4t[7,5,1,6]
+	map1 = reshape(map1, 4,4)
+	map2 = quantummap(lattice, mps)
+	map2 = reshape(map2, 4,4)
+	map1 ./= tr(map1)
+	map2 ./= tr(map2)
+	@test distance(map1, map2) / norm(map1) < 2tol
+
 	ρ1 = zeros(2,2)
 	ρ1[1,1] = 1
 	ρ2 = 0.5 .* one(ρ1)
 
-	for ρimp in [ρ1, _rand_dm(2)]
+	for ρimp in [ρ1, ρ2, _rand_dm(2)]
 
 		tmp = initialstate!(deepcopy(mps), lattice, ρimp, trunc=trunc)
 		Zval = integrate(lattice, tmp)
 		
+		ρ = kron(ρimp, ρbath) 
 
-		
-		ρ = kron(ρimp, exp(-β * Hbarebath)) 
+		# compute output state
+		ρout = Uop * ρ * Uop'
+		ρout4 = reshape(ρout, (d,2,d,2))
+		@tensor ρimpout[2,3] := ρout4[1,2,1,3]
+		ρimpout ./= tr(ρimpout)
+		ρimpout2 = rdm(lattice, tmp)
+		ρimpout2 ./= tr(ρimpout2)
+		# println(ρimpout)
+		# println(ρimpout2)
+		@test distance(ρimpout, ρimpout2) / norm(ρimpout) < tol
 
 		## diagonal observables
 		op = [-0.73 0; 0 0.5]
@@ -252,7 +276,6 @@ end
 	end
 
 end
-
 
 
 @testset "Rabi model 2: mixed-time" begin
