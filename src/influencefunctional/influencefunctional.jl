@@ -26,13 +26,13 @@ phydim(b::NonAdditiveHyb) = size(b.op, 1)
 TO.scalartype(::Type{NonAdditiveHyb{T}}) where T = T
 
 
-struct NonDiagonalHyb{T<:Number} <: HybridizationStyle
-	sp::Matrix{T}
-end
+# struct NonDiagonalHyb{T<:Number} <: HybridizationStyle
+# 	sp::Matrix{T}
+# end
 
-phydim(b::NonDiagonalHyb) = size(b.op, 1)
+# phydim(b::NonDiagonalHyb) = size(b.op, 1)
 
-TO.scalartype(::Type{NonDiagonalHyb{T}}) where T = T
+# TO.scalartype(::Type{NonDiagonalHyb{T}}) where T = T
 
 
 include("partialif/partialif.jl")
