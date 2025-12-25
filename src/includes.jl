@@ -1,10 +1,9 @@
 using ImpurityModelBase, QuAPI
 import QuAPI: branch, index
 using LinearAlgebra
-using Base: @boundscheck, @propagate_inbounds
+using Base: @boundscheck
 using Logging: @warn
-using Strided, Permutations, TupleTools
-using TensorOperations
+using TensorOperations,TupleTools
 const TO = TensorOperations
 
 # auxiliary
