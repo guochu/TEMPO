@@ -112,7 +112,7 @@ println("------------------------------------")
 end
 
 
-@testset "Toy model 2: real-time" begin
+@testset "Toy model: real-time" begin
 
 	Ω = 0.5
 	N = 10
