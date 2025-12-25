@@ -4,6 +4,7 @@ end
 propagator(h::BosonicImpurity, lat, b::Symbol) = _get_propagator(h.m, lat, b)
 propagator(h::BosonicImpurity, lat; branch::Symbol=:τ) = propagator(h, lat, branch)
 phydim(h::BosonicImpurity) = size(h.m, 1)
+BosonicImpurity(d::Int) = BosonicImpurity(zeros(d, d))
 
 TO.scalartype(::Type{BosonicImpurity{M}}) where {M} = scalartype(M)
 
