@@ -3,10 +3,10 @@ struct ContourOperator{T<:Number}
 	ops::Vector{Matrix{T}}
 end
 
-function ContourOperator(idx::AbstractVector{ContourIndex}, data::AbstractVector{<:AbstractMatrix}) 
+function ContourOperator(idx::AbstractVector{ContourIndex}, data::AbstractVector{<:AbstractMatrix{T}}) where {T}
 	(length(Set(idx)) == length(idx)) || throw(ArgumentError("multiple op with the same ContourIndex not allowed"))
 	(length(idx) == length(data)) || throw(DimensionMismatch("op size mismatch with number of ContourIndexes"))
-	return ContourOperator(idx, data)
+	return ContourOperator(convert(Vector{ContourIndex}, idx), convert(Vector{Matrix{T}}, data))
 end
 ContourOperator(p::ContourIndex, data::AbstractMatrix) = ContourOperator([p], [data])
 
