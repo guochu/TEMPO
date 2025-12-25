@@ -5,7 +5,7 @@ export TruncationScheme, NoTruncation, TruncationDimCutoff, truncdimcutoff
 # ContourIndex
 export ContourIndex, branch, scalartype
 # ADT
-export space_l, space_r, bond_dimension, bond_dimensions
+export space_l, space_r, bond_dimension, bond_dimensions, scaling
 export ADT, randomadt, isleftcanonical, isrightcanonical, iscanonical
 export distance, distance2, Orthogonalize, leftorth!, rightorth!, canonicalize!
 export mult, mult!
