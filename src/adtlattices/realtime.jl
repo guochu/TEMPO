@@ -48,7 +48,7 @@ function RealADTLattice(; order::Int=1, kwargs...)
 	if order == 1
 		return RealADTLattice1Order(; kwargs...)
 	else
-		error("Second orderr RealADTLattice not implemented")
+		error("Second order RealADTLattice not implemented")
 	end
 end
 
