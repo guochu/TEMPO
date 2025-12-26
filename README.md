@@ -1,4 +1,4 @@
-# Time evolving matrix product operator (TEMPO) method, elementary functionalities finished, but more recent advances not included yet
+# Time evolving matrix product operator (TEMPO) method, elementary functionalities have been implemented, but more recent advances not included yet
 
 
 ## Todo list
