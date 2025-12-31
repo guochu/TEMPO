@@ -196,7 +196,8 @@ end
 _svd_guess(x::ADT, y::ADT, D::Int) = _svd_guess!(copy(x), y, D)
 function _svd_guess!(x::ADT, y::ADT, D::Int)
     (length(x) == length(y)) || throw(DimensionMismatch())
-    left = ones(scalartype(x), 1, 1, 1)
+     T = promote_type(scalartype(x), scalartype(y))
+    left = ones(T, 1, 1, 1)
     tmp5 = n_fuse(_mult_site_n(x[1], y[1]), 3)
     @tensor tmp4[1,4;5,6] := left[1,2,3] * tmp5[2,3,4,5,6]
     trunc = truncdim(D)

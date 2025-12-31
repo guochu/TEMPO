@@ -45,6 +45,12 @@ end
 	L = 6
 	chi = 20
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
+	alg1 = SVDCompression(trunc)
+	alg2 = DMRGMult1(trunc, initguess=:svd)
+	alg3 = DMRGMult1(trunc, initguess=:rand, maxiter=10)
+	alg4 = DMRGMult1(trunc, initguess=:pre, maxiter=10)
+	algs = [alg1, alg2, alg3, alg4]
+
 	tol = 1.0e-7
 	for T in (Float64, ComplexF64)
 		psi1 = randompt(T, L, D=4)
@@ -64,5 +70,11 @@ end
 		psi4 = mult(psi1, psi2, trunc=trunc)
 		@test distance(psi3, psi4) / _n < tol
 
+
+		for alg in algs
+			psi4 = mult(psi1, psi2, alg)
+			@test distance(psi3, psi4) / _n < tol
+		end
+		
 	end
 end

@@ -74,6 +74,21 @@ function unset_svectors!(psi::ProcessTensor)
 	return psi
 end
 
+
+function increase_bond!(psi::ProcessTensor, D::Int)
+	if bond_dimension(psi) < D
+		L = length(psi)
+		for i in 1:L
+			sl = (i == 1) ? 1 : max(D, size(psi[i], 1))
+			sr = (i == L) ? 1 : max(D, size(psi[i], 3))
+			m = zeros(scalartype(psi), sl, size(psi[i], 2), sr, size(psi[i], 4))
+			m[1:size(psi[i], 1), :, 1:size(psi[i], 3), :] .= psi[i]
+			psi[i] = m
+		end
+	end
+	return psi
+end
+
 # attributes
 
 function _check_mpo_space(mpotensors::Vector)
