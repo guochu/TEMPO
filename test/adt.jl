@@ -68,7 +68,7 @@ end
 end
 
 
-@testset "ADT: integrate" begin
+@testset "ADT: zipup integrate" begin
 
 	L = 6
 	tol = 1.0e-7
@@ -82,6 +82,14 @@ end
 		v2 = integrate(psi1, psi2)
 		@test abs(v2 - v1) / abs(v1) < tol
 
+		canonicalize!(psi1)
+		canonicalize!(psi2)
+		psi3 = psi1 * psi2
+
+		v1 = integrate(psi3)
+		v2 = integrate(psi1, psi2)
+		@test abs(v2 - v1) / abs(v1) < tol
+		
 	end
 
 end
