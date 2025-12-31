@@ -42,3 +42,14 @@ function Base.:<(a::ContourIndex, b::ContourIndex)
 	end
 end
 
+function Base.:(<=)(a::ContourIndex, b::ContourIndex)
+	if a == b
+		return true
+	elseif a < b
+		return true
+	else
+		return false
+	end
+end
+Base.:(>)(a::ContourIndex, b::ContourIndex) = !(a <= b)
+Base.:(>=)(a::ContourIndex, b::ContourIndex) = !(a < b)
