@@ -2,13 +2,14 @@ module TEMPO
 
 # auxiliary
 export TruncationScheme, NoTruncation, TruncationDimCutoff, truncdimcutoff, renyi_entropy
+export SVDCompression, PronyExpansion, DeterminedPronyExpansion, exponential_expansion, expansion_error
 # ContourIndex
 export ContourIndex, branch, scalartype
 # ADT
-export space_l, space_r, bond_dimension, bond_dimensions, scaling
+export space_l, space_r, bond_dimension, bond_dimensions, scaling, phydim, phydims
 export ADT, randomadt, isleftcanonical, isrightcanonical, iscanonical
 export distance, distance2, Orthogonalize, leftorth!, rightorth!, canonicalize!
-export mult, mult!
+export mult, mult!, DMRGMult1
 # PT
 export ProcessTensor, randompt
 # ADT terms
@@ -17,7 +18,7 @@ export ADTTerm, apply!
 export FockOrdering, ImagFockOrdering, RealFockOrdering, MixedFockOrdering, TimeOrderingStyle
 export M2M1, M2m2M1m1, M2M1_m1M1m2M2, TimeLocalLayout
 export index, OrderingStyle, LayoutStyle, ImaginaryTimeOrderingStyle, RealTimeOrderingStyle
-export branches, phydim, ADTLattice, vacuumstate, indexmappings
+export branches, ADTLattice, vacuumstate, indexmappings
 export ImagADTLattice, ImagADTLattice1Order, RealADTLattice, RealADTLattice1Order
 export MixedADTLattice, MixedADTLattice1Order
 # PT Lattices

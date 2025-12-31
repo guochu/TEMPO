@@ -7,7 +7,7 @@ struct TruncateDim <: TruncationScheme
 	D::Int
 end
 TruncateDim(;D::Int) = TruncateDim(D)
-
+truncdim(d::Int) = TruncateDim(d)
 
 struct TruncateCutoff <: TruncationScheme
 	ϵ::Float64

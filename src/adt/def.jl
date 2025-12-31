@@ -90,11 +90,12 @@ randomadt(ds::AbstractVector{Int}; kwargs...) = randomadt(Float64, ds; kwargs...
 randomadt(::Type{T}, L::Int; D::Int, d::Int=2) where {T<:Number} = randomadt(T, [d for i in 1:L], D=D)
 randomadt(L::Int; kwargs...) = randomadt(Float64, L; kwargs...)
 
-function increase_bond!(psi::ADT; D::Int)
+function increase_bond!(psi::ADT, D::Int)
 	if bond_dimension(psi) < D
-		for i in 1:length(psi)
-			sl = max(D, size(psi[i], 1))
-			sr = max(D, size(psi[i], 3))
+		L = length(psi)
+		for i in 1:L
+			sl = (i == 1) ? 1 : max(D, size(psi[i], 1))
+			sr = (i == L) ? 1 : max(D, size(psi[i], 3))
 			m = zeros(scalartype(psi), sl, size(psi[i], 2), sr)
 			m[1:size(psi[i], 1), :, 1:size(psi[i], 3)] .= psi[i]
 			psi[i] = m
