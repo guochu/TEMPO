@@ -16,8 +16,10 @@ const DenseMPOTensor{T} = AbstractArray{T, 4} where {T<:Number}
 
 space_l(m::DenseMPSTensor) = size(m, 1)
 space_r(m::DenseMPSTensor) = size(m, 3)
+phydim(m::DenseMPSTensor) = size(m, 2)
 space_l(m::DenseMPOTensor) = size(m, 1)
 space_r(m::DenseMPOTensor) = size(m, 3)
+phydim(m::DenseMPOTensor) = size(m, 2)
 space_l(t::Dense1DTN) = size(t[1], 1)
 space_r(t::Dense1DTN) = size(t[end], 3)
 
@@ -36,12 +38,18 @@ function LinearAlgebra.normalize!(x::Dense1DTN)
 end
 
 bond_dimension(psi::Dense1DTN, bond::Int) = begin
-	((bond >= 1) && (bond <= length(psi))) || throw(BoundsError())
+	((bond >= 1) && (bond <= length(psi))) || throw(BoundsError(1:length(psi), bond))
 	space_r(psi[bond])
 end 
 bond_dimensions(psi::Dense1DTN) = [bond_dimension(psi, i) for i in 1:length(psi)]
 bond_dimension(psi::Dense1DTN) = maximum(bond_dimensions(psi))
 latticedims(psi::Dense1DTN) = [size(m, 2) for m in psi.data]
+
+phydim(psi::Dense1DTN, bond::Int) = begin
+	((bond >= 1) && (bond <= length(psi))) || throw(BoundsError(1:length(psi), bond))
+	phydim(psi[bond])
+end 
+phydims(psi::Dense1DTN) = [phydim(psi, i) for i in 1:length(psi)]
 
 function isleftcanonical(psij::DenseMPSTensor; kwargs...)
 	@tensor r[-1, -2] := conj(psij[1,2,-1]) * psij[1,2,-2]

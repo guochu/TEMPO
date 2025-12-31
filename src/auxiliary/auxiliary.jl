@@ -2,6 +2,7 @@ include("truncation.jl")
 include("tensorops.jl")
 include("distance.jl")
 
+include("mpsalgs.jl")
 
 # # mpo hamiltonian
 include("mpohamiltonian/abstractmpotensor.jl")

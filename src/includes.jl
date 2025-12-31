@@ -1,4 +1,4 @@
-using ImpurityModelBase, QuAPI
+using ImpurityModelBase, QuAPI, Statistics
 import QuAPI: branch, index
 using LinearAlgebra
 using Base: @boundscheck

@@ -66,3 +66,22 @@ end
 
 	end
 end
+
+
+@testset "ADT: integrate" begin
+
+	L = 6
+	tol = 1.0e-7
+	for T in (Float64, ComplexF64)
+		psi1 = randomadt(T, L, D=4)
+		psi2 = randomadt(T, L, D=4)
+
+		psi3 = psi1 * psi2
+
+		v1 = integrate(psi3)
+		v2 = integrate(psi1, psi2)
+		@test abs(v2 - v1) / abs(v1) < tol
+
+	end
+
+end

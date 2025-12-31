@@ -1,5 +1,5 @@
 # arXiv:1407.1832v1 "Time-evolving a matrix product state with long-ranged interactions"
-abstract type TimeEvoMPOAlgorithm end
+abstract type TimeEvoMPOAlgorithm <: MPSAlgorithm end
 abstract type FirstOrderStepper <: TimeEvoMPOAlgorithm end
 abstract type SecondOrderStepper <: TimeEvoMPOAlgorithm end
 
