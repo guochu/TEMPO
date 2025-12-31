@@ -9,6 +9,8 @@ using Test, LinearAlgebra, TensorOperations, ImpurityModelBase, QuAPI
 
 include("util.jl")
 
+include("auxiliary.jl")
+
 include("adtlattice.jl")
 include("adt.jl")
 

@@ -82,3 +82,4 @@ TO.scalartype(::Type{NonDiagonalHyb{T}}) where T = T
 
 include("partialif/partialif.jl")
 include("ptpartialif/ptpartialif.jl")
+include("ttiif/ttiif.jl")

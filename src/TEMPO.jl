@@ -39,8 +39,9 @@ export sysdynamics, sysdynamics!, BosonicImpurity
 
 
 
+using Polynomials, Statistics
 
-using ImpurityModelBase, QuAPI, Statistics
+using ImpurityModelBase, QuAPI
 import QuAPI: branch, index
 using LinearAlgebra
 using Base: @boundscheck
