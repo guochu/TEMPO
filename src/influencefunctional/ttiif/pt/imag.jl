@@ -66,12 +66,12 @@ function _get_mpo3(mpoj)
 	return tompotensors(h)
 end
 
-# band_boundary(lattice::RealPTLattice1Order, j::Int) = index(lattice, j, branch=:+), index(lattice, j, branch=:-)
-
-
 function pt_ti_mpotensor(corr::CorrelationMatrix, op1::AbstractMatrix, op2::AbstractMatrix, alg::ExponentialExpansionAlgorithm)
-	m1 = GenericDecayTerm(op1, op2, corr.ηₖⱼ[2:end])
-	m2 = GenericDecayTerm(op2, op1, corr.ηⱼₖ[2:end])
+	# m1 = GenericDecayTerm(op1, op2, corr.ηₖⱼ[2:end])
+	# m2 = GenericDecayTerm(op2, op1, corr.ηⱼₖ[2:end])
+	m1 = GenericDecayTerm(op1, op2, corr.ηⱼₖ[2:end])
+	m2 = GenericDecayTerm(op2, op1, corr.ηₖⱼ[2:end])
+
 
 	m1s = exponential_expansion(m1, alg=alg)
 	m2s = exponential_expansion(m2, alg=alg)

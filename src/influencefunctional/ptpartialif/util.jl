@@ -50,7 +50,7 @@ function _get_contour_op(lattice, ind1::ContourIndex, ind2::ContourIndex, z::Abs
 		m = exp(coef .* z1 * z2) 
 		t = FockTermS(pos1, m)
 	else
-		zz = kron(z1, z2)
+		zz = kron(z2, z1)
 		m = exp(coef .* zz)
 		t = FockTermS((pos1, pos2), reshape(m, (d,d,d,d)))
 	end
