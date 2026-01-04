@@ -5,6 +5,10 @@ export TruncationScheme, NoTruncation, TruncationDimCutoff, truncdimcutoff, reny
 export SVDCompression, PronyExpansion, DeterminedPronyExpansion, exponential_expansion, expansion_error
 # ContourIndex
 export ContourIndex, branch, scalartype
+# MPOHamiltonian
+export MPOHamiltonian, tompotensors, timeevompo, WI, WII, ComplexStepper
+export SchurMPOTensor, ExponentialDecayTerm, GenericDecayTerm, PowerlawDecayTerm
+
 # ADT
 export space_l, space_r, bond_dimension, bond_dimensions, scaling, phydim, phydims
 export ADT, randomadt, isleftcanonical, isrightcanonical, iscanonical
@@ -14,6 +18,7 @@ export mult, mult!, DMRGMult1
 export ProcessTensor, randompt
 # ADT terms
 export ADTTerm, apply!
+export FockTermS
 # ADT Lattices
 export FockOrdering, ImagFockOrdering, RealFockOrdering, MixedFockOrdering, TimeOrderingStyle
 export M2M1, M2m2M1m1, M2M1_m1M1m2M2, TimeLocalLayout
@@ -27,7 +32,9 @@ export ImagPTLattice, ImagPTLattice1Order, RealPTLattice, RealPTLattice1Order
 export MixedPTLattice, MixedPTLattice1Order
 export rdm, quantummap
 # influence functional
-export HybridizationStyle, AdditiveHyb, NonAdditiveHyb
+export HybridizationStyle, AdditiveHyb, NonAdditiveHyb, NonDiagonalHyb, pairop
+export PartialIF, TranslationInvariantIF
+export influenceoperator, influenceoperatorexponential, differentialinfluencefunctional
 export hybriddynamics, hybriddynamics!, hybriddynamics_naive, hybriddynamics_naive!
 export partialif_naive, partialif
 # boundary condition
