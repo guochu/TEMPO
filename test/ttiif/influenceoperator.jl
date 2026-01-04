@@ -108,104 +108,109 @@ end
 	lattice = PTLattice(N=N, δt=δt, contour=:real)
 	corr = correlationfunction(bath, lattice)
 
-	hyb = NonAdditiveHyb(_rand_ham(ComplexF64, d))
-	op1, op2 = pairop(hyb)
+	# hyb = NonAdditiveHyb(_rand_ham(ComplexF64, d))
+	for hyb in (NonAdditiveHyb(_rand_ham(d)), NonDiagonalHyb(randn(ComplexF64, d, d)))
 
-	mps_pp, mps_pm, mps_mp, mps_mm = influenceoperator(lattice, corr, hyb, algexpan=algexpan)
+		op1, op2 = pairop(hyb)
 
-	vc = vacuumstate(lattice)
-	mps2_pp = nothing
-	for i in 1:lattice.N, j in 1:lattice.N
-		ind1, ind2 = ContourIndex(i, :+), ContourIndex(j, :+)
+		mps_pp, mps_pm, mps_mp, mps_mm = influenceoperator(lattice, corr, hyb, algexpan=algexpan)
 
-		coef = index(corr, i, j, b1=:+, b2=:+)
-		t = __get_contour_op(lattice, ind1, ind2, op1, op2, coef)
+		vc = vacuumstate(lattice)
+		mps2_pp = nothing
+		for i in 1:lattice.N, j in 1:lattice.N
+			ind1, ind2 = ContourIndex(i, :+), ContourIndex(j, :+)
 
-		if !isnothing(mps2_pp)
-			mps2_pp += apply!(t, vacuumstate(scalartype(hyb), lattice)) 
-		else
-			mps2_pp = apply!(t, vacuumstate(scalartype(hyb), lattice)) 
-		end
-	end
+			coef = index(corr, i, j, b1=:+, b2=:+)
+			t = __get_contour_op(lattice, ind1, ind2, op1, op2, coef)
 
-	# println(norm(mps_pp), " ", norm(mps2_pp), " ", dot(mps_pp, mps2_pp), " ", distance(mps_pp, mps2_pp))
-	@test distance(mps_pp, mps2_pp) / norm(mps2_pp) < tol
-
-	mps2_pm = nothing
-	for i in 1:lattice.N, j in 1:lattice.N
-		ind1, ind2 = ContourIndex(i, :+), ContourIndex(j, :-)
-		coef = index(corr, i, j, b1=:+, b2=:-)
-		t = __get_contour_op(lattice, ind1, ind2, op1, op2, coef)
-		if !isnothing(mps2_pm)
-			mps2_pm += apply!(t, vacuumstate(scalartype(hyb), lattice)) 
-		else
-			mps2_pm = apply!(t, vacuumstate(scalartype(hyb), lattice)) 
+			if !isnothing(mps2_pp)
+				mps2_pp += apply!(t, vacuumstate(scalartype(hyb), lattice)) 
+			else
+				mps2_pp = apply!(t, vacuumstate(scalartype(hyb), lattice)) 
+			end
 		end
 
-	end
-	# println(norm(mps_pm), " ", norm(mps2_pm), " ",  dot(mps_pm, mps2_pm), " ", distance(mps_pm, mps2_pm))
-	@test distance(mps_pm, mps2_pm) / norm(mps2_pm) < tol
+		# println(norm(mps_pp), " ", norm(mps2_pp), " ", dot(mps_pp, mps2_pp), " ", distance(mps_pp, mps2_pp))
+		@test distance(mps_pp, mps2_pp) / norm(mps2_pp) < tol
 
-	mps2_mp = nothing
-	for i in 1:lattice.N, j in 1:lattice.N
-		ind1, ind2 = ContourIndex(i, :-), ContourIndex(j, :+)
-		coef = index(corr, i, j, b1=:-, b2=:+)
-		t = __get_contour_op(lattice, ind1, ind2, op1, op2, coef)
-		if !isnothing(mps2_mp)
-			mps2_mp += apply!(t, vacuumstate(scalartype(hyb), lattice)) 
-		else
-			mps2_mp = apply!(t, vacuumstate(scalartype(hyb), lattice)) 
+		mps2_pm = nothing
+		for i in 1:lattice.N, j in 1:lattice.N
+			ind1, ind2 = ContourIndex(i, :+), ContourIndex(j, :-)
+			coef = index(corr, i, j, b1=:+, b2=:-)
+			t = __get_contour_op(lattice, ind1, ind2, op1, op2, coef)
+			if !isnothing(mps2_pm)
+				mps2_pm += apply!(t, vacuumstate(scalartype(hyb), lattice)) 
+			else
+				mps2_pm = apply!(t, vacuumstate(scalartype(hyb), lattice)) 
+			end
+
+		end
+		# println(norm(mps_pm), " ", norm(mps2_pm), " ",  dot(mps_pm, mps2_pm), " ", distance(mps_pm, mps2_pm))
+		@test distance(mps_pm, mps2_pm) / norm(mps2_pm) < tol
+
+		mps2_mp = nothing
+		for i in 1:lattice.N, j in 1:lattice.N
+			ind1, ind2 = ContourIndex(i, :-), ContourIndex(j, :+)
+			coef = index(corr, i, j, b1=:-, b2=:+)
+			t = __get_contour_op(lattice, ind1, ind2, op1, op2, coef)
+			if !isnothing(mps2_mp)
+				mps2_mp += apply!(t, vacuumstate(scalartype(hyb), lattice)) 
+			else
+				mps2_mp = apply!(t, vacuumstate(scalartype(hyb), lattice)) 
+			end
+
+		end
+		# println(norm(mps_mp), " ", norm(mps2_mp), " ", dot(mps_mp, mps2_mp), " ", distance(mps_mp, mps2_mp))
+		@test distance(mps_mp, mps2_mp) / norm(mps2_mp) < tol				
+
+		mps2_mm = nothing
+		for i in 1:lattice.N, j in 1:lattice.N
+			ind1, ind2 = ContourIndex(i, :-), ContourIndex(j, :-)
+
+			coef = index(corr, i, j, b1=:-, b2=:-)
+			t = __get_contour_op(lattice, ind1, ind2, op1, op2, coef)
+
+			if !isnothing(mps2_mm)
+				mps2_mm += apply!(t, vacuumstate(scalartype(hyb), lattice)) 
+			else
+				mps2_mm = apply!(t, vacuumstate(scalartype(hyb), lattice)) 
+			end
+		end
+		# println(norm(mps_mm), " ", norm(mps2_mm), " ", dot(mps_mm, mps2_mm), " ", distance(mps_mm, mps2_mm))
+		@test distance(mps_mm, mps2_mm) / norm(mps2_mm) < tol
+
+		dt = 0.01
+
+		mps_pp = dt * mps_pp + vacuumstate(lattice)
+		mps_pm = dt * mps_pm + vacuumstate(lattice)
+		mps_mp = dt * mps_mp + vacuumstate(lattice)
+		mps_mm = dt * mps_mm + vacuumstate(lattice)
+
+
+		mps2_pp, mps2_pm, mps2_mp, mps2_mm = influenceoperatorexponential(lattice, corr, dt, hyb, WII(), algexpan=algexpan)
+
+		@test distance(mps_pp, mps2_pp) / norm(mps2_pp) < dt
+		@test distance(mps_pm, mps2_pm) / norm(mps2_pm) < dt
+		@test distance(mps_mp, mps2_mp) / norm(mps2_mp) < dt
+		@test distance(mps_mm, mps2_mm) / norm(mps2_mm) < dt
+
+		mps0 = mult!(mps2_pp, mps2_pm, trunc=trunc)
+		mps0 = mult!(mps0, mps2_mp, trunc=trunc)
+		mps0 = mult!(mps0, mps2_mm, trunc=trunc)
+
+		for algmult in (SVDCompression(D=50), DMRGMult1(trunc=truncdimcutoff(D=50,ϵ=1.0e-6)))
+			mps1 = differentialinfluencefunctional(lattice, corr, dt, hyb, WII(), algmult, algexpan=algexpan)
+			_n = norm(mps1)
+			mps2 = differentialinfluencefunctional(lattice, corr, dt, hyb, WI(), algmult, algexpan=algexpan)
+			mps3 = differentialinfluencefunctional(lattice, corr, dt, hyb, ComplexStepper(WI()), algmult, algexpan=algexpan)
+			mps4 = differentialinfluencefunctional(lattice, corr, dt, hyb, ComplexStepper(WII()), algmult, algexpan=algexpan)
+			@test distance(mps1, mps0) / _n < dt
+			@test distance(mps2, mps0) / _n < dt
+			@test distance(mps3, mps0) / _n < dt
+			@test distance(mps4, mps0) / _n < dt
 		end
 
 	end
-	# println(norm(mps_mp), " ", norm(mps2_mp), " ", dot(mps_mp, mps2_mp), " ", distance(mps_mp, mps2_mp))
-	@test distance(mps_mp, mps2_mp) / norm(mps2_mp) < tol				
 
-	mps2_mm = nothing
-	for i in 1:lattice.N, j in 1:lattice.N
-		ind1, ind2 = ContourIndex(i, :-), ContourIndex(j, :-)
-
-		coef = index(corr, i, j, b1=:-, b2=:-)
-		t = __get_contour_op(lattice, ind1, ind2, op1, op2, coef)
-
-		if !isnothing(mps2_mm)
-			mps2_mm += apply!(t, vacuumstate(scalartype(hyb), lattice)) 
-		else
-			mps2_mm = apply!(t, vacuumstate(scalartype(hyb), lattice)) 
-		end
-	end
-	# println(norm(mps_mm), " ", norm(mps2_mm), " ", dot(mps_mm, mps2_mm), " ", distance(mps_mm, mps2_mm))
-	@test distance(mps_mm, mps2_mm) / norm(mps2_mm) < tol
-
-	dt = 0.01
-
-	mps_pp = dt * mps_pp + vacuumstate(lattice)
-	mps_pm = dt * mps_pm + vacuumstate(lattice)
-	mps_mp = dt * mps_mp + vacuumstate(lattice)
-	mps_mm = dt * mps_mm + vacuumstate(lattice)
-
-
-	mps2_pp, mps2_pm, mps2_mp, mps2_mm = influenceoperatorexponential(lattice, corr, dt, hyb, WII(), algexpan=algexpan)
-
-	@test distance(mps_pp, mps2_pp) / norm(mps2_pp) < dt
-	@test distance(mps_pm, mps2_pm) / norm(mps2_pm) < dt
-	@test distance(mps_mp, mps2_mp) / norm(mps2_mp) < dt
-	@test distance(mps_mm, mps2_mm) / norm(mps2_mm) < dt
-
-	mps0 = mult!(mps2_pp, mps2_pm, trunc=trunc)
-	mps0 = mult!(mps0, mps2_mp, trunc=trunc)
-	mps0 = mult!(mps0, mps2_mm, trunc=trunc)
-
-	for algmult in (SVDCompression(D=50), DMRGMult1(trunc=truncdimcutoff(D=50,ϵ=1.0e-6)))
-		mps1 = differentialinfluencefunctional(lattice, corr, dt, hyb, WII(), algmult, algexpan=algexpan)
-		_n = norm(mps1)
-		mps2 = differentialinfluencefunctional(lattice, corr, dt, hyb, WI(), algmult, algexpan=algexpan)
-		mps3 = differentialinfluencefunctional(lattice, corr, dt, hyb, ComplexStepper(WI()), algmult, algexpan=algexpan)
-		mps4 = differentialinfluencefunctional(lattice, corr, dt, hyb, ComplexStepper(WII()), algmult, algexpan=algexpan)
-		@test distance(mps1, mps0) / _n < dt
-		@test distance(mps2, mps0) / _n < dt
-		@test distance(mps3, mps0) / _n < dt
-		@test distance(mps4, mps0) / _n < dt
-	end
 
 end
