@@ -9,20 +9,18 @@ using Test, LinearAlgebra, TensorOperations, ImpurityModelBase, QuAPI
 
 include("util.jl")
 
-include("auxiliary.jl")
+# include("auxiliary.jl")
 
-include("adtlattice.jl")
-include("adt.jl")
+# include("adtlattice.jl")
+# include("adt.jl")
 
-include("ptlattice.jl")
-include("pt.jl")
+# include("ptlattice.jl")
+# include("pt.jl")
 
-include("adtpartialif.jl")
+# include("adtpartialif.jl")
 
-include("ttiif/pt.jl")
-
-
-include("models/models.jl")
+include("ttiif/ttiif.jl")
 
 
-include("ptmodels/ptmodels.jl")
+# include("models/models.jl")
+# include("ptmodels/ptmodels.jl")

@@ -1,9 +1,9 @@
 println("------------------------------------")
-println("|           TTI-IF PT              |")
+println("|    TTI-IF InfluenceOperator      |")
 println("------------------------------------")
 
 
-@testset "InfluenceOperator-NonAdditiveHyb: imaginary-time" begin
+@testset "TTI-IF-InfluenceOperatot: imaginary-time" begin
 	β = 1
 	δτ = 0.2
 	tol = 1.0e-6
@@ -20,7 +20,7 @@ println("------------------------------------")
 	x, y, z, sp, sm = p["x"], p["y"], p["z"], p["+"], p["-"]
 
 
-	for hyb in (NonAdditiveHyb(y), NonDiagonalHyb(sp), NonDiagonalHyb(im .* sp))
+	for hyb in (NonAdditiveHyb(_rand_ham(d)), NonDiagonalHyb(randn(ComplexF64, d, d)))
 		op1, op2 = pairop(hyb)
 
 		mpo1 = influenceoperator(lattice, corr, hyb, algexpan=algexpan)
@@ -39,9 +39,9 @@ println("------------------------------------")
 					t = FockTermS((lattice[ind1], lattice[ind2]), reshape(m, (d,d,d,d)))
 				end
 				if @isdefined mpo2
-					mpo2 += apply!(t, vacuumstate(lattice)) 
+					mpo2 += apply!(t, vacuumstate(scalartype(hyb), lattice)) 
 				else
-					mpo2 = apply!(t, vacuumstate(lattice)) 
+					mpo2 = apply!(t, vacuumstate(scalartype(hyb), lattice)) 
 				end
 
 			end

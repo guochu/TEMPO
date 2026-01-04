@@ -24,7 +24,7 @@ function _hybriddynamics_fast(lattice::AbstractPTLattice, corr::AbstractCorrelat
 		t = @elapsed mps = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algmult, algexpan=alg.algexpan)
 		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bond_dimension(mps))
 	else
-		mps = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, hyb, algmult, algexpan=alg.algexpan)
+		mps = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algmult, algexpan=alg.algexpan)
 	end
 	
 	for i in 1:alg.k

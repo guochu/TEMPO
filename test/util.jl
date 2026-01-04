@@ -56,6 +56,13 @@ function rabi_ham_2(Ω; d)
 	return H, n
 end
 
+function _rand_ham(::Type{T}, d) where {T<:Number}
+	x = randn(T, d, d)
+	x = x + x'
+	return x/norm(x)
+end
+_rand_ham(d) = _rand_ham(ComplexF64, d)
+
 function _rand_dm(d)
 	x = randn(ComplexF64, d, d)
 	x = x' * x

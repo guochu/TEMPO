@@ -3,12 +3,30 @@ include("imaginarytime.jl")
 include("realtime.jl")
 include("mixedtime.jl")
 
+
+function hybriddynamics(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb, alg::PartialIF)
+	T = promote_type(scalartype(lattice), scalartype(hyb), scalartype(corr))
+	return hybriddynamics!(vacuumstate(T, lattice), lattice, corr, hyb, alg)
+end 
+hybriddynamics(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb, alg::PartialIF) = hybriddynamics!(
+				copy(gmps), lattice, corr, hyb, alg)
+hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb, alg::PartialIF) = hybriddynamics!(
+				gmps, lattice, corr, hyb, trunc=alg.trunc)
+
 hybriddynamics(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, bs::NonAdditiveHyb; kwargs...) = hybriddynamics!(copy(gmps), lattice, corr, bs; kwargs...)
 function hybriddynamics(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, bs::NonAdditiveHyb; kwargs...)
 	T = promote_type(scalartype(lattice), scalartype(bs), scalartype(corr))
 	return hybriddynamics!(vacuumstate(T, lattice), lattice, corr, bs; kwargs...)
 end 
 
+function hybriddynamics_naive(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb, alg::PartialIF)
+	T = promote_type(scalartype(lattice), scalartype(hyb), scalartype(corr))
+	return hybriddynamics_naive!(vacuumstate(T, lattice), lattice, corr, hyb, alg)
+end 
+hybriddynamics_naive(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb, alg::PartialIF) = hybriddynamics_naive!(
+						copy(gmps), lattice, corr, hyb, alg)
+hybriddynamics_naive!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb, alg::PartialIF) = hybriddynamics_naive!(
+						gmps, lattice, corr, hyb, trunc=alg.trunc)
 
 hybriddynamics_naive(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, bs::NonAdditiveHyb; kwargs...) = hybriddynamics_naive!(copy(gmps), lattice, corr, bs; kwargs...)
 function hybriddynamics_naive(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, bs::NonAdditiveHyb; kwargs...) 
