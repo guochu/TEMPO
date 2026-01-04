@@ -205,7 +205,8 @@ function _svd_guess!(x::ADT, y::ADT, D::Int)
         u, s, v = tsvd!(tmp4, (1,2), (3,4), trunc=trunc)
         x[i] = u
         _renormalize!(x, s, false)
-        @tensor r[1,3,4] := Diagonal(s)[1,2] * v[2,3,4]
+        s2 = Matrix(Diagonal(s))
+        @tensor r[1,3,4] := s2[1,2] * v[2,3,4]
         @tensor tmp1[1,5,4;2] := r[1,2,3] * y[i+1][3,4,5]
         @tensor tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * x[i+1][4,5,6]
         tmp4 = n_fuse(tmp2, 2)

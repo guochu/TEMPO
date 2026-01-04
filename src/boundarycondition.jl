@@ -47,7 +47,8 @@ function initialstate!(x::ProcessTensor, lattice::RealPTLattice1Order, ρ0::Abst
 	u, s, v = tsvd!(tmp, (1,2), (3,4), trunc=trunc)
 
 	I2 = one(ρ0)
-	@tensor a[1,2,4,5,6] := u[1,2,3] * Diagonal(s)[3,4] * I2[5,6]
+	s2 = Matrix(Diagonal(s))
+	@tensor a[1,2,4,5,6] := u[1,2,3] * s2[3,4] * I2[5,6]
 	@tensor b[1,4,2,3,5] := v[1,2,3] * I2[4,5]
 	x[pos1] = tie(a, (1,1,2,1))
 	x[pos2] = tie(b, (2,1,1,1))

@@ -281,7 +281,7 @@ function split_mpotensor(mpoj::DenseMPOTensor, trunc)
 	f = reshape(_eye(scalartype(mpoj), d2, d2), d2, d, d)
 	@tensor mpoj6[1,5,7, 6,3,8] := mpoj[1,2,3,4] * f[2,5,6] * f[4,7,8]
 	u, s, v = tsvd!(mpoj6, (1,2,3), (4,5,6), trunc=trunc)
-	ss = Diagonal(sqrt.(s))
+	ss = Matrix(Diagonal(sqrt.(s)))
 	@tensor uu[1,2,5,3] := u[1,2,3,4] * ss[4,5]
 	@tensor vv[1,3,4,5] := ss[1,2] * v[2,3,4,5]
 	return uu, vv

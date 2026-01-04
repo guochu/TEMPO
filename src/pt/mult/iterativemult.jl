@@ -138,7 +138,8 @@ function _svd_guess!(x::ProcessTensor, y::ProcessTensor, D::Int)
         u, s, v = tsvd!(tmp4, (1,2,5), (3,4), trunc=trunc)
         x[i] = permute(u, (1,2,4,3))
         _renormalize!(x, s, false)
-        @tensor r[1,3,4] := Diagonal(s)[1,2] * v[2,3,4]
+        s2 = Matrix(Diagonal(s))
+        @tensor r[1,3,4] := s2[1,2] * v[2,3,4]
         @tensor tmp1[1,6,5,4,2] := r[1,2,3] * y[i+1][3,4,5,6]
         @tensor tmp4[1,6,7,3,2] := tmp1[1,2,3,4,5] * x[i+1][5,6,7,4]
     end

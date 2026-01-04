@@ -18,7 +18,7 @@ branch(x::ContourIndex) = x.branch
 Base.:(==)(a::ContourIndex, b::ContourIndex) = (a.j == b.j) && (branch(a) == branch(b))
 
 function Base.:<(a::ContourIndex, b::ContourIndex)
-	(a == b) && throw(ArgumentError("the two indices are the same"))
+	(a == b) && return false
 	if branch(a) == :+
 		if branch(b) == :+
 			return a.j < b.j
