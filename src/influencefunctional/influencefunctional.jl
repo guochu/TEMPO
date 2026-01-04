@@ -71,16 +71,17 @@ NonAdditiveHyb(a::AbstractMatrix{T}) where {T<:Number} = NonAdditiveHyb{T}(a)
 phydim(b::NonAdditiveHyb) = size(b.op, 1)
 
 TO.scalartype(::Type{NonAdditiveHyb{T}}) where T = T
+pairop(b::NonAdditiveHyb) = b.op, b.op
 
 
 struct NonDiagonalHyb{T<:Number} <: GeneralHybStyle
-	sp::Matrix{T}
+	op::Matrix{T}
 end
 
 phydim(b::NonDiagonalHyb) = size(b.op, 1)
 
 TO.scalartype(::Type{NonDiagonalHyb{T}}) where T = T
-
+pairop(b::NonDiagonalHyb) = b.op, b.op'
 
 include("partialif/partialif.jl")
 include("ptpartialif/ptpartialif.jl")

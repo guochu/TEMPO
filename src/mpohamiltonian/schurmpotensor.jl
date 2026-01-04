@@ -33,7 +33,7 @@ function SchurMPOTensor(data::AbstractMatrix{Any})
 	M = Matrix{T}
 	return SchurMPOTensor{M, T}(data)
 end
-SchurMPOTensor(data::AbstractMatrix{SparseMPOTensorElement{M, T}}) where {M<:AbstractMatrix, T<:Number} = SchurMPOTensor{spacetype(M), M, T}(data)
+SchurMPOTensor(data::AbstractMatrix{SparseMPOTensorElement{M, T}}) where {M<:AbstractMatrix, T<:Number} = SchurMPOTensor{M, T}(data)
 
 
 Base.contains(m::SchurMPOTensor{M, T}, i::Int, j::Int) where {M, T} = (i <= j) && (m.Os[i, j] != zero(T))
