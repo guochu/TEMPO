@@ -9,8 +9,7 @@ function influenceoperator(lattice::ImagPTLattice1Order, corr2::ImagCorrelationF
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = pt_ti_mpotensor(corr, op1, op2, algexpan)
-	h = MPOHamiltonian([mpoj, mpoj, mpoj])
-	mpotensors = tompotensors(h)
+	mpotensors = _get_mpo3(mpoj)
 	# println(mpotensors[2])
 	return _fit_to_lattice(lattice, mpotensors) 
 end
@@ -20,9 +19,8 @@ function influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagC
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = pt_ti_mpotensor(corr, op1, op2, algexpan)
-	h = MPOHamiltonian([mpoj, mpoj, mpoj])
-	h2 = timeevompo(h, dt, alg)
-	mpotensors = tompotensors(h2)
+	mpoj′ = timeevompo(mpoj, dt, alg)
+	mpotensors = _get_mpo3(mpoj′)
 	return _fit_to_lattice(lattice, mpotensors) 
 end
 function influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper; 
@@ -30,9 +28,8 @@ function influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagC
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = pt_ti_mpotensor(corr, op1, op2, algexpan)
-	h = MPOHamiltonian([mpoj, mpoj, mpoj])
-	h1, h2 = timeevompo(h, dt, alg)
-	mpo1, mpo2 = tompotensors(h1), tompotensors(h2)
+	mpoja, mpojb = timeevompo(mpoj, dt, alg)
+	mpo1, mpo2 = _get_mpo3(mpoja), _get_mpo3(mpojb)
 	return _fit_to_lattice(lattice, mpo1), _fit_to_lattice(lattice, mpo2) 
 end
 
@@ -61,4 +58,43 @@ function _fit_to_lattice(lattice::ImagPTLattice1Order, mpotensors)
 end
 
 
-# real-time
+# # real-time
+# function influenceoperator(lattice::RealPTLattice1Order, corr2::RealCorrelationFunction, hyb::GeneralHybStyle; algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+# 	corr = corr2.data
+# 	op1, op2 = pairop(hyb)
+# 	mpoj1 = pt_ti_mpotensor(corr[:+, :+], op1, op2, algexpan)
+# 	mpoj2 = pt_ti_mpotensor(corr[:+, :-], op1, op2, algexpan)
+# 	mpoj3 = pt_ti_mpotensor(corr[:-, :+], op1, op2, algexpan)
+# 	mpoj4 = pt_ti_mpotensor(corr[:-, :-], op1, op2, algexpan)
+# 	h = MPOHamiltonian([mpoj, mpoj, mpoj])
+# 	mpotensors = tompotensors(h)
+# 	# println(mpotensors[2])
+# 	return _fit_to_lattice(lattice, mpotensors) 
+# end
+
+# function influenceoperatorexponential(lattice::RealPTLattice1Order, corr2::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper; 
+# 										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+# 	corr = corr2.data
+# 	op1, op2 = pairop(hyb)
+# 	mpoj = pt_ti_mpotensor(corr, op1, op2, algexpan)
+# 	h = MPOHamiltonian([mpoj, mpoj, mpoj])
+# 	h2 = timeevompo(h, dt, alg)
+# 	mpotensors = tompotensors(h2)
+# 	return _fit_to_lattice(lattice, mpotensors) 
+# end
+# function influenceoperatorexponential(lattice::RealPTLattice1Order, corr2::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper; 
+# 										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+# 	corr = corr2.data
+# 	op1, op2 = pairop(hyb)
+# 	mpoj = pt_ti_mpotensor(corr, op1, op2, algexpan)
+# 	h = MPOHamiltonian([mpoj, mpoj, mpoj])
+# 	h1, h2 = timeevompo(h, dt, alg)
+# 	mpo1, mpo2 = tompotensors(h1), tompotensors(h2)
+# 	return _fit_to_lattice(lattice, mpo1), _fit_to_lattice(lattice, mpo2) 
+# end
+
+function _get_mpo3(mpoj)
+	# mpoj = ti_mpotensor(η, algexpan)
+	h = MPOHamiltonian([mpoj, mpoj, mpoj])
+	return tompotensors(h)
+end
