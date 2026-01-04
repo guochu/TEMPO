@@ -21,15 +21,19 @@ end
 
 function get_A(x::SchurMPOTensor)
 	s1, s2 = size(x)
-	return x.Os[2:s1-1, 2:s2-1]
+	# return x.Os[2:s1-1, 2:s2-1]
+	return [x[i, j] for i in 2:s1-1, j in 2:s2-1]
+
 end
 function get_B(x::SchurMPOTensor)
 	s1, s2 = size(x)
-	return x.Os[2:s1-1, end]
+	# return x.Os[2:s1-1, end]
+	return [x[i, s2] for i in 2:s1-1]
 end
 function get_C(x::SchurMPOTensor)
 	s1, s2 = size(x)
-	return x.Os[1, 2:s2-1]
+	# return x.Os[1, 2:s2-1]
+	return [x[1, j] for j in 2:s2-1]
 end
 get_D(x::SchurMPOTensor) = x[1, end]
 
@@ -87,8 +91,11 @@ function timeevompo(m::SchurMPOTensor, dt::Number, alg::WII)
 	WB = Array{T, 1}(undef, size(B))
 	WC = Array{T, 1}(undef, size(C))
 
+
 	for a in 1:s1, b in 1:s2
-        m = exp([Ddt mo mo mo; δ₂*C[b] Ddt mo mo; δ₁*B[a] mo Ddt mo; A[a,b] δ₁*B[a] δ₂*C[b] Ddt])
+		# println(size(Ddt), " ", size(mo), " ", size(C[b]), " ", size(B[a]), " ", size(A[a, b]))
+		tmp = [Ddt mo mo mo; δ₂*C[b] Ddt mo mo; δ₁*B[a] mo Ddt mo; A[a,b] δ₁*B[a] δ₂*C[b] Ddt]
+        m = exp(tmp)
         m = m[:, 1:d]
         WC[b] = m[(d+1):2*d, :]
         WB[a] = m[(2*d+1):3*d, :]
