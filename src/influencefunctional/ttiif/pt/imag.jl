@@ -58,43 +58,31 @@ function _fit_to_lattice(lattice::ImagPTLattice1Order, mpotensors)
 end
 
 
-# # real-time
-# function influenceoperator(lattice::RealPTLattice1Order, corr2::RealCorrelationFunction, hyb::GeneralHybStyle; algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
-# 	corr = corr2.data
-# 	op1, op2 = pairop(hyb)
-# 	mpoj1 = pt_ti_mpotensor(corr[:+, :+], op1, op2, algexpan)
-# 	mpoj2 = pt_ti_mpotensor(corr[:+, :-], op1, op2, algexpan)
-# 	mpoj3 = pt_ti_mpotensor(corr[:-, :+], op1, op2, algexpan)
-# 	mpoj4 = pt_ti_mpotensor(corr[:-, :-], op1, op2, algexpan)
-# 	h = MPOHamiltonian([mpoj, mpoj, mpoj])
-# 	mpotensors = tompotensors(h)
-# 	# println(mpotensors[2])
-# 	return _fit_to_lattice(lattice, mpotensors) 
-# end
 
-# function influenceoperatorexponential(lattice::RealPTLattice1Order, corr2::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper; 
-# 										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
-# 	corr = corr2.data
-# 	op1, op2 = pairop(hyb)
-# 	mpoj = pt_ti_mpotensor(corr, op1, op2, algexpan)
-# 	h = MPOHamiltonian([mpoj, mpoj, mpoj])
-# 	h2 = timeevompo(h, dt, alg)
-# 	mpotensors = tompotensors(h2)
-# 	return _fit_to_lattice(lattice, mpotensors) 
-# end
-# function influenceoperatorexponential(lattice::RealPTLattice1Order, corr2::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper; 
-# 										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
-# 	corr = corr2.data
-# 	op1, op2 = pairop(hyb)
-# 	mpoj = pt_ti_mpotensor(corr, op1, op2, algexpan)
-# 	h = MPOHamiltonian([mpoj, mpoj, mpoj])
-# 	h1, h2 = timeevompo(h, dt, alg)
-# 	mpo1, mpo2 = tompotensors(h1), tompotensors(h2)
-# 	return _fit_to_lattice(lattice, mpo1), _fit_to_lattice(lattice, mpo2) 
-# end
 
 function _get_mpo3(mpoj)
 	# mpoj = ti_mpotensor(η, algexpan)
 	h = MPOHamiltonian([mpoj, mpoj, mpoj])
 	return tompotensors(h)
+end
+
+# band_boundary(lattice::RealPTLattice1Order, j::Int) = index(lattice, j, branch=:+), index(lattice, j, branch=:-)
+
+
+function pt_ti_mpotensor(corr::CorrelationMatrix, op1::AbstractMatrix, op2::AbstractMatrix, alg::ExponentialExpansionAlgorithm)
+	m1 = GenericDecayTerm(op1, op2, corr.ηₖⱼ[2:end])
+	m2 = GenericDecayTerm(op2, op1, corr.ηⱼₖ[2:end])
+
+	m1s = exponential_expansion(m1, alg=alg)
+	m2s = exponential_expansion(m2, alg=alg)
+
+	# println("here---", corr.ηₖⱼ[1], " ", corr.ηⱼₖ[1])
+	eta = corr.ηₖⱼ[1] + corr.ηⱼₖ[1]
+	# h1 = corr.ηₖⱼ[1] * op1 * op2 + corr.ηⱼₖ[1] * op2 * op1
+	# h1 = corr.ηₖⱼ[1] * op2 * op1 + corr.ηⱼₖ[1] * op1 * op2
+
+	# h1 = (corr.ηₖⱼ[1] + corr.ηⱼₖ[1])  * op1 * op2 
+	h1 = (eta/2) .* (op1 * op2 + op2 * op1)
+	return SchurMPOTensor(h1, vcat(m1s, m2s))
+	# return SchurMPOTensor(h1, [])
 end
