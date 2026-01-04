@@ -84,7 +84,7 @@ function compute_mpotensor_data(::Type{M}, ::Type{T}, data::AbstractMatrix) wher
 			sj = data[i, j]
  			if isa(sj, AbstractMatrix)
  				(size(sj, 1) == size(sj, 2)) || throw(DimensionMismatch("physical space mismatch"))			 						
- 				s_p = space(sj, 1)
+ 				s_p = size(sj, 1)
  				if isnothing(d)
  					d = s_p
  				else

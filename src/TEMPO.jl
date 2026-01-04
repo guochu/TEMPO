@@ -49,11 +49,17 @@ using Logging: @warn
 using TensorOperations,TupleTools
 const TO = TensorOperations
 
+
 # auxiliary
 include("auxiliary/auxiliary.jl")
 
 # default constants
 include("defaults.jl")
+
+
+# mpo hamiltonian
+include("mpohamiltonian/mpohamiltonian.jl")
+
 
 include("contourindices.jl")
 

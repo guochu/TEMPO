@@ -41,25 +41,25 @@ end
 Base.getindex(x::MPOHamiltonian, i::Colon, j::Int, k::Int) = [getindex(x, i,j,k) for i in 1:length(x)]
 
 
-# """
-# 	MPO(h::MPOHamiltonian, L::Int) 
+"""
+	MPO(h::MPOHamiltonian, L::Int) 
 	
-# Conversion of an MPOHamiltonian into a finite dense MPO
-# """
-# MPO(h::MPOHamiltonian{<:SchurMPOTensor}) = _tompo(h, 1, size(h[end], 2))
-# MPO(h::MPOHamiltonian{<:SparseMPOTensor}; rowl::Int=1, colr::Int=1) = _tompo(h, rowl, colr)
+Conversion of an MPOHamiltonian into a finite dense MPO
+"""
+tompotensors(h::MPOHamiltonian{<:SchurMPOTensor}) = _tompotensors(h, 1, size(h[end], 2))
+tompotensors(h::MPOHamiltonian{<:SparseMPOTensor}; rowl::Int=1, colr::Int=1) = _tompotensors(h, rowl, colr)
 
-function _tompo(h::MPOHamiltonian, leftrow::Int, rightcol::Int) 
+function _tompotensors(h::MPOHamiltonian, leftrow::Int, rightcol::Int) 
 	L = length(h)
 	(L >= 2) || throw(ArgumentError("size of MPO must at least be 2"))
 	# isstrict(h) || throw(ArgumentError("only strict MPOHamiltonian is allowed"))
 	T = scalartype(h)
 
-	mpotensors = Vector{Array(T, 4)}(undef, L)
+	mpotensors = Vector{Array{T, 4}}(undef, L)
 	dj = phydim(h[1])
 
 	tmp = zeros(T, 1, dj, size(h[1], 2), dj)
-	for i in 1:size(h1[1], 2)
+	for i in 1:size(h[1], 2)
 		tmp[1, :, i, :] = h[1, leftrow, i]
 	end
 	mpotensors[1] = tmp

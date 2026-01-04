@@ -56,7 +56,9 @@ phydim(b::AdditiveHyb) = length(b.op)
 
 TO.scalartype(::Type{AdditiveHyb}) = Float64
 
-struct NonAdditiveHyb{T<:Number} <: HybridizationStyle
+abstract type GeneralHybStyle <: HybridizationStyle end
+
+struct NonAdditiveHyb{T<:Number} <: GeneralHybStyle
 	op::Matrix{T}
 
 function NonAdditiveHyb{T}(op::AbstractMatrix) where {T<:Number}
@@ -71,7 +73,7 @@ phydim(b::NonAdditiveHyb) = size(b.op, 1)
 TO.scalartype(::Type{NonAdditiveHyb{T}}) where T = T
 
 
-struct NonDiagonalHyb{T<:Number} <: HybridizationStyle
+struct NonDiagonalHyb{T<:Number} <: GeneralHybStyle
 	sp::Matrix{T}
 end
 

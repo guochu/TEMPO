@@ -25,11 +25,11 @@ Base.adjoint(x::ExponentialDecayTerm) = ExponentialDecayTerm(_op_adjoint(x.a, x.
 _op_adjoint(a::AbstractMatrix, m::AbstractMatrix, b::AbstractMatrix) = (a', m', b')
 
 
-function _longrange_schurmpo_util(h1, h2s::Vector{<:ExponentialDecayTerm})
-    isempty(h2s) && throw(ArgumentError("empty interactions."))
-	pspace = size(h2s[1].a, 1)
+function _longrange_schurmpo_util(h1, h2s::Vector)
+    # isempty(h2s) && throw(ArgumentError("empty interactions."))
+	# pspace = size(h2s[1].a, 1)
 	N = length(h2s)
-	T = Float64
+	T = scalartype(h1)
 	for item in h2s
 		T = promote_type(T, scalartype(item))
 	end
@@ -58,5 +58,5 @@ end
 Return an SchurMPOTensor, with outer matrix size (N+2)×(N+2) (N=length(h2s))
 Algorithm reference: "Time-evolving a matrix product state with long-ranged interactions"
 """
-SchurMPOTensor(h1::AbstractMatrix{<:Number}, h2s::Vector{<:ExponentialDecayTerm}) = _longrange_schurmpo_util(h1, h2s)
-SchurMPOTensor(h2s::Vector{<:ExponentialDecayTerm}) = _longrange_schurmpo_util(0., h2s)
+SchurMPOTensor(h1::AbstractMatrix{<:Number}, h2s::Vector) = _longrange_schurmpo_util(h1, h2s)
+SchurMPOTensor(h2s::Vector) = _longrange_schurmpo_util(0., h2s)
