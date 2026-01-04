@@ -25,7 +25,7 @@ println("------------------------------------")
 		local mpo2
 		for i in 1:lattice.N, j in 1:lattice.N
 			ind1, ind2 = ContourIndex(i), ContourIndex(j)
-			coef = index(corr, i, j)
+			coef = index(corr, j, i)
 			if coef != 0
 				if ind1 == ind2
 					m = (coef/2) .* (op1 * op2 + op2 * op1)

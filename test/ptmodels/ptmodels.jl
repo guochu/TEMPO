@@ -10,4 +10,4 @@ include("independentbosons.jl")
 include("quantumcontrol.jl")
 
 include("toymodel.jl")
-# include("toymodel2.jl")
+include("toymodel2.jl")

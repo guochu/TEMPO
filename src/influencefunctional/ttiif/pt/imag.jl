@@ -6,7 +6,7 @@
 The influenceoperator ΣᵢⱼΔᵢⱼāᵢaⱼ as an MPO, the bond dimension of MPO is 2n, where n is number of the prony expansion
 """
 function influenceoperator(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle; algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
-	corr = corr2.data
+	corr = transpose(corr2.data)
 	op1, op2 = pairop(hyb)
 	mpoj = pt_ti_mpotensor(corr, op1, op2, algexpan)
 	mpotensors = _get_mpo3(mpoj)
@@ -16,7 +16,7 @@ end
 
 function influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper; 
 										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
-	corr = corr2.data
+	corr = transpose(corr2.data)
 	op1, op2 = pairop(hyb)
 	mpoj = pt_ti_mpotensor(corr, op1, op2, algexpan)
 	mpoj′ = timeevompo(mpoj, dt, alg)
@@ -25,7 +25,7 @@ function influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagC
 end
 function influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper; 
 										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
-	corr = corr2.data
+	corr = transpose(corr2.data)
 	op1, op2 = pairop(hyb)
 	mpoj = pt_ti_mpotensor(corr, op1, op2, algexpan)
 	mpoja, mpojb = timeevompo(mpoj, dt, alg)
