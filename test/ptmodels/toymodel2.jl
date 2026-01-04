@@ -123,16 +123,17 @@ end
 	lattice = PTLattice(N = N, δt=δt, contour=:real)
 
 	p = spin_half_matrices()
-	x, y, z, sp = p["x"], p["y"], p["z"], p["+"]
+	x, y, z = p["x"], p["y"], p["z"]
 	hop = Ω .* z
 	Is = one(x)
 	Ib = one(zeros(d, d))
 	model = BosonicImpurity(hop)
+	sp = randn(ComplexF64, 2, 2)
+	sp ./= norm(sp)
 
 	Hbarebath = bosondensityoperator(d=d)
 	a = bosonaoperator(d=d)
 	H = kron(hop, Ib) + kron(Is, Hbarebath) + kron(sp, a) + kron(sp', a')
-
 
 	bs = NonDiagonalHyb(sp)
 	spec = DiracDelta(1)
