@@ -1,14 +1,42 @@
+# function integrate(lat::ImagPTLattice, x::ProcessTensor)
+# 	(length(lat) == length(x)) || throw(DimensionMismatch("lattice size mismatch with PT size"))
+#     L = length(x)
+#     sca = scaling(x)
+#     v = dropdims(x[L], dims=3) * sca
+#     for i in L-1:-1:1
+#         @tensor tmp[1,5,4] := sca * x[i][1,2,3,4] * v[3,5,2]
+#         v = tmp
+#     end
+#     v = dropdims(v, dims=1)
+#     return tr(v)
+# end
+
 function integrate(lat::ImagPTLattice, x::ProcessTensor)
 	(length(lat) == length(x)) || throw(DimensionMismatch("lattice size mismatch with PT size"))
     L = length(x)
     sca = scaling(x)
     v = dropdims(x[L], dims=3) * sca
     for i in L-1:-1:1
-        @tensor tmp[1,5,4] := sca * x[i][1,2,3,4] * v[3,5,2]
+        @tensor tmp[1,2,5] := sca * x[i][1,2,3,4] * v[3,4,5]
         v = tmp
     end
     v = dropdims(v, dims=1)
     return tr(v)
+end
+
+function integrate(lat::ImagPTLattice, x::ProcessTensor, y::ProcessTensor)
+	(length(lat) == length(x) == length(y)) || throw(DimensionMismatch("lattice size mismatch with PT size"))
+	L = length(x)
+	sca = scaling(x) * scaling(y)
+	v1 = dropdims(x[L], dims=3)
+	v2 = dropdims(y[L], dims=3)
+	@tensor v[1,4,2,5] := v1[1,2,3] * v2[4,3,5] * sca
+	for i in L-1:-1:1
+		@tensor tmp[7,1,8,6] := sca * y[i][1,2,3,4] * v[5,4,3,6] * x[i][7,8,5,2]
+		v = tmp
+	end
+	v = dropdims(v, dims=(1,2))
+	return tr(v)
 end
 
 # function integrate(lat::RealPTLattice, x::ProcessTensor)

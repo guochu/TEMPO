@@ -90,9 +90,10 @@ println("------------------------------------")
 	v = integrate(lattice, mps2) / Zval
 
 	corrs = [v]
+	c2 = ContourIndex(1)
 	for i in 2:N
-		c2 = ContourIndex(i)
-		ct = ContourOperator([c2, c1], [op2, op1])
+		c1 = ContourIndex(i)
+		ct = ContourOperator([c1, c2], [op1, op2])
 
 		mps2 = apply!(ct, lattice, deepcopy(mps))
 		v = integrate(lattice, mps2) / Zval
