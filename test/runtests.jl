@@ -16,6 +16,7 @@ include("adt.jl")
 
 include("ptlattice.jl")
 include("pt.jl")
+include("ptzipup.jl")
 
 include("adtpartialif.jl")
 
