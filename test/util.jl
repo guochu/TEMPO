@@ -68,3 +68,40 @@ function _rand_dm(d)
 	x = x' * x
 	return x / tr(x)
 end
+
+function _rand_lindblad(d)
+	H = _rand_ham(ComplexF64, d)
+	jumps = [randn(ComplexF64, d, d) for i in 1:d^2]
+	return lindbladoperator(H, jumps)
+end
+
+# function generate_site_mpdo(D, R=D^2)
+# 	L = D
+# 	Vs = randn(ComplexF64, L, L * R)
+# 	u, s, v = svd(Vs)
+# 	Vs = reshape(Matrix(v'), D, D, R) 
+# 	return Vs
+# end
+
+# function compute_cptp(Vs)
+# 	@tensor r[2,5, 1,4] := Vs[1,2,3] * conj(Vs[4,5,3])
+# 	return r
+# end
+
+# function _rand_lindblad(D)
+# 	H = _rand_ham(ComplexF64, D)
+# 	jumps = [randn(ComplexF64, D) for i in 1:D]
+# 	H′
+# 	for 
+		
+# 	end
+# 	@tensor L[1,4,2,3] := H[1,2] * H[3,4]
+# 	for j in jumps
+# 		@tensor L[] := j[1,2]
+# 	end
+# end
+
+# function _rand_cptp(D, R=D^2)
+# 	Vs = generate_site_mpdo(D, R)
+# 	return compute_cptp(Vs)
+# end

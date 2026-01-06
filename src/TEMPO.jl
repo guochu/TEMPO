@@ -101,6 +101,7 @@ include("boundarycondition.jl")
 
 # models
 include("models/models.jl")
+include("models/dissipativemodels.jl")
 
 
 end
