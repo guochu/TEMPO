@@ -49,7 +49,7 @@ end
 
 function sysdynamics!(mps::ADT, lattice::RealADTLattice1Order, model::DissipativeImpurity; trunc::TruncationScheme=DefaultKTruncation)
 	alg = Orthogonalize(SVD(), trunc)
-	U = _get_dissipative_propagator(model.m, lattice.δt)
+	U = _get_dissipative_adt_propagator(model.m, lattice.δt)
 	for j in 1:lattice.N
 		pos1, pos2 = index(lattice, j+1, branch=:+), index(lattice, j, branch=:+)
 		pos3, pos4 = index(lattice, j, branch=:-), index(lattice, j+1, branch=:-)
@@ -62,7 +62,7 @@ end
 
 function sysdynamics!(mps::ADT, lattice::RealADTLattice1Order, model::DissipativeImpurity, op::ContourOperator; trunc::TruncationScheme=DefaultKTruncation)
 	alg = Orthogonalize(SVD(), trunc)
-	U = _get_dissipative_propagator(model.m, lattice.δt)
+	U = _get_dissipative_adt_propagator(model.m, lattice.δt)
 	for j in 1:lattice.N
 		pos1, pos2 = index(lattice, j+1, branch=:+), index(lattice, j, branch=:+)
 		pos3, pos4 = index(lattice, j, branch=:-), index(lattice, j+1, branch=:-)
@@ -84,7 +84,7 @@ end
 
 function sysdynamics!(mps::ProcessTensor, lattice::RealPTLattice1Order, model::DissipativeImpurity; trunc::TruncationScheme=DefaultKTruncation)
 	alg = Orthogonalize(SVD(), trunc)
-	U = _get_dissipative_propagator(model.m, lattice.δt)
+	U = _get_dissipative_pt_propagator(model.m, lattice.δt)
 	for j in 1:lattice.N
 		ind1, ind2 = ContourIndex(j, :+), ContourIndex(j, :-)
 		# t = ContourOperator((ind1, ind2), U)
@@ -96,13 +96,21 @@ function sysdynamics!(mps::ProcessTensor, lattice::RealPTLattice1Order, model::D
 	return mps
 end
 
-function _get_dissipative_propagator(m4, δt)
+function _get_dissipative_adt_propagator(m4, δt)
 	d = size(m4, 1)
 	d2 = d * d
 	m2 = reshape(m4, d2, d2)
 	m2_exp = exp(m2 * δt)
 	# return reshape(m2_exp, d,d,d,d)
 	return permute(reshape(m2_exp, d,d,d,d), (1,3,4,2))
+end
+
+function _get_dissipative_pt_propagator(m4, δt)
+	d = size(m4, 1)
+	d2 = d * d
+	m2 = reshape(m4, d2, d2)
+	m2_exp = exp(m2 * δt)
+	return reshape(m2_exp, d,d,d,d)
 end
 
 function _get_L_prime(U, j::Int, cts::ContourOperator)

@@ -1,6 +1,6 @@
 include("imag.jl")
 include("real.jl")
-
+# TTI-IF support for L-shaped is possible for finite MPS, but TTI is destroyed and the algorithm is not elegant, so it is not implemented for now
 
 function hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::TranslationInvariantIF)
 	mps = hybriddynamics(lattice, corr, hyb, alg)

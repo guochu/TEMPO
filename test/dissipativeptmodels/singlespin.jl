@@ -1,5 +1,5 @@
 println("------------------------------------")
-println("|           Single Spin            |")
+println("|      Dissipative Single Spin     |")
 println("------------------------------------")
 
 
@@ -17,10 +17,11 @@ println("------------------------------------")
 	lattice = PTLattice(N = N, δt=δt, contour=:real)
 
 	d = 2
-	# ρimp = _rand_dm(d)
-	ρimp = [0.7 0; 0 0.3]
+	ρimp = _rand_dm(d)
+	# ρimp = [0.7 0; 0 0.3]
 
 	Lop = _rand_lindblad(d)
+	# Lop = lindbladoperator(_rand_ham(ComplexF64, d), [])
 	
 	# hop = Ω .* [0 1; 1 0]
 	z = [1 0; 0 0.]
@@ -41,59 +42,59 @@ println("------------------------------------")
 	@test v ≈ tr(z*z * ρimp) 
 
 
-	# # off-diagonal observables
-	# op1 = [0 0.8; 0 0]
-	# op2 = [0 0; 0.7 0]
+	# off-diagonal observables
+	op1 = [0 0.8; 0 0]
+	op2 = [0 0; 0.7 0]
 
-	# ind1 = ContourIndex(1, branch=:+)
+	ind1 = ContourIndex(1, branch=:+)
 
-	# m = ContourOperator(ind1, op1 * op2)
-	# mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
-	# mps2 = initialstate!(mps2, lattice, ρimp)
-	# v = integrate(lattice, mps2) / Zval
+	m = ContourOperator(ind1, op1 * op2)
+	mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
+	mps2 = initialstate!(mps2, lattice, ρimp)
+	v = integrate(lattice, mps2) / Zval
 
-	# corrs = [v]
-	# ind2 = ContourIndex(1, branch=:+)
-	# for i in 2:N
-	# 	ind1 = ContourIndex(i, branch=:+)
-	# 	m = ContourOperator([ind1, ind2], [op1, op2])
+	corrs = [v]
+	ind2 = ContourIndex(1, branch=:+)
+	for i in 2:N
+		ind1 = ContourIndex(i, branch=:+)
+		m = ContourOperator([ind1, ind2], [op1, op2])
 
-	# 	mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
-	# 	mps2 = initialstate!(mps2, lattice, ρimp)
-	# 	v = integrate(lattice, mps2) / Zval
+		mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
+		mps2 = initialstate!(mps2, lattice, ρimp)
+		v = integrate(lattice, mps2) / Zval
 
-	# 	push!(corrs, v)
-	# end
+		push!(corrs, v)
+	end
 
-	# corrs2 = correlation_2op_1t(hop, op1, op2, ρimp, 0:δt:t, reverse = false)
-	# corrs2 = corrs2[1:length(corrs)]
+	corrs2 = correlation_2op_1t(Lop, op1, op2, ρimp, 0:δt:t, reverse = false)
+	corrs2 = corrs2[1:length(corrs)]
 
-	# @test norm(corrs - corrs2) / norm(corrs2) < tol
+	@test norm(corrs - corrs2) / norm(corrs2) < tol
 
 
-	# ind1 = ContourIndex(1, branch=:-) 
+	ind1 = ContourIndex(1, branch=:-) 
 
-	# m = ContourOperator(ind1, op1 * op2)
-	# mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
-	# mps2 = initialstate!(mps2, lattice, ρimp)
-	# v = integrate(lattice, mps2) / Zval
+	m = ContourOperator(ind1, op1 * op2)
+	mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
+	mps2 = initialstate!(mps2, lattice, ρimp)
+	v = integrate(lattice, mps2) / Zval
 
-	# corrs = [v]
-	# for i in 2:N
-	# 	ind2 = ContourIndex(i, branch=:+)
+	corrs = [v]
+	for i in 2:N
+		ind2 = ContourIndex(i, branch=:+)
 
-	# 	m = ContourOperator([ind1, ind2], [op1, op2])
-	# 	mps2 = apply!(m, lattice, deepcopy(mps))
-	# 	mps2 = initialstate!(mps2, lattice, ρimp)
+		m = ContourOperator([ind1, ind2], [op1, op2])
+		mps2 = apply!(m, lattice, deepcopy(mps))
+		mps2 = initialstate!(mps2, lattice, ρimp)
 
-	# 	v = integrate(lattice, mps2) / Zval
+		v = integrate(lattice, mps2) / Zval
 
-	# 	push!(corrs, v)
-	# end
+		push!(corrs, v)
+	end
 
-	# corrs2 = correlation_2op_1t(hop, op1, op2, ρimp, 0:δt:t, reverse = true)
-	# corrs2 = corrs2[1:length(corrs)]
+	corrs2 = correlation_2op_1t(Lop, op1, op2, ρimp, 0:δt:t, reverse = true)
+	corrs2 = corrs2[1:length(corrs)]
 
-	# @test norm(corrs - corrs2) / norm(corrs2) < tol
+	@test norm(corrs - corrs2) / norm(corrs2) < tol
 
 end

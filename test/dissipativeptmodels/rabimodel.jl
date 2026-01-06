@@ -1,62 +1,54 @@
 println("------------------------------------")
-println("|     Dissipative JC Model         |")
+println("|     Dissipative Rabi Model       |")
 println("------------------------------------")
 
-# H = Ω*σz	+ (A†a + Aa†) + 2a† a
-
-@testset "Toy JC model: real-time" begin
+@testset "Rabi model: real-time" begin
 
 	Ω = 0.5
 	N = 10
 	δt = 0.05
 	β = 2
 	t = N * δt
-	chi = 50
+	chi = 100
 	d = 20
-	tol = 2.0e-2
+	tol = 1.0e-2
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
 
 	lattice = PTLattice(N = N, δt=δt, contour=:real)
 
-	p = spin_half_matrices()
-	x, y, z = p["x"], p["y"], p["z"]
-	hop = Ω .* z
+	# x = [0 1; 1 0]
+	x = Matrix{ComplexF64}([0 im; -im 0])
+	hop = Ω .* x
+	z = [-1 0; 0 1]
 	Is = one(x)
 	Ib = one(zeros(d, d))
-	
+
 	jumpops = [randn(ComplexF64, 2, 2), randn(ComplexF64, 2, 2)]
 	model = DissipativeImpurity(lindbladoperator(hop, jumpops))
 
-
-	sp = randn(ComplexF64, 2, 2)
-	sp ./= norm(sp)
-
 	Hbarebath = bosondensityoperator(d=d)
 	a = bosonaoperator(d=d)
-	H = kron(hop, Ib) + kron(Is, Hbarebath) + kron(sp, a) + kron(sp', a')
+	H = kron(hop, Ib) + kron(Is, Hbarebath) + kron(z, a' + a)
 
 	jumpops2 = [kron(jump, Ib) for jump in jumpops]
 	Lop = lindbladoperator(H, jumpops2)
 
-	bs = NonDiagonalHyb(sp)
+	bs = NonAdditiveHyb(z)
 	spec = DiracDelta(1)
 	bath = bosonicbath(spec, β=β)
 	corr = correlationfunction(bath, lattice)
-
-	algmult = SVDCompression(trunc)
-	algexpan = PronyExpansion(n=20, tol=1.0e-8)
-	alg = TranslationInvariantIF(k=5, fast=true, algmult=algmult, algexpan=algexpan, verbosity=2)
-	mpsI = hybriddynamics(lattice, corr, bs, alg)
+	# mpsI = hybriddynamics(lattice, corr, bs, trunc=trunc)
+	mpsI = hybriddynamics_naive(lattice, corr, bs, trunc=trunc)
 	# @test distance(mpsI, mpsI′) / norm(mpsI′) < tol
 	mpsK = sysdynamics(lattice, model, trunc=trunc)
 	mps = mult!(mpsK, mpsI, trunc=trunc)
 
 	ρimp = _rand_dm(2)
 
+
 	tmp = initialstate!(deepcopy(mps), lattice, ρimp)
 	Zval = integrate(lattice, tmp)
 	
-
 	
 	ρ = kron(ρimp, exp(-β * Hbarebath)) 
 
