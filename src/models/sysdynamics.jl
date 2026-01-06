@@ -1,25 +1,22 @@
-struct BosonicImpurity{M<:AbstractMatrix} <: AbstractBosonicImpurityHamiltonian
+struct ImpurityHamiltonian{M<:AbstractMatrix} <: AbstractBosonicImpurityHamiltonian
 	m::M
 end
-propagator(h::BosonicImpurity, lat, b::Symbol) = _get_propagator(h.m, lat, b)
-propagator(h::BosonicImpurity, lat; branch::Symbol=:τ) = propagator(h, lat, branch)
-phydim(h::BosonicImpurity) = size(h.m, 1)
-BosonicImpurity(d::Int) = BosonicImpurity(zeros(d, d))
+propagator(h::ImpurityHamiltonian, lat, b::Symbol) = _get_propagator(h.m, lat, b)
+propagator(h::ImpurityHamiltonian, lat; branch::Symbol=:τ) = propagator(h, lat, branch)
+phydim(h::ImpurityHamiltonian) = size(h.m, 1)
+ImpurityHamiltonian(d::Int) = ImpurityHamiltonian(zeros(d, d))
 
-TO.scalartype(::Type{BosonicImpurity{M}}) where {M} = scalartype(M)
-
-# # Ĥ = Ωσ̂ₓ
-# spinboson(;Ω::Real=0) = BosonicImpurity(Ω .* pauli_x())
+TO.scalartype(::Type{ImpurityHamiltonian{M}}) where {M} = scalartype(M)
 
 
-sysdynamics_forward!(mps::ADT, lattice::AbstractADTLattice, model::BosonicImpurity, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+sysdynamics_forward!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
 						mps, lattice, model, :+, lattice.Nt, args...; trunc=trunc)
-sysdynamics_backward!(mps::ADT, lattice::AbstractADTLattice, model::BosonicImpurity, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+sysdynamics_backward!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
 						mps, lattice, model, :-, lattice.Nt, args...; trunc=trunc)
-sysdynamics_imaginary!(mps::ADT, lattice::AbstractADTLattice, model::BosonicImpurity, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+sysdynamics_imaginary!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
 						mps, lattice, model, :τ, lattice.Nτ, args...; trunc=trunc)
 
-function _sysdynamics_util!(gmps::ADT, lattice::AbstractADTLattice, model::BosonicImpurity, branch::Symbol, N::Int; trunc::TruncationScheme=DefaultKTruncation)
+function _sysdynamics_util!(gmps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, branch::Symbol, N::Int; trunc::TruncationScheme=DefaultKTruncation)
 	# free dynamics
 	U = propagator(model, lattice, branch)
 	# data = decompose_to_mps(U)
@@ -46,15 +43,15 @@ function _get_propagator(h, lattice, b::Symbol)
 end
 
 
-sysdynamics_forward!(mps::ProcessTensor, lattice::AbstractPTLattice, model::BosonicImpurity, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+sysdynamics_forward!(mps::ProcessTensor, lattice::AbstractPTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
 						mps, lattice, model, :+, lattice.Nt, args...; trunc=trunc)
-sysdynamics_backward!(mps::ProcessTensor, lattice::AbstractPTLattice, model::BosonicImpurity, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+sysdynamics_backward!(mps::ProcessTensor, lattice::AbstractPTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
 						mps, lattice, model, :-, lattice.Nt, args...; trunc=trunc)
-sysdynamics_imaginary!(mps::ProcessTensor, lattice::AbstractPTLattice, model::BosonicImpurity, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+sysdynamics_imaginary!(mps::ProcessTensor, lattice::AbstractPTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
 						mps, lattice, model, :τ, lattice.Nτ, args...; trunc=trunc)
 
 
-function _sysdynamics_util!(gmps::ProcessTensor, lattice::AbstractPTLattice, model::BosonicImpurity, branch::Symbol, N::Int; trunc::TruncationScheme=DefaultKTruncation)
+function _sysdynamics_util!(gmps::ProcessTensor, lattice::AbstractPTLattice, model::ImpurityHamiltonian, branch::Symbol, N::Int; trunc::TruncationScheme=DefaultKTruncation)
 	# free dynamics
 	U = propagator(model, lattice, branch)
 	# data = decompose_to_mps(U)

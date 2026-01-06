@@ -21,7 +21,7 @@ println("------------------------------------")
 	z = [-1 0; 0 1]
 	Is = one(x)
 	Ib = one(zeros(d, d))
-	model = BosonicImpurity(xop)
+	model = ImpurityHamiltonian(xop)
 
 	mpsK = sysdynamics(lattice, model, trunc=trunc)
 	mpsK = boundarycondition!(mpsK, lattice)
@@ -131,7 +131,7 @@ end
 	z = [-1 0; 0 1]
 	Is = one(x)
 	Ib = one(zeros(d, d))
-	model = BosonicImpurity(hop)
+	model = ImpurityHamiltonian(hop)
 
 	Hbarebath = bosondensityoperator(d=d)
 	a = bosonaoperator(d=d)
@@ -280,7 +280,7 @@ end
 	z = [-1 0; 0 1]
 	Is = one(x)
 	Ib = one(zeros(d, d))
-	model = BosonicImpurity(xop)
+	model = ImpurityHamiltonian(xop)
 
 	op1 = [0 0.8; 0 0]
 	op2 = [0 0; 0.7 0]

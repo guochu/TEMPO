@@ -22,7 +22,7 @@ println("------------------------------------")
 	Lop = _rand_lindblad(d)
 	# Lop = lindbladoperator(_rand_ham(ComplexF64, d), [])
 
-	model = DissipativeImpurity(Lop)
+	model = ImpurityLindbladian(Lop)
 
 	z = [1 0; 0 0]
 	zdiag = [z[i,i] for i in 1:size(z, 1)]

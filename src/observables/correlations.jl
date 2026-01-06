@@ -1,5 +1,5 @@
 
-function correlation(lattice::Union{ImagADTLattice1Order, MixedADTLattice1Order}, model::BosonicImpurity, op::ContourOperator, mpsI::ADT; 
+function correlation(lattice::Union{ImagADTLattice1Order, MixedADTLattice1Order}, model::ImpurityHamiltonian, op::ContourOperator, mpsI::ADT; 
 					trunc::TruncationScheme=DefaultKTruncation)
 	mpsK = sysdynamics(lattice, model, trunc=trunc)
 	mpsK = boundarycondition!(mpsK, lattice)
@@ -9,7 +9,7 @@ function correlation(lattice::Union{ImagADTLattice1Order, MixedADTLattice1Order}
 	v = integrate(mpsK′, mpsI)
 	return v / Z
 end
-function correlation(lattice::RealADTLattice1Order, model::BosonicImpurity, op::ContourOperator, mpsI::ADT, ρ0::VecOrMat=ones(lattice.d); 
+function correlation(lattice::RealADTLattice1Order, model::ImpurityHamiltonian, op::ContourOperator, mpsI::ADT, ρ0::VecOrMat=ones(lattice.d); 
 						trunc::TruncationScheme=DefaultKTruncation)
 	mpsK = sysdynamics(lattice, model, trunc=trunc)
 	mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρ0)

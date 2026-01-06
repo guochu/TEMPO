@@ -25,7 +25,7 @@ println("------------------------------------")
 
 	jumpops = [randn(ComplexF64, 2, 2), randn(ComplexF64, 2, 2)]
 
-	model = DissipativeImpurity(lindbladoperator(hop, jumpops))
+	model = ImpurityLindbladian(lindbladoperator(hop, jumpops))
 
 	Hbarebath = bosondensityoperator(d=d)
 	a = bosonaoperator(d=d)

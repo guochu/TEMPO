@@ -21,7 +21,7 @@ println("------------------------------------")
 	hop = Ω .* z
 	Is = one(x)
 	Ib = one(zeros(d, d))
-	model = BosonicImpurity(hop)
+	model = ImpurityHamiltonian(hop)
 
 	nop = bosondensityoperator(d=d)
 	Hbarebath = kron(nop, Ib) + kron(Ib, nop)
@@ -132,7 +132,7 @@ end
 	hop = Ω .* z
 	Is = one(x)
 	Ib = one(zeros(d, d))
-	model = BosonicImpurity(hop)
+	model = ImpurityHamiltonian(hop)
 
 	nop = bosondensityoperator(d=d)
 	Hbarebath = kron(nop, Ib) + kron(Ib, nop)
@@ -283,7 +283,7 @@ end
 	hop = Ω .* z
 	Is = one(x)
 	Ib = one(zeros(d, d))
-	model = BosonicImpurity(hop)
+	model = ImpurityHamiltonian(hop)
 
 	nop = bosondensityoperator(d=d)
 	Hbarebath = kron(nop, Ib) + kron(Ib, nop)

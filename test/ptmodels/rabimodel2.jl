@@ -22,7 +22,7 @@ println("------------------------------------")
 	z = [-1 0; 0 1]
 	Is = one(x)
 	Ib = one(zeros(d, d))
-	model = BosonicImpurity(hop)
+	model = ImpurityHamiltonian(hop)
 
 	Hbarebath = bosondensityoperator(d=d)
 	a = bosonaoperator(d=d)
@@ -130,7 +130,7 @@ end
 	hop = Ω .* z
 	Is = one(x)
 	Ib = one(zeros(d, d))
-	model = BosonicImpurity(hop)
+	model = ImpurityHamiltonian(hop)
 
 	Hbarebath = bosondensityoperator(d=d)
 	a = bosonaoperator(d=d)
@@ -300,7 +300,7 @@ end
 	hop = Ω .* y
 	Is = one(x)
 	Ib = one(zeros(d, d))
-	model = BosonicImpurity(hop)
+	model = ImpurityHamiltonian(hop)
 
 	Hbarebath = bosondensityoperator(d=d)
 	a = bosonaoperator(d=d)

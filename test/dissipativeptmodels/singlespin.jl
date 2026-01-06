@@ -25,7 +25,7 @@ println("------------------------------------")
 	
 	# hop = Ω .* [0 1; 1 0]
 	z = [1 0; 0 0.]
-	model = DissipativeImpurity(Lop)
+	model = ImpurityLindbladian(Lop)
 
 	mps = sysdynamics(lattice, model, trunc=trunc)
 	# mps = initialstate!(mps, lattice, ρimp)

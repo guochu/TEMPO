@@ -1,14 +1,14 @@
 # dissipative impurity
-struct DissipativeImpurity
+struct ImpurityLindbladian
 	m::Array{ComplexF64, 4}
 end
 
-phydim(h::DissipativeImpurity) = size(h.m, 1)
+phydim(h::ImpurityLindbladian) = size(h.m, 1)
 
-DissipativeImpurity(d::Int) = DissipativeImpurity(zeros(ComplexF64, d, d, d, d))
-TO.scalartype(::Type{DissipativeImpurity}) = ComplexF64
-DissipativeImpurity(L::LindbladOperator) = DissipativeImpurity(L.m)
-DissipativeImpurity(H::AbstractMatrix, jumpops::Vector{<:AbstractMatrix}) = DissipativeImpurity(lindbladoperator(H, jumpops))
+ImpurityLindbladian(d::Int) = ImpurityLindbladian(zeros(ComplexF64, d, d, d, d))
+TO.scalartype(::Type{ImpurityLindbladian}) = ComplexF64
+ImpurityLindbladian(L::LindbladOperator) = ImpurityLindbladian(L.m)
+ImpurityLindbladian(H::AbstractMatrix, jumpops::Vector{<:AbstractMatrix}) = ImpurityLindbladian(lindbladoperator(H, jumpops))
 
 # function lindbladoperator(H::AbstractMatrix, jumpops::Vector{<:AbstractMatrix})
 # 	I2 = one(H)
@@ -41,13 +41,13 @@ DissipativeImpurity(H::AbstractMatrix, jumpops::Vector{<:AbstractMatrix}) = Diss
 # end
 
 
-sysdynamics(gmps::ADT, lattice::AbstractADTLattice, model::DissipativeImpurity, args...; kwargs...) = sysdynamics!(copy(gmps), lattice, model, args...; kwargs...)
-function sysdynamics(lattice::AbstractADTLattice, model::DissipativeImpurity, args...; kwargs...)
+sysdynamics(gmps::ADT, lattice::AbstractADTLattice, model::ImpurityLindbladian, args...; kwargs...) = sysdynamics!(copy(gmps), lattice, model, args...; kwargs...)
+function sysdynamics(lattice::AbstractADTLattice, model::ImpurityLindbladian, args...; kwargs...)
 	T = promote_type(scalartype(lattice), scalartype(model))
 	sysdynamics!(vacuumstate(T, lattice), lattice, model, args...; kwargs...)
 end 
 
-function sysdynamics!(mps::ADT, lattice::RealADTLattice1Order, model::DissipativeImpurity; trunc::TruncationScheme=DefaultKTruncation)
+function sysdynamics!(mps::ADT, lattice::RealADTLattice1Order, model::ImpurityLindbladian; trunc::TruncationScheme=DefaultKTruncation)
 	alg = Orthogonalize(SVD(), trunc)
 	U = _get_dissipative_adt_propagator(model.m, lattice.δt)
 	for j in 1:lattice.N
@@ -60,7 +60,7 @@ function sysdynamics!(mps::ADT, lattice::RealADTLattice1Order, model::Dissipativ
 	return mps
 end
 
-function sysdynamics!(mps::ADT, lattice::RealADTLattice1Order, model::DissipativeImpurity, op::ContourOperator; trunc::TruncationScheme=DefaultKTruncation)
+function sysdynamics!(mps::ADT, lattice::RealADTLattice1Order, model::ImpurityLindbladian, op::ContourOperator; trunc::TruncationScheme=DefaultKTruncation)
 	alg = Orthogonalize(SVD(), trunc)
 	U = _get_dissipative_adt_propagator(model.m, lattice.δt)
 	for j in 1:lattice.N
@@ -75,14 +75,14 @@ function sysdynamics!(mps::ADT, lattice::RealADTLattice1Order, model::Dissipativ
 end
 
 
-sysdynamics(gmps::ProcessTensor, lattice::AbstractPTLattice, model::DissipativeImpurity; kwargs...) = sysdynamics!(copy(gmps), lattice, model; kwargs...)
-function sysdynamics(lattice::AbstractPTLattice, model::DissipativeImpurity; kwargs...)
+sysdynamics(gmps::ProcessTensor, lattice::AbstractPTLattice, model::ImpurityLindbladian; kwargs...) = sysdynamics!(copy(gmps), lattice, model; kwargs...)
+function sysdynamics(lattice::AbstractPTLattice, model::ImpurityLindbladian; kwargs...)
 	T = promote_type(scalartype(lattice), scalartype(model))
 	return sysdynamics!(vacuumstate(T, lattice), lattice, model; kwargs...)
 end 
 
 
-function sysdynamics!(mps::ProcessTensor, lattice::RealPTLattice1Order, model::DissipativeImpurity; trunc::TruncationScheme=DefaultKTruncation)
+function sysdynamics!(mps::ProcessTensor, lattice::RealPTLattice1Order, model::ImpurityLindbladian; trunc::TruncationScheme=DefaultKTruncation)
 	alg = Orthogonalize(SVD(), trunc)
 	U = _get_dissipative_pt_propagator(model.m, lattice.δt)
 	for j in 1:lattice.N

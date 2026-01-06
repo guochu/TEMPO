@@ -15,7 +15,7 @@ println("------------------------------------")
 	lattice = PTLattice(N = N, δτ=δτ, contour=:imag)
 
 	hop = Ω .* [0 1; 1 0]
-	model = BosonicImpurity(hop)
+	model = ImpurityHamiltonian(hop)
 	mps = sysdynamics(lattice, model, trunc=trunc)
 
 	ρ = exp(-β * hop)
@@ -83,7 +83,7 @@ end
 	
 	# hop = Ω .* [0 1; 1 0]
 	hop = Ω .* pauli_y()
-	model = BosonicImpurity(hop)
+	model = ImpurityHamiltonian(hop)
 
 	for ρimp in [ρ1,ρ2]
 
@@ -178,7 +178,7 @@ end
 
 	
 	hop = Ω .* [0 1; 1 0]
-	model = BosonicImpurity(hop)
+	model = ImpurityHamiltonian(hop)
 	ρ = exp(-β .* hop)
 
 

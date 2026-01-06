@@ -15,7 +15,7 @@ println("------------------------------------")
 	lattice = ADTLattice(N = N, δτ=δτ, contour=:imag)
 
 	xop = Ω .* [0 1; 1 0]
-	model = BosonicImpurity(xop)
+	model = ImpurityHamiltonian(xop)
 	mps = sysdynamics(lattice, model, trunc=trunc)
 	mps = boundarycondition!(mps, lattice)
 
@@ -101,7 +101,7 @@ end
 	zdiag = [z[i,i] for i in 1:size(z, 1)]
 	
 	xop = Ω .* [0 1; 1 0]
-	model = BosonicImpurity(xop)
+	model = ImpurityHamiltonian(xop)
 
 	for ρimp in [ρ1, ρ2]
 
@@ -207,7 +207,7 @@ end
 
 	
 	xop = Ω .* [0 1; 1 0]
-	model = BosonicImpurity(xop)
+	model = ImpurityHamiltonian(xop)
 	ρ = exp(-β .* xop)
 
 

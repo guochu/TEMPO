@@ -26,7 +26,7 @@ end
 	
 	# hop = Ω .* [0 1; 1 0]
 	hop = Ω .* pauli_y()
-	model = BosonicImpurity(hop)
+	model = ImpurityHamiltonian(hop)
 	Uop = exp((-im .* δt) .* hop)
 
 	ρ = ρimp
@@ -72,7 +72,7 @@ end
 	hop = Ω .* z
 	Is = one(x)
 	Ib = one(zeros(d, d))
-	model = BosonicImpurity(hop)
+	model = ImpurityHamiltonian(hop)
 
 	Hbarebath = bosondensityoperator(d=d)
 	a = bosonaoperator(d=d)

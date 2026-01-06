@@ -40,7 +40,7 @@ export partialif_naive, partialif
 # boundary condition
 export boundarycondition, boundarycondition!, initialstate!
 # models
-export sysdynamics, sysdynamics!, BosonicImpurity
+export sysdynamics, sysdynamics!, ImpurityHamiltonian, ImpurityLindbladian
 
 
 

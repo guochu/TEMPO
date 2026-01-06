@@ -31,7 +31,7 @@ println("------------------------------------")
 		@test distance(mpsI, mpsI′) / norm(mpsI′) < tol
 
 
-		model = BosonicImpurity(ϵ_d .* nop)
+		model = ImpurityHamiltonian(ϵ_d .* nop)
 		mpsK = sysdynamics(lattice, model, trunc=trunc)
 
 		mpsK = boundarycondition!(mpsK, lattice)
@@ -105,7 +105,7 @@ end
 	@test distance(mpsI, mpsI′) / norm(mpsI′) < tol
 
 
-	model = BosonicImpurity(ϵ_d .* nop)
+	model = ImpurityHamiltonian(ϵ_d .* nop)
 	mpsK = sysdynamics(lattice, model, trunc=trunc)
 	mpsK = boundarycondition!(mpsK, lattice)
 

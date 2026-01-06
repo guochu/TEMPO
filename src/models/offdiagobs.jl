@@ -1,7 +1,7 @@
 
 
 
-function _sysdynamics_util!(gmps::ADT, lattice::AbstractADTLattice, model::BosonicImpurity, branch::Symbol, 
+function _sysdynamics_util!(gmps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, branch::Symbol, 
 							N::Int, cts::ContourOperator; trunc::TruncationScheme=DefaultKTruncation)
 	# free dynamics
 	U = propagator(model, lattice, branch)
