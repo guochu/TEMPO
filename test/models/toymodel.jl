@@ -30,7 +30,7 @@ println("------------------------------------")
 
 
 	mpsK = sysdynamics(lattice, model, trunc=trunc)
-	mpsK = boundarycondition!(mpsK, lattice, trunc=trunc)
+	mpsK = boundarycondition!(mpsK, lattice)
 	
 	bs = AdditiveHyb([z[i,i] for i in 1:size(z,1)])
 
@@ -87,7 +87,7 @@ println("------------------------------------")
 
 	ct = ContourOperator(c1, op1 * op2)
 	mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
-	mpsK = boundarycondition!(mpsK, lattice, trunc=trunc)
+	mpsK = boundarycondition!(mpsK, lattice)
 	mps2 = mult!(mpsK, mpsI, trunc=trunc)
 	v = integrate(mps2) / z1
 
@@ -98,7 +98,7 @@ println("------------------------------------")
 		ct = ContourOperator([c1, c2], [op1, op2])
 
 		mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
-		mpsK = boundarycondition!(mpsK, lattice, trunc=trunc)
+		mpsK = boundarycondition!(mpsK, lattice)
 		mps2 = mult!(mpsK, mpsI, trunc=trunc)
 		v = integrate(mps2) / z1
 		push!(corrs, v)
@@ -156,7 +156,7 @@ end
 	for ρimp in [ρ1, ρ2, _rand_dm(2)]
 
 		mpsK = sysdynamics(lattice, model, trunc=trunc)
-		mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp, trunc=trunc)
+		mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp)
 		mps = mult!(mpsK, mpsI, trunc=trunc)
 
 		Zval = integrate(mps)
@@ -201,7 +201,7 @@ end
 
 		ct = ContourOperator(c1, op1 * op2)
 		mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
-		mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp, trunc=trunc)
+		mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp)
 		mps2 = mult!(mpsK, mpsI, trunc=trunc)
 		v = integrate(mps2) / Zval
 
@@ -212,7 +212,7 @@ end
 			ct = ContourOperator([c1, c2], [op1, op2])
 
 			mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
-			mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp, trunc=trunc)
+			mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp)
 			mps2 = mult!(mpsK, mpsI, trunc=trunc)
 			v = integrate(mps2) / Zval
 
@@ -235,7 +235,7 @@ end
 
 		ct = ContourOperator(c1, op1 * op2)
 		mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
-		mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp, trunc=trunc)
+		mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp)
 		mps2 = mult!(mpsK, mpsI, trunc=trunc)
 		v = integrate(mps2) / Zval
 
@@ -245,7 +245,7 @@ end
 			ct = ContourOperator([c1, c2], [op1, op2])
 
 			mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
-			mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp, trunc=trunc)
+			mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp)
 			mps2 = mult!(mpsK, mpsI, trunc=trunc)
 			v = integrate(mps2) / Zval
 
@@ -307,7 +307,7 @@ end
 	mpsI = mult!(mpsI, deepcopy(mpsI), trunc=trunc)
 
 	mpsK = sysdynamics(lattice, model, trunc=trunc)
-	mpsK = boundarycondition!(mpsK, lattice, trunc=trunc)
+	mpsK = boundarycondition!(mpsK, lattice)
 	mps = mult!(mpsK, mpsI, trunc=trunc)
 
 	Zval = integrate(mps)
@@ -321,7 +321,7 @@ end
 
 	ct = ContourOperator(c1, op1 * op2)
 	mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
-	mpsK = boundarycondition!(mpsK, lattice, trunc=trunc)
+	mpsK = boundarycondition!(mpsK, lattice)
 	mps2 = mult!(mpsK, mpsI, trunc=trunc)
 	v = integrate(mps2) / integrate(mps)
 
@@ -332,7 +332,7 @@ end
 		ct = ContourOperator([c1, c2], [op1, op2])
 
 		mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
-		mpsK = boundarycondition!(mpsK, lattice, trunc=trunc)
+		mpsK = boundarycondition!(mpsK, lattice)
 		mps2 = mult!(mpsK, mpsI, trunc=trunc)
 		v = integrate(mps2) / Zval
 
@@ -349,7 +349,7 @@ end
 
 	ct = ContourOperator(c1, op2 * op1)
 	mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
-	mpsK = boundarycondition!(mpsK, lattice, trunc=trunc)
+	mpsK = boundarycondition!(mpsK, lattice)
 	mps2 = mult!(mpsK, mpsI, trunc=trunc)
 	v = integrate(mps2) / Zval
 
@@ -359,7 +359,7 @@ end
 		ct = ContourOperator([c1, c2], [op2, op1])
 
 		mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
-		mpsK = boundarycondition!(mpsK, lattice, trunc=trunc)
+		mpsK = boundarycondition!(mpsK, lattice)
 		mps2 = mult!(mpsK, mpsI, trunc=trunc)
 		v = integrate(mps2) / Zval
 

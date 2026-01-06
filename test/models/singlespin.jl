@@ -17,7 +17,7 @@ println("------------------------------------")
 	xop = Ω .* [0 1; 1 0]
 	model = BosonicImpurity(xop)
 	mps = sysdynamics(lattice, model, trunc=trunc)
-	mps = boundarycondition!(mps, lattice, trunc=trunc)
+	mps = boundarycondition!(mps, lattice)
 
 	ρ = exp(-β * xop)
 	@test tr(ρ) ≈ integrate(mps)
@@ -57,7 +57,7 @@ println("------------------------------------")
 
 	ct = ContourOperator(c1, op1 * op2)
 	mps2 = sysdynamics(lattice, model, ct, trunc=trunc)
-	mps2 = boundarycondition!(mps2, lattice, trunc=trunc)
+	mps2 = boundarycondition!(mps2, lattice)
 	v = integrate(mps2) / integrate(mps)
 
 	corrs = [v]
@@ -67,7 +67,7 @@ println("------------------------------------")
 		ct = ContourOperator([c2, c1], [op2, op1])
 
 		mps2 = sysdynamics(lattice, model, ct, trunc=trunc)
-		mps2 = boundarycondition!(mps2, lattice, trunc=trunc)
+		mps2 = boundarycondition!(mps2, lattice)
 		v = integrate(mps2) / integrate(mps)
 
 		push!(corrs, v)
@@ -106,7 +106,7 @@ end
 	for ρimp in [ρ1, ρ2]
 
 		mps = sysdynamics(lattice, model, trunc=trunc)
-		mps = boundarycondition!(mps, lattice, ρ₀=ρimp, trunc=trunc)
+		mps = boundarycondition!(mps, lattice, ρ₀=ρimp)
 
 		pos1 = index(lattice, 1, branch=:+)
 		m = ADTTerm((pos1,), zdiag .* zdiag )
@@ -140,7 +140,7 @@ end
 
 		ct = ContourOperator(c1, op1 * op2)
 		mps2 = sysdynamics(lattice, model, ct, trunc=trunc)
-		mps2 = boundarycondition!(mps2, lattice, ρ₀=ρimp, trunc=trunc)
+		mps2 = boundarycondition!(mps2, lattice, ρ₀=ρimp)
 		v = integrate(mps2) / integrate(mps)
 
 		corrs = [v]
@@ -150,7 +150,7 @@ end
 			ct = ContourOperator([c1, c2], [op1, op2])
 
 			mps2 = sysdynamics(lattice, model, ct, trunc=trunc)
-			mps2 = boundarycondition!(mps2, lattice, ρ₀=ρimp, trunc=trunc)
+			mps2 = boundarycondition!(mps2, lattice, ρ₀=ρimp)
 			v = integrate(mps2) / integrate(mps)
 
 			push!(corrs, v)
@@ -166,7 +166,7 @@ end
 
 		ct = ContourOperator(c1, op1 * op2)
 		mps2 = sysdynamics(lattice, model, ct, trunc=trunc)
-		mps2 = boundarycondition!(mps2, lattice, ρ₀=ρimp, trunc=trunc)
+		mps2 = boundarycondition!(mps2, lattice, ρ₀=ρimp)
 		v = integrate(mps2) / integrate(mps)
 
 		corrs = [v]
@@ -175,7 +175,7 @@ end
 			ct = ContourOperator([c1, c2], [op1, op2])
 
 			mps2 = sysdynamics(lattice, model, ct, trunc=trunc)
-			mps2 = boundarycondition!(mps2, lattice, ρ₀=ρimp, trunc=trunc)
+			mps2 = boundarycondition!(mps2, lattice, ρ₀=ρimp)
 			v = integrate(mps2) / integrate(mps)
 
 			push!(corrs, v)
@@ -212,7 +212,7 @@ end
 
 
 	mps = sysdynamics(lattice, model, trunc=trunc)
-	mps = boundarycondition!(mps, lattice, trunc=trunc)
+	mps = boundarycondition!(mps, lattice)
 
 
 	# off-diagonal observables
@@ -223,7 +223,7 @@ end
 
 	ct = ContourOperator(c1, op1 * op2)
 	mps2 = sysdynamics(lattice, model, ct, trunc=trunc)
-	mps2 = boundarycondition!(mps2, lattice, trunc=trunc)
+	mps2 = boundarycondition!(mps2, lattice)
 	v = integrate(mps2) / integrate(mps)
 
 	corrs = [v]
@@ -233,7 +233,7 @@ end
 		ct = ContourOperator([c1, c2], [op1, op2])
 
 		mps2 = sysdynamics(lattice, model, ct, trunc=trunc)
-		mps2 = boundarycondition!(mps2, lattice, trunc=trunc)
+		mps2 = boundarycondition!(mps2, lattice)
 		v = integrate(mps2) / integrate(mps)
 
 		push!(corrs, v)
@@ -249,7 +249,7 @@ end
 
 	ct = ContourOperator(c1, op1 * op2)
 	mps2 = sysdynamics(lattice, model, ct, trunc=trunc)
-	mps2 = boundarycondition!(mps2, lattice, trunc=trunc)
+	mps2 = boundarycondition!(mps2, lattice)
 	v = integrate(mps2) / integrate(mps)
 
 	corrs = [v]
@@ -258,7 +258,7 @@ end
 		ct = ContourOperator([c1, c2], [op1, op2])
 
 		mps2 = sysdynamics(lattice, model, ct, trunc=trunc)
-		mps2 = boundarycondition!(mps2, lattice, trunc=trunc)
+		mps2 = boundarycondition!(mps2, lattice)
 		v = integrate(mps2) / integrate(mps)
 
 		push!(corrs, v)

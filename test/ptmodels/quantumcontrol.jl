@@ -38,7 +38,7 @@ end
 		# ddseq2 = [Matrix(item') for item in ddseq]
 		op = ContourOperator(inds, [ddseq; adjoint.(ddseq)]) 
 		apply!(op, lattice, adt)
-		initialstate!(adt, lattice, ρimp, trunc=trunc)
+		initialstate!(adt, lattice, ρimp)
 		rho1 = rdm(lattice, adt)
 		rho1 ./= 2
 
@@ -100,7 +100,7 @@ end
 		ddseq = seq[1:i]
 		op = ContourOperator(inds, [ddseq; adjoint.(ddseq)]) 
 		apply!(op, lattice, adt)
-		initialstate!(adt, lattice, ρimp, trunc=trunc)
+		initialstate!(adt, lattice, ρimp)
 		rho1 = rdm(lattice, adt)
 		rho1 ./= 2
 

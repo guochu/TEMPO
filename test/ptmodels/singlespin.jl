@@ -88,14 +88,14 @@ end
 	for ρimp in [ρ1,ρ2]
 
 		mps = sysdynamics(lattice, model, trunc=trunc)
-		# mps = initialstate!(mps, lattice, ρimp, trunc=trunc)
+		# mps = initialstate!(mps, lattice, ρimp)
 
 		ind1 = ContourIndex(1, branch=:+)
 		m = ContourOperator(ind1, z * z )
 
 		mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
-		mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
-		tmp = initialstate!(deepcopy(mps), lattice, ρimp, trunc=trunc)
+		mps2 = initialstate!(mps2, lattice, ρimp)
+		tmp = initialstate!(deepcopy(mps), lattice, ρimp)
 
 		Zval = integrate(lattice, tmp)
 		v = integrate(lattice, mps2) / Zval
@@ -110,7 +110,7 @@ end
 
 		m = ContourOperator(ind1, op1 * op2)
 		mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
-		mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
+		mps2 = initialstate!(mps2, lattice, ρimp)
 		v = integrate(lattice, mps2) / Zval
 
 		corrs = [v]
@@ -120,7 +120,7 @@ end
 			m = ContourOperator([ind1, ind2], [op1, op2])
 
 			mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
-			mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
+			mps2 = initialstate!(mps2, lattice, ρimp)
 			v = integrate(lattice, mps2) / Zval
 
 			push!(corrs, v)
@@ -136,7 +136,7 @@ end
 
 		m = ContourOperator(ind1, op1 * op2)
 		mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
-		mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
+		mps2 = initialstate!(mps2, lattice, ρimp)
 		v = integrate(lattice, mps2) / Zval
 
 		corrs = [v]
@@ -145,7 +145,7 @@ end
 
 			m = ContourOperator([ind1, ind2], [op1, op2])
 			mps2 = apply!(m, lattice, deepcopy(mps))
-			mps2 = initialstate!(mps2, lattice, ρimp, trunc=trunc)
+			mps2 = initialstate!(mps2, lattice, ρimp)
 
 			v = integrate(lattice, mps2) / Zval
 
