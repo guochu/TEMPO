@@ -76,7 +76,13 @@ pairop(b::NonAdditiveHyb) = b.op, b.op
 
 struct NonDiagonalHyb{T<:Number} <: GeneralHybStyle
 	op::Matrix{T}
+
+function NonDiagonalHyb{T}(op::AbstractMatrix) where {T<:Number}
+	(size(op, 1) == size(op, 2)) || throw(ArgumentError("square matrix expected"))
+	new{T}(convert(Matrix{T}, op))
 end
+end
+NonDiagonalHyb(a::AbstractMatrix{T}) where {T<:Number} = NonDiagonalHyb{T}(a)
 
 phydim(b::NonDiagonalHyb) = size(b.op, 1)
 
