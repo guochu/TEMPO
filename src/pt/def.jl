@@ -112,7 +112,7 @@ function iscanonical(psi::ProcessTensor; kwargs...)
 	isrightcanonical(psi) || return false
 	# we also check whether the singular vectors are the correct Schmidt numbers
 	svectors_uninitialized(psi) && return false
-	hold = l_LL(psi)
+	hold = l_LL(psi, psi)
 	for i in 1:length(psi)-1
 		hold = updateleft(hold, psi[i], psi[i])
 		tmp = psi.s[i+1]

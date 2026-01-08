@@ -1,3 +1,2 @@
-include("diagonal.jl")
-include("nondiagonal.jl")
+include("adt/adt.jl")
 

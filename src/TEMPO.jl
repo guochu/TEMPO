@@ -102,5 +102,7 @@ include("boundarycondition.jl")
 # models
 include("models/sysdynamics.jl")
 
+# observables
+include("observables/observables.jl")
 
 end
