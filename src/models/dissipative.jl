@@ -1,5 +1,5 @@
 # dissipative impurity
-struct ImpurityLindbladian
+struct ImpurityLindbladian <: AbstractImpurityOperator
 	m::Array{ComplexF64, 4}
 end
 

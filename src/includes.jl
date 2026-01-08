@@ -52,5 +52,4 @@ include("influencefunctional/influencefunctional.jl")
 include("boundarycondition.jl")
 
 # models
-include("models/models.jl")
-include("models/dissipativemodels.jl")
+include("models/sysdynamics.jl")

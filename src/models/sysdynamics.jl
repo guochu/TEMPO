@@ -1,76 +1,36 @@
-struct ImpurityHamiltonian{M<:AbstractMatrix} <: AbstractBosonicImpurityHamiltonian
-	m::M
-end
-propagator(h::ImpurityHamiltonian, lat, b::Symbol) = _get_propagator(h.m, lat, b)
-propagator(h::ImpurityHamiltonian, lat; branch::Symbol=:τ) = propagator(h, lat, branch)
-phydim(h::ImpurityHamiltonian) = size(h.m, 1)
-ImpurityHamiltonian(d::Int) = ImpurityHamiltonian(zeros(d, d))
+abstract type AbstractImpurityOperator end
 
-TO.scalartype(::Type{ImpurityHamiltonian{M}}) where {M} = scalartype(M)
-
-
-sysdynamics_forward!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
-						mps, lattice, model, :+, lattice.Nt, args...; trunc=trunc)
-sysdynamics_backward!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
-						mps, lattice, model, :-, lattice.Nt, args...; trunc=trunc)
-sysdynamics_imaginary!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
-						mps, lattice, model, :τ, lattice.Nτ, args...; trunc=trunc)
-
-function _sysdynamics_util!(gmps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, branch::Symbol, N::Int; trunc::TruncationScheme=DefaultKTruncation)
-	# free dynamics
-	U = propagator(model, lattice, branch)
-	# data = decompose_to_mps(U)
-	alg = Orthogonalize(SVD(), trunc)
-	for j in 1:N
-		a, b = (branch == :-) ? (j, j+1) : (j+1, j)
-        pos1, pos2 = index(lattice, a, branch=branch), index(lattice, b, branch=branch)
-        t = ADTTerm((pos1, pos2), U)
-        apply!(t, gmps)
-        canonicalize!(gmps, alg=alg)			
-	end
-	return gmps
-end
+# interfaces
+sysdynamics(gmps::ADT, lattice::AbstractADTLattice, model::AbstractImpurityOperator, args...; kwargs...) = sysdynamics!(copy(gmps), lattice, model, args...; kwargs...)
+function sysdynamics(lattice::AbstractADTLattice, model::AbstractImpurityOperator, args...; kwargs...)
+	T = promote_type(scalartype(lattice), scalartype(model))
+	sysdynamics!(vacuumstate(T, lattice), lattice, model, args...; kwargs...)
+end 
 
 
-function _get_propagator(h, lattice, b::Symbol)
-	if b == :τ
-		return exp(-lattice.δτ .* h)
-	elseif b == :+
-		return exp(-im*lattice.δt .* h)
-	else
-		return exp(im*lattice.δt .* h)
-	end
-end
+sysdynamics(gmps::ProcessTensor, lattice::AbstractPTLattice, model::AbstractImpurityOperator; kwargs...) = sysdynamics!(copy(gmps), lattice, model; kwargs...)
+function sysdynamics(lattice::AbstractPTLattice, model::AbstractImpurityOperator; kwargs...)
+	T = promote_type(scalartype(lattice), scalartype(model))
+	return sysdynamics!(vacuumstate(T, lattice), lattice, model; kwargs...)
+end 
 
 
-sysdynamics_forward!(mps::ProcessTensor, lattice::AbstractPTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
-						mps, lattice, model, :+, lattice.Nt, args...; trunc=trunc)
-sysdynamics_backward!(mps::ProcessTensor, lattice::AbstractPTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
-						mps, lattice, model, :-, lattice.Nt, args...; trunc=trunc)
-sysdynamics_imaginary!(mps::ProcessTensor, lattice::AbstractPTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
-						mps, lattice, model, :τ, lattice.Nτ, args...; trunc=trunc)
 
 
-function _sysdynamics_util!(gmps::ProcessTensor, lattice::AbstractPTLattice, model::ImpurityHamiltonian, branch::Symbol, N::Int; trunc::TruncationScheme=DefaultKTruncation)
-	# free dynamics
-	U = propagator(model, lattice, branch)
-	# data = decompose_to_mps(U)
-	alg = Orthogonalize(SVD(), trunc)
-	for j in 1:N
-        t = ContourOperator(ContourIndex(j, branch), U)
-        apply!(t, lattice, gmps)			
-	end
-	canonicalize!(gmps, alg=alg)
-	return gmps
-end
+
+# sysdynamics_forward!(gmps::ADT, lattice::AbstractADTLattice, model::AbstractImpurityOperator, args...; kwargs...) = error("sysdynamics_forward! not implemented for model $(typeof(model))")
+# sysdynamics_backward!(gmps::ADT, lattice::AbstractADTLattice, model::AbstractImpurityOperator, args...; kwargs...) = error("sysdynamics_backward! not implemented for model $(typeof(model))")
+# sysdynamics_imaginary!(gmps::ADT, lattice::AbstractADTLattice, model::AbstractImpurityOperator, args...; kwargs...) = error("sysdynamics_imaginary! not implemented for model $(typeof(model))")
 
 
-# function pauli_matrices()
-# 	s_SP = Array{Float64, 2}([0 0; 1 0])
-# 	s_SM = Array{Float64, 2}([0 1; 0 0])
-# 	s_Z = Array{Float64, 2}([-1 0; 0 1])
-# 	s_x = s_SP+s_SM
-# 	s_y = -im*(s_SP-s_SM)
-# 	return s_x, s_y, s_Z
-# end
 
+
+
+
+# sysdynamics_forward!(gmps::ProcessTensor, lattice::AbstractPTLattice, model::AbstractImpurityOperator; kwargs...) = error("sysdynamics_forward! not implemented for model $(typeof(model))")
+# sysdynamics_backward!(gmps::ProcessTensor, lattice::AbstractPTLattice, model::AbstractImpurityOperator; kwargs...) = error("sysdynamics_backward! not implemented for model $(typeof(model))")
+# sysdynamics_imaginary!(gmps::ProcessTensor, lattice::AbstractPTLattice, model::AbstractImpurityOperator; kwargs...) = error("sysdynamics_imaginary! not implemented for model $(typeof(model))")
+
+
+include("unitary.jl")
+include("dissipative.jl")
