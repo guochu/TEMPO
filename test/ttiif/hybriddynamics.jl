@@ -23,7 +23,9 @@ println("------------------------------------")
 	for d in (2,)
 		lattice = ADTLattice(N=N, δτ=δτ, d=d, contour=:imag)
 
-		hyb = AdditiveHyb(randn(Float64, d))
+		op = randn(Float64, d)
+		op ./= norm(op)
+		hyb = AdditiveHyb(op)
 
 		mpsI1 = hybriddynamics(lattice, corr, hyb, base_alg) 
 
@@ -63,7 +65,9 @@ end
 	# println("ordering is ", ordering)
 	lattice = ADTLattice(N=N, δt=δt, contour=:real, d=d)
 
-	hyb = AdditiveHyb(randn(Float64, d))
+	op = randn(Float64, d)
+	op ./= norm(op)
+	hyb = AdditiveHyb(op)
 
 	mpsI1 = hybriddynamics(lattice, corr, hyb, base_alg) 
 
