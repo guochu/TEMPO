@@ -73,7 +73,11 @@ phydim(b::NonAdditiveHyb) = size(b.op, 1)
 TO.scalartype(::Type{NonAdditiveHyb{T}}) where T = T
 pairop(b::NonAdditiveHyb) = b.op, b.op
 
+"""
+	struct NonDiagonalHyb{T<:Number}
 
+The Impurity-bath coupling is op*a + op'*a'
+"""
 struct NonDiagonalHyb{T<:Number} <: GeneralHybStyle
 	op::Matrix{T}
 
