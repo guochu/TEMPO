@@ -1,10 +1,10 @@
-# include("../src/includes.jl")
+include("../src/includes.jl")
 
 using Test, LinearAlgebra, TensorOperations, ImpurityModelBase, QuAPI
 
-push!(LOAD_PATH, "../src")
-using TEMPO
-using TEMPO: QR, SVD
+# push!(LOAD_PATH, "../src")
+# using TEMPO
+# using TEMPO: QR, SVD
 
 
 include("util.jl")
@@ -21,6 +21,7 @@ include("ptzipup.jl")
 include("adtpartialif.jl")
 
 include("ttiif/ttiif.jl")
+include("ptttiif/ptttiif.jl")
 
 
 include("models/models.jl")

@@ -3,6 +3,15 @@ include("imaginarytime.jl")
 include("realtime.jl")
 include("mixedtime.jl")
 
+function hybriddynamics(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::PartialIF)
+	T = promote_type(scalartype(lattice), scalartype(hyb), scalartype(corr))
+	return hybriddynamics!(vacuumstate(T, lattice), lattice, corr, hyb, alg)
+end 
+hybriddynamics(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::PartialIF) = hybriddynamics!(
+				copy(gmps), lattice, corr, hyb, alg)
+hybriddynamics!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::PartialIF) = hybriddynamics!(
+				gmps, lattice, corr, hyb, trunc=alg.trunc)
+
 
 function hybriddynamics(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb, alg::PartialIF)
 	T = promote_type(scalartype(lattice), scalartype(hyb), scalartype(corr))
