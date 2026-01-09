@@ -51,12 +51,18 @@ function expectationvalue(m::ADTTerm, cache::ADTExpectationCache)
 	return contract_center(left, right)
 end
 
-function contract_center(left::Vector, right::Vector)
-	@tensor r = left[1] * right[1]
-	return r
-end
+# function contract_center(left::Vector, right::Vector)
+# 	@tensor r = left[1] * right[1]
+# 	return r
+# end
 
-function contract_center(left::Matrix, right::Matrix)
-	@tensor r = left[1, 2] * right[1, 2]
+# function contract_center(left::Matrix, right::Matrix)
+# 	@tensor r = left[1, 2] * right[1, 2]
+# 	return r
+# end
+function contract_center(a::Array{T, N}, b::Array{T, N}) where {T, N}
+	a1 = reshape(a, length(a))
+	b1 = reshape(b, length(b))
+	@tensor r = a1[1] * b1[1]
 	return r
 end
