@@ -1,9 +1,9 @@
 using LinearAlgebra: BlasFloat, LAPACK
 using LinearAlgebra.BLAS: gemm, gemm!
 
-abstract type AbstractMatrixFactorization end
-struct QR <: AbstractMatrixFactorization end
-struct SVD <: AbstractMatrixFactorization end
+# abstract type AbstractMatrixFactorization end
+# struct QR <: AbstractMatrixFactorization end
+# struct SVD <: AbstractMatrixFactorization end
 
 
 scalar(x::AbstractArray{T}) where {T<:Number} = only(x)
@@ -265,49 +265,19 @@ function texp(a::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N1, I
     return reshape(t2, shape_a)
 end
 
-
-
-function _rightnull_lq!(A::StridedMatrix{<:BlasFloat}, atol::Real)
-    iszero(atol) || throw(ArgumentError("nonzero atol not supported by LQ"))
-    m, n = size(A)
-    k = min(m, n)
-    At = adjoint!(similar(A, n, m), A)
-    At, T = LAPACK.geqrt!(At, min(k, 36))
-    N = similar(A, max(n-m, 0), n);
-    fill!(N, 0)
-    for k = 1:n-m
-        N[k,m+k] = 1
-    end
-    N = LAPACK.gemqrt!('R', eltype(At) <: Real ? 'T' : 'C', At, T, N)
+function _tomat(a::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N2, Int}) where {T<:Number, N, N1, N2}
+    (N == N1 + N2) || throw(DimensionMismatch())
+    newindex = (left..., right...)
+    a1 = permute(a, newindex)
+    shape_a = size(a1)
+    dimu = shape_a[1:N1]
+    s1 = prod(dimu)
+    dimv = shape_a[(N1+1):end]
+    s2 = prod(dimv)
+    return reshape(a1, s1, s2), shape_a
 end
 
-function _rightnull_svd!(A::StridedMatrix{<:BlasFloat}, atol::Real)
-    size(A, 1) == 0 && return _one!(similar(A, (size(A, 2), size(A, 2))))
-    U, S, V = LAPACK.gesvd!('N', 'A', A) 
-    indstart = count(>(atol), S) + 1
-    return V[indstart:end, :]
-end
 
-function _leftnull_qr!(A::StridedMatrix{<:BlasFloat}, atol::Real)
-    iszero(atol) || throw(ArgumentError("nonzero atol not supported by QR"))
-    m, n = size(A)
-    m >= n || throw(ArgumentError("no null space if less rows than columns"))
-
-    A, T = LAPACK.geqrt!(A, min(minimum(size(A)), 36))
-    N = similar(A, m, max(0, m-n));
-    fill!(N, 0)
-    for k = 1:m-n
-        N[n+k,k] = 1
-    end
-    N = LAPACK.gemqrt!('L', 'N', A, T, N)
-end
-
-function _leftnull_svd!(A::StridedMatrix{<:BlasFloat}, atol::Real)
-    size(A, 2) == 0 && return _one!(similar(A, (size(A, 1), size(A, 1))))
-    U, S, V = LAPACK.gesvd!('A', 'N', A) 
-    indstart = count(>(atol), S) + 1
-    return U[:, indstart:end]
-end
 
 """
     renyi_entropy(v::AbstractVector{<:Real}; α::Real=1) 
