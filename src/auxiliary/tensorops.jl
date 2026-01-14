@@ -175,19 +175,19 @@ end
 
 function tsvd!(a::StridedArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N2, Int}, workspace::AbstractVector{T}=similar(a, length(a)); 
     trunc::TruncationScheme=NoTruncation()) where {T <: Number, N, N1, N2}
-    (N == N1 + N2) || throw(DimensionMismatch())
     if length(workspace) <= length(a)
         resize!(workspace, length(a))
     end
-    dim = (left..., right...)
-    b = permute(a, dim)
-    shape_b = size(b)
-    ushape = shape_b[1:N1]
-    vshape = shape_b[(N1+1):end]
-    s1 = prod(ushape)
-    s2 = prod(vshape)
-    # u, s, v = F.U, F.S, F.Vt
-    bmat = copyto!(reshape(view(workspace, 1:length(a)), s1, s2), reshape(b, s1, s2))
+    # (N == N1 + N2) || throw(DimensionMismatch())
+    # dim = (left..., right...)
+    # b = permute(a, dim)
+    # shape_b = size(b)
+    # ushape = shape_b[1:N1]
+    # vshape = shape_b[(N1+1):end]
+    # s1 = prod(ushape)
+    # s2 = prod(vshape)
+    b, ushape, vshape = _tomat(a, left, right)
+    bmat = copyto!(reshape(view(workspace, 1:length(a)), size(b)), b)
     u, s, v, err = tsvd!(bmat, reshape(a, length(a)), trunc=trunc)
     md = length(s)
     return reshape(u, (ushape..., md)), s, reshape(v, (md, vshape...)), err
@@ -208,18 +208,19 @@ end
 QR decomposition of QTensor a, by joining axs to be the second dimension
 """
 function tqr!(a::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N2, Int}, workspace::AbstractVector{T}=similar(a, length(a))) where {T<:Number, N, N1, N2}
-    (N == N1 + N2) || throw(DimensionMismatch())
     if length(workspace) <= length(a)
         resize!(workspace, length(a))
     end
-    newindex = (left..., right...)
-    a1 = permute(a, newindex)
-    shape_a = size(a1)
-    dimu = shape_a[1:N1]
-    s1 = prod(dimu)
-    dimv = shape_a[(N1+1):end]
-    s2 = prod(dimv)
-    bmat = copyto!(reshape(view(workspace, 1:length(a)), s1, s2), reshape(a1, s1, s2))
+    # (N == N1 + N2) || throw(DimensionMismatch())
+    # newindex = (left..., right...)
+    # a1 = permute(a, newindex)
+    # shape_a = size(a1)
+    # dimu = shape_a[1:N1]
+    # s1 = prod(dimu)
+    # dimv = shape_a[(N1+1):end]
+    # s2 = prod(dimv)
+    a1, dimu, dimv = _tomat(a, left, right)
+    bmat = copyto!(reshape(view(workspace, 1:length(a)), size(a1)), a1)
     # F = LinearAlgebra.qr!(bmat)
     # u = Base.Matrix(F.Q)
     # v = Base.Matrix(F.R)
@@ -229,18 +230,19 @@ function tqr!(a::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N2, I
 end
 
 function tlq!(a::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N2, Int}, workspace::AbstractVector{T}=similar(a, length(a))) where {T<:Number, N, N1, N2}
-    (N == N1 + N2) || throw(DimensionMismatch())
     if length(workspace) <= length(a)
         resize!(workspace, length(a))
     end
-    newindex = (left..., right...)
-    a1 = permute(a, newindex)
-    shape_a = size(a1)
-    dimu = shape_a[1:N1]
-    s1 = prod(dimu)
-    dimv = shape_a[(N1+1):end]
-    s2 = prod(dimv)
-    bmat = copyto!(reshape(view(workspace, 1:length(a)), s1, s2), reshape(a1, s1, s2))
+    # (N == N1 + N2) || throw(DimensionMismatch())
+    # newindex = (left..., right...)
+    # a1 = permute(a, newindex)
+    # shape_a = size(a1)
+    # dimu = shape_a[1:N1]
+    # s1 = prod(dimu)
+    # dimv = shape_a[(N1+1):end]
+    # s2 = prod(dimv)
+    a1, dimu, dimv = _tomat(a, left, right)
+    bmat = copyto!(reshape(view(workspace, 1:length(a)), size(a1)), a1)
     # F = LinearAlgebra.lq!(bmat)
     # u = Matrix(F.L)
     # v = Matrix(F.Q)
@@ -265,16 +267,33 @@ function texp(a::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N1, I
     return reshape(t2, shape_a)
 end
 
+function leftorth!(A::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N2, Int};
+                    alg::Union{QR,QRpos,SVD,SDD,Polar}=QRpos(), atol::Real=zero(float(real(scalartype(A))))) where {T, N, N1, N2}
+    A2, dimu, dimv = _tomat(A, left, right)
+    u, v = leftorth!(A2, alg, atol)
+    s = size(v, 1)
+    return reshape(u, dimu..., s), reshape(v, s, dimv...)
+end
+function rightorth!(A::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N2, Int};
+                    alg::Union{LQ,LQpos,SVD,SDD,Polar}=LQpos(), atol::Real=zero(float(real(scalartype(A))))) where {T, N, N1, N2}
+    A2, dimu, dimv = _tomat(A, left, right)
+    u, v = rightorth!(A2, alg, atol)
+    s = size(v, 1)
+    return reshape(u, dimu..., s), reshape(v, s, dimv...)
+end
+
 function _tomat(a::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N2, Int}) where {T<:Number, N, N1, N2}
     (N == N1 + N2) || throw(DimensionMismatch())
     newindex = (left..., right...)
     a1 = permute(a, newindex)
     shape_a = size(a1)
-    dimu = shape_a[1:N1]
+    # dimu = shape_a[1:N1]
+    dimu = ntuple(i->shape_a[i], N1)
     s1 = prod(dimu)
-    dimv = shape_a[(N1+1):end]
+    # dimv = shape_a[(N1+1):end]
+    dimv = ntuple(i->shape_a[N1+i], N2)
     s2 = prod(dimv)
-    return reshape(a1, s1, s2), shape_a
+    return reshape(a1, s1, s2), dimu, dimv
 end
 
 
