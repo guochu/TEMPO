@@ -54,9 +54,10 @@ function Base.:*(m::ADTTransferMatrix{<:Number, N}, right::Array{<:Number, N}) w
 	return right
 end
 
-
-l_LL(m::ADTTransferMatrix{T, N}) where {T, N} = ones(T, ntuple(i->space_l(m.states[i][1]), N))
-r_RR(m::ADTTransferMatrix{T, N}) where {T, N} = ones(T, ntuple(i->space_r(m.states[i][end]), N))
+l_LL(f, m::ADTTransferMatrix{T, N}) where {T, N} = f(T, ntuple(i->space_l(m.states[i][1]), N))
+r_RR(f, m::ADTTransferMatrix{T, N}) where {T, N} = f(T, ntuple(i->space_r(m.states[i][end]), N))
+l_LL(m::ADTTransferMatrix{T, N}) where {T, N} = l_LL(ones, m)
+r_RR(m::ADTTransferMatrix{T, N}) where {T, N} = r_RR(ones, m)
 
 TransferMatrix(states::Vararg{M, N}) where {M <: ADT, N} = ADTTransferMatrix(map(x->x.data, states), scaling(states...))
 TransferMatrix(j::Int, states::Vararg{M, N}) where {M <: ADT, N} = ADTTransferMatrix(map(x->[x[j]], states), scaling(states...))
