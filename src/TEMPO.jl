@@ -7,7 +7,7 @@ export OrthogonalFactorizationAlgorithm, leftorth!, rightorth!, permute, tsvd!
 # ContourIndex
 export ContourIndex, branch, scalartype
 # MPOHamiltonian
-export MPOHamiltonian, tompotensors, timeevompo, WI, WII, ComplexStepper
+export MPOHamiltonian, tompotensors, timeevompo, WI, WII, ComplexStepper, FirstOrderStepper
 export SchurMPOTensor, ExponentialDecayTerm, GenericDecayTerm, PowerlawDecayTerm
 
 # ADT
