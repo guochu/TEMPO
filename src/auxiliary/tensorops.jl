@@ -267,6 +267,7 @@ function texp(a::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N1, I
     return reshape(t2, shape_a)
 end
 
+leftorth!(A::StridedMatrix; alg::Union{QR,QRpos,SVD,SDD,Polar}=QRpos(), atol::Real=zero(float(real(scalartype(A))))) = leftorth!(A, alg, atol)
 function leftorth!(A::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N2, Int};
                     alg::Union{QR,QRpos,SVD,SDD,Polar}=QRpos(), atol::Real=zero(float(real(scalartype(A))))) where {T, N, N1, N2}
     A2, dimu, dimv = _tomat(A, left, right)
@@ -274,6 +275,8 @@ function leftorth!(A::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{
     s = size(v, 1)
     return reshape(u, dimu..., s), reshape(v, s, dimv...)
 end
+
+rightorth!(A::StridedMatrix; alg::Union{LQ,LQpos,SVD,SDD,Polar}=LQpos(), atol::Real=zero(float(real(scalartype(A))))) = rightorth!(A, alg, atol)
 function rightorth!(A::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N2, Int};
                     alg::Union{LQ,LQpos,SVD,SDD,Polar}=LQpos(), atol::Real=zero(float(real(scalartype(A))))) where {T, N, N1, N2}
     A2, dimu, dimv = _tomat(A, left, right)
