@@ -28,6 +28,9 @@ include("adt/adt.jl")
 # pt
 include("pt/pt.jl")
 
+# conversion between pt and adt
+include("conversions.jl")
+
 
 # adtterms
 include("adtterms.jl")

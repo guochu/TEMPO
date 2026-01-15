@@ -13,3 +13,13 @@
 # 	lattice2 = similaradtlattice(lattice)
 	
 # end
+
+
+
+function copytensor(::Type{T}, d::Int) where {T<:Number}
+	m = zeros(T, d,d,d)
+	for i in 1:d
+		m[i,i,i] = 1
+	end
+	return m
+end
