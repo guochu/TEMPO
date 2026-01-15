@@ -61,6 +61,7 @@ end
 # 	return r
 # end
 function contract_center(a::Array{T, N}, b::Array{T, N}) where {T, N}
+	(size(a) == size(b)) || throw(ArgumentError("a, b size mismatch"))
 	a1 = reshape(a, length(a))
 	b1 = reshape(b, length(b))
 	@tensor r = a1[1] * b1[1]
