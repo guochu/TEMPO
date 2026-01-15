@@ -91,6 +91,7 @@ function _rightorth!(psi::ADT, alg::SVD, trunc::TruncationScheme, normalize::Boo
 	return psi
 end
 
+canonicalize(psi::ADT; kwargs...) = canonicalize!(deepcopy(psi); kwargs...)
 function canonicalize!(psi::ADT; alg::Orthogonalize = Orthogonalize(trunc=DefaultTruncation, normalize=false))
 	alg.normalize && @warn "canonicalize with renormalization not recommanded for ADT"
 	L = length(psi)

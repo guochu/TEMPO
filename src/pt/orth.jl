@@ -73,6 +73,7 @@ function _rightorth!(psi::ProcessTensor, alg::SVD, trunc::TruncationScheme, norm
 	return psi
 end
 
+canonicalize(psi::ProcessTensor; kwargs...) = canonicalize!(deepcopy(psi); kwargs...)
 function canonicalize!(psi::ProcessTensor; alg::Orthogonalize = Orthogonalize(trunc=DefaultTruncation, normalize=false))
 	alg.normalize && @warn "canonicalize with renormalization not recommanded for ProcessTensor"
 	L = length(psi)
