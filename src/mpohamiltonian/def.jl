@@ -64,13 +64,14 @@ function _tompotensors(h::MPOHamiltonian, leftrow::Int, rightcol::Int)
 	end
 	mpotensors[1] = tmp
 	for n in 2:L-1
-		dj = phydim(h[n])
-		sl, sr = size(h[n])
-		tmp = zeros(T, sl, dj, sr, dj)
-		for i in 1:sl, j in 1:sr
-			tmp[i, :, j, :] = h[n, i, j]
-		end
-		mpotensors[n] = tmp
+		# dj = phydim(h[n])
+		# sl, sr = size(h[n])
+		# tmp = zeros(T, sl, dj, sr, dj)
+		# for i in 1:sl, j in 1:sr
+		# 	tmp[i, :, j, :] = h[n, i, j]
+		# end
+		# mpotensors[n] = tmp
+		mpotensors[n] = tompotensor(h[n])
 	end
 	dj = phydim(h[L])
 	sl = size(h[L], 1)
@@ -81,4 +82,16 @@ function _tompotensors(h::MPOHamiltonian, leftrow::Int, rightcol::Int)
 	end
 	mpotensors[L] = tmp
 	return mpotensors
+end
+
+
+function tompotensor(h::AbstractSparseMPOTensor)
+	T = scalartype(h)
+	dj = phydim(h)
+	sl, sr = size(h)
+	tmp = zeros(T, sl, dj, sr, dj)
+	for i in 1:sl, j in 1:sr
+		tmp[i, :, j, :] = h[i, j]
+	end
+	return tmp
 end
