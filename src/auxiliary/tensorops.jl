@@ -271,6 +271,9 @@ leftorth!(A::StridedMatrix; alg::Union{QR,QRpos,SVD,SDD,Polar}=QRpos(), atol::Re
 function leftorth!(A::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N2, Int};
                     alg::Union{QR,QRpos,SVD,SDD,Polar}=QRpos(), atol::Real=zero(float(real(scalartype(A))))) where {T, N, N1, N2}
     A2, dimu, dimv = _tomat(A, left, right)
+    if !isa(A2, StridedMatrix)
+        A2 = copy(A2)
+    end
     u, v = leftorth!(A2, alg, atol)
     s = size(v, 1)
     return reshape(u, dimu..., s), reshape(v, s, dimv...)
@@ -280,6 +283,9 @@ rightorth!(A::StridedMatrix; alg::Union{LQ,LQpos,SVD,SDD,Polar}=LQpos(), atol::R
 function rightorth!(A::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N2, Int};
                     alg::Union{LQ,LQpos,SVD,SDD,Polar}=LQpos(), atol::Real=zero(float(real(scalartype(A))))) where {T, N, N1, N2}
     A2, dimu, dimv = _tomat(A, left, right)
+    if !isa(A2, StridedMatrix)
+        A2 = copy(A2)
+    end
     u, v = rightorth!(A2, alg, atol)
     s = size(v, 1)
     return reshape(u, dimu..., s), reshape(v, s, dimv...)
