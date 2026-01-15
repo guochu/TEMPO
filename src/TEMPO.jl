@@ -43,7 +43,7 @@ export boundarycondition, boundarycondition!, initialstate!
 # models
 export sysdynamics, sysdynamics!, ImpurityHamiltonian, ImpurityLindbladian
 # observables
-export environments, expectationvalue, Zvalue, expectation
+export environments, expectationvalue, Zvalue, expectation, TransferMatrix
 
 
 
