@@ -13,7 +13,19 @@ function ADTTerm(positions::NTuple{N, Int}, data::AbstractArray{T, N}) where {N,
 	data = permute(data, p)
 	return ADTTerm(decompose_to_mps(data), positions)
 end
-ADTTerm(p::Int, data::AbstractVector) = ADTTerm((p,), data)
+ADTTerm(p::Int, data::AbstractVector{<:Number}) = ADTTerm((p,), data)
+ADTTerm(p::Int, data::DenseMPSTensor) = ADTTerm((p,), [data])
+function ADTTerm(positions::NTuple{N, Int}, data::AbstractVector{<:AbstractArray{T, 3}}) where {N, T}
+	if issorted(positions)	
+		for i in 1:length(positions)-1
+			(space_r(data[i]) == space_l(data[i+1])) || throw(DimensionMismatch("MPO Tensor auxiliary space mismatch"))
+		end
+		(space_l(data[1]) == space_r(data[end])) || throw(DimensionMismatch("MPO Tensor auxiliary space mismatch"))
+		return ADTTerm(data, positions)
+	else
+		throw(ArgumentError("not implemented for this case"))
+	end
+end
 
 function ADTTerm(positions::NTuple{N, Int}, data::NTuple{N, <:AbstractVector{T}}) where {N, T<:Number}
 	(length(Set(positions)) == N) || throw(ArgumentError("multiple n̂ on the same position not allowed"))
