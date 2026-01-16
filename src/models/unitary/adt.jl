@@ -45,40 +45,40 @@ sysdynamics_backward!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHami
 sysdynamics_imaginary!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
 						mps, lattice, model, :τ, lattice.Nτ, args...; trunc=trunc)
 
-function sysdynamics!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, ind::ContourIndex, op::AbstractMatrix; 
-						trunc::TruncationScheme=DefaultKTruncation)
-	bh = branch(ind)
-	U = propagator(model, lattice, bh)
-	alg = Orthogonalize(SVD(), trunc)
-	if bh == :-
-		a, b = j, j+1
-		U′ = op * U
-	else
-		a, b = j+1, j
-		U′ = U * op
-	end
-	pos1, pos2 = index(lattice, a, branch=bh), index(lattice, b, branch=bh)
-	t = ADTTerm((pos1, pos2), U′)
-	apply!(t, mps)
-	canonicalize!(mps, alg=alg)
-	return mps
-end
-function sysdynamics!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, ind::ContourIndex; 
-						trunc::TruncationScheme=DefaultKTruncation)
-	bh = branch(ind)
-	U = propagator(model, lattice, bh)
-	alg = Orthogonalize(SVD(), trunc)
-	if bh == :-
-		a, b = j, j+1
-	else
-		a, b = j+1, j
-	end
-	pos1, pos2 = index(lattice, a, branch=bh), index(lattice, b, branch=bh)
-	t = ADTTerm((pos1, pos2), U)
-	apply!(t, mps)
-	canonicalize!(mps, alg=alg)
-	return mps
-end
+# function sysdynamics!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, ind::ContourIndex, op::AbstractMatrix; 
+# 						trunc::TruncationScheme=DefaultKTruncation)
+# 	bh = branch(ind)
+# 	U = propagator(model, lattice, bh)
+# 	alg = Orthogonalize(SVD(), trunc)
+# 	if bh == :-
+# 		a, b = j, j+1
+# 		U′ = op * U
+# 	else
+# 		a, b = j+1, j
+# 		U′ = U * op
+# 	end
+# 	pos1, pos2 = index(lattice, a, branch=bh), index(lattice, b, branch=bh)
+# 	t = ADTTerm((pos1, pos2), U′)
+# 	apply!(t, mps)
+# 	canonicalize!(mps, alg=alg)
+# 	return mps
+# end
+# function sysdynamics!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, ind::ContourIndex; 
+# 						trunc::TruncationScheme=DefaultKTruncation)
+# 	bh = branch(ind)
+# 	U = propagator(model, lattice, bh)
+# 	alg = Orthogonalize(SVD(), trunc)
+# 	if bh == :-
+# 		a, b = j, j+1
+# 	else
+# 		a, b = j+1, j
+# 	end
+# 	pos1, pos2 = index(lattice, a, branch=bh), index(lattice, b, branch=bh)
+# 	t = ADTTerm((pos1, pos2), U)
+# 	apply!(t, mps)
+# 	canonicalize!(mps, alg=alg)
+# 	return mps
+# end
 
 
 function _sysdynamics_util!(gmps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, branch::Symbol, N::Int; trunc::TruncationScheme=DefaultKTruncation)

@@ -79,13 +79,18 @@ function sysdynamics!(mps::ProcessTensor, lattice::RealPTLattice1Order, model::I
 end
 
 
+# function _get_dissipative_adt_propagator(m4, δt)
+# 	d = size(m4, 1)
+# 	d2 = d * d
+# 	m2 = reshape(m4, d2, d2)
+# 	m2_exp = exp(m2 * δt)
+# 	# return reshape(m2_exp, d,d,d,d)
+# 	return permute(reshape(m2_exp, d,d,d,d), (1,3,4,2))
+# end
+
 function _get_dissipative_adt_propagator(m4, δt)
-	d = size(m4, 1)
-	d2 = d * d
-	m2 = reshape(m4, d2, d2)
-	m2_exp = exp(m2 * δt)
-	# return reshape(m2_exp, d,d,d,d)
-	return permute(reshape(m2_exp, d,d,d,d), (1,3,4,2))
+	r = _get_dissipative_pt_propagator(m4, δt)
+	return permute(r, (1,3,4,2))
 end
 
 function _get_dissipative_pt_propagator(m4, δt)
