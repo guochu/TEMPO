@@ -105,7 +105,7 @@ include("influencefunctional/influencefunctional.jl")
 include("boundarycondition.jl")
 
 # models
-include("models/sysdynamics.jl")
+include("models/models.jl")
 
 # observables
 include("observables/observables.jl")
