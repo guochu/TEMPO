@@ -24,3 +24,4 @@ ImpurityLindbladian(d::Int) = ImpurityLindbladian(zeros(ComplexF64, d, d, d, d))
 TO.scalartype(::Type{ImpurityLindbladian}) = ComplexF64
 ImpurityLindbladian(L::LindbladOperator) = ImpurityLindbladian(L.m)
 ImpurityLindbladian(H::AbstractMatrix, jumpops::Vector{<:AbstractMatrix}) = ImpurityLindbladian(lindbladoperator(H, jumpops))
+ImpurityLindbladian(h::ImpurityHamiltonian) = ImpurityLindbladian(lindbladoperator(h.m, []))
