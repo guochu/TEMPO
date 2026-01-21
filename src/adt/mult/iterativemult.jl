@@ -63,6 +63,7 @@ function iterativemult(x::ADT, y::ADT, alg::DMRGMultAlgorithm)
         z = _svd_guess(x, y, alg.D)
     elseif alg.initguess == :rand
         z = randomadt(promote_type(scalartype(x), scalartype(y)), phydims(x), D=alg.D)
+        canonicalize!(z, alg=Orthogonalize(normalize=true))
     elseif alg.initguess == :pre
         z = increase_bond!(copy(x), alg.D)
     else

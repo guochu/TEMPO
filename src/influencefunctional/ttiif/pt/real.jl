@@ -58,6 +58,11 @@ end
 function differentialinfluencefunctional(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper, 
 											algmult::DMRGAlgorithm; algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	h1, h2, h3, h4 = influenceoperatorexponential(lattice, corr, dt, hyb, alg, algexpan=algexpan)
+	# trunc = algmult.trunc
+	# canonicalize!(h1, alg=Orthogonalize(trunc=trunc, normalize=false))
+	# canonicalize!(h2, alg=Orthogonalize(trunc=trunc, normalize=false))
+	# canonicalize!(h3, alg=Orthogonalize(trunc=trunc, normalize=false))
+	# canonicalize!(h4, alg=Orthogonalize(trunc=trunc, normalize=false))
 	mps = mult(h2, h1, algmult)
 	mps = mult(h3, mps, algmult)
 	mps = mult(h4, mps, algmult)
@@ -66,6 +71,16 @@ end
 function differentialinfluencefunctional(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper, 
 											algmult::DMRGAlgorithm; algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	(h1a, h1b), (h2a, h2b), (h3a, h3b), (h4a, h4b) = influenceoperatorexponential(lattice, corr, dt, hyb, alg, algexpan=algexpan)
+	# trunc = algmult.trunc
+	# canonicalize!(h1a, alg=Orthogonalize(trunc=trunc, normalize=false))
+	# canonicalize!(h1b, alg=Orthogonalize(trunc=trunc, normalize=false))
+	# canonicalize!(h2a, alg=Orthogonalize(trunc=trunc, normalize=false))
+	# canonicalize!(h2b, alg=Orthogonalize(trunc=trunc, normalize=false))
+	# canonicalize!(h3a, alg=Orthogonalize(trunc=trunc, normalize=false))
+	# canonicalize!(h3b, alg=Orthogonalize(trunc=trunc, normalize=false))
+	# canonicalize!(h4a, alg=Orthogonalize(trunc=trunc, normalize=false))
+	# canonicalize!(h4b, alg=Orthogonalize(trunc=trunc, normalize=false))
+
 	mps = mult(h1b, h1a, algmult)
 
 	mps = mult(h2a, mps, algmult)
