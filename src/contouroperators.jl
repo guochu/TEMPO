@@ -12,9 +12,9 @@ ContourOperator(p::ContourIndex, data::AbstractMatrix) = ContourOperator([p], [d
 
 TO.scalartype(::Type{ContourOperator{T}}) where {T} = T
 
-apply!(x::ContourOperator, lat::AbstractPTLattice, mps::ProcessTensor; aheads::Union{Vector{Bool}, Bool}=true) = apply!(x, lat, mps, aheads)
+apply!(x::ContourOperator, lat::AbstractPTLattice, mps::ProcessTensor; aheads::Union{AbstractVector{Bool}, Bool}=true) = apply!(x, lat, mps, aheads)
 
-function apply!(x::ContourOperator, lat::AbstractPTLattice, mps::ProcessTensor, aheads::Vector{Bool})
+function apply!(x::ContourOperator, lat::AbstractPTLattice, mps::ProcessTensor, aheads::AbstractVector{Bool})
 	for (ind, m, a) in zip(x.indices, x.ops, aheads)
 		pos = lat[ind]
 		m2 = m
