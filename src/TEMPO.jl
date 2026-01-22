@@ -19,7 +19,7 @@ export mult, mult!, DMRGMult1
 export ProcessTensor, randompt
 # ADT terms
 export ADTTerm, apply!
-export FockTermS
+export FockTermS, FockTerm, FockProdTerm
 # ADT Lattices
 export FockOrdering, ImagFockOrdering, RealFockOrdering, MixedFockOrdering, TimeOrderingStyle
 export M2M1, M2m2M1m1, M2M1_m1M1m2M2, TimeLocalLayout

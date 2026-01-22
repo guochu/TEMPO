@@ -97,8 +97,35 @@ function apply!(x::AbstractFockTerm{T}, mps::ProcessTensor) where {T}
 end
 
 
+struct FockProdTerm{T <: Number}
+	data::Vector{Matrix{T}}
+	positions::Vector{Int}
+end
 
+function FockProdTerm(positions::AbstractVector{Int}, data::AbstractVector{<:AbstractMatrix{T}}) where {T}
+	(length(positions) == length(data)) || throw(ArgumentError("number of positions mismatch with number of ops"))
+	(length(positions) == length(Set(positions))) || throw(ArgumentError("multiple n̂ on the same position not allowed"))
+	p = sortperm(positions)
+	positions = positions[p]
+	data = data[p]
+	return FockProdTerm(data, positions)
+end
 
+TO.scalartype(::Type{FockProdTerm{T}}) where {T} = T
+
+apply!(x::FockProdTerm, mps::ProcessTensor; aheads::Union{AbstractVector{Bool}, Bool}=true) = apply!(x, mps, aheads)
+apply!(x::FockProdTerm, mps::ProcessTensor, ahead::Bool) = apply!(x, mps, [ahead for i in 1:length(x.positions)])
+function apply!(x::FockProdTerm, mps::ProcessTensor, aheads::AbstractVector{Bool}) 
+	for (pos, m, a) in zip(x.positions, x.data, aheads)
+		if a
+			@tensor tmp[1,2,3,5] := mps[pos][1,2,3,4] * m[4,5]
+		else
+			@tensor tmp[3,1,4,5] := m[1,2] * mps[pos][3,2,4,5]
+		end
+		mps[pos] = tmp
+	end
+	return mps
+end
 
 function decompose_to_mpo(m::AbstractArray{T, N}) where {T<:Number, N}
 	L2 = div(N, 2)
