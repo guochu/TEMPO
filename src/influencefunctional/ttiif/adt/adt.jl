@@ -6,7 +6,7 @@ function hybriddynamics!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractC
 		mps = hybriddynamics(lattice, corr, hyb, alg)
 		return mult!(gmps, mps, alg.algmult)
 	else
-		(alg.verbosity > 1) && println("Serial scheme using 2^$(alg.k)-1 multiplications")
+		(alg.verbosity > 1) && println("Serial scheme using 2^$(alg.k) multiplications")
 		return _hybriddynamics_slow!(gmps, lattice, corr, hyb, alg)
 	end
 end
@@ -16,7 +16,7 @@ function hybriddynamics(lattice::AbstractADTLattice, corr::AbstractCorrelationFu
 		(alg.verbosity > 1) && println("Tree bipartition scheme using $(alg.k) multiplications")
 		return _hybriddynamics_fast(lattice, corr, hyb, alg)
 	else
-		(alg.verbosity > 1) && println("Serial scheme using 2^$(alg.k) multiplications")
+		(alg.verbosity > 1) && println("Serial scheme using 2^$(alg.k)-1 multiplications")
 		return _hybriddynamics_slow(lattice, corr, hyb, alg)
 	end
 end
