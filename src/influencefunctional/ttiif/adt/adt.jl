@@ -66,7 +66,7 @@ function _hybriddynamics_slow!(gmps, lattice::AbstractADTLattice, corr::Abstract
 	algmult = alg.algmult
 	if alg.verbosity > 1
 		t = @elapsed mps_all = influenceoperatorexponential(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algexpan=alg.algexpan)
-		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bond_dimension(mps))
+		println("building the initial MPS-IFs takes $t seconds ")
 	else
 		mps_all = influenceoperatorexponential(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algexpan=alg.algexpan)
 	end
@@ -78,7 +78,7 @@ function _hybriddynamics_slow!(gmps, lattice::AbstractADTLattice, corr::Abstract
 					mult!(gmps, mps, algmult)
 				end
 			end
-			println("the $i-th iteration takes $t seconds, bond dimension is ", bond_dimension(mps))
+			println("the $i-th iteration takes $t seconds, bond dimension is ", bond_dimension(gmps))
 		else
 			for mps in mps_all
 				mult!(gmps, mps, algmult)
