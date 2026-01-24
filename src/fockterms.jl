@@ -97,25 +97,27 @@ function apply!(x::AbstractFockTerm{T}, mps::ProcessTensor) where {T}
 end
 
 
-struct FockProdTerm{T <: Number}
+struct ProdFockTerm{T <: Number}
 	data::Vector{Matrix{T}}
 	positions::Vector{Int}
 end
 
-function FockProdTerm(positions::AbstractVector{Int}, data::AbstractVector{<:AbstractMatrix{T}}) where {T}
+function ProdFockTerm(positions::AbstractVector{Int}, data::AbstractVector{<:AbstractMatrix{T}}) where {T}
 	(length(positions) == length(data)) || throw(ArgumentError("number of positions mismatch with number of ops"))
 	(length(positions) == length(Set(positions))) || throw(ArgumentError("multiple n̂ on the same position not allowed"))
 	p = sortperm(positions)
 	positions = positions[p]
 	data = data[p]
-	return FockProdTerm(data, positions)
+	return ProdFockTerm(data, positions)
 end
 
-TO.scalartype(::Type{FockProdTerm{T}}) where {T} = T
+ProdFockTerm(pos::Int, data::AbstractMatrix{<:Number}) = ProdFockTerm([pos], [data])
 
-apply!(x::FockProdTerm, mps::ProcessTensor; aheads::Union{AbstractVector{Bool}, Bool}=true) = apply!(x, mps, aheads)
-apply!(x::FockProdTerm, mps::ProcessTensor, ahead::Bool) = apply!(x, mps, [ahead for i in 1:length(x.positions)])
-function apply!(x::FockProdTerm, mps::ProcessTensor, aheads::AbstractVector{Bool}) 
+TO.scalartype(::Type{ProdFockTerm{T}}) where {T} = T
+
+apply!(x::ProdFockTerm, mps::ProcessTensor; aheads::Union{AbstractVector{Bool}, Bool}=true) = apply!(x, mps, aheads)
+apply!(x::ProdFockTerm, mps::ProcessTensor, ahead::Bool) = apply!(x, mps, [ahead for i in 1:length(x.positions)])
+function apply!(x::ProdFockTerm, mps::ProcessTensor, aheads::AbstractVector{Bool}) 
 	for (pos, m, a) in zip(x.positions, x.data, aheads)
 		if a
 			@tensor tmp[1,2,3,5] := mps[pos][1,2,3,4] * m[4,5]
