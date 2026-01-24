@@ -16,6 +16,8 @@ const DenseMPOTensor{T} = AbstractArray{T, 4} where {T<:Number}
 
 space_l(m::DenseMPSTensor) = size(m, 1)
 space_r(m::DenseMPSTensor) = size(m, 3)
+space_l(m::AbstractMatrix) = size(m, 1)
+space_r(m::AbstractMatrix) = size(m, 2)
 phydim(m::DenseMPSTensor) = size(m, 2)
 space_l(m::DenseMPOTensor) = size(m, 1)
 space_r(m::DenseMPOTensor) = size(m, 3)

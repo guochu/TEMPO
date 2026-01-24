@@ -45,5 +45,5 @@ function tofockprodterm(x::ContourOperator, lat::AbstractPTLattice)
 		pos[i] = lat[ind]
 		data[i] = (branch(ind) == :-) ? transpose(x.ops[i]) : x.ops[i]
 	end
-	return FockProdTerm(pos, data)
+	return ProdFockTerm(pos, data)
 end

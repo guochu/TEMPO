@@ -2,7 +2,10 @@ abstract type AbstractFockTerm{T<:Number} end
 TO.scalartype(::Type{<:AbstractFockTerm{T}}) where {T} = T
 # num_terms(t::AbstractFockTerm) = length(t.positions)
 
-struct FockTermS{N, T <: Number} <: AbstractFockTerm{T}
+abstract type GenericFockTerm{T<:Number} <: AbstractFockTerm{T} end
+abstract type AbstractProdFockTerm{T<:Number} <: AbstractFockTerm{T} end
+
+struct FockTermS{N, T <: Number} <: GenericFockTerm{T}
 	data::NTuple{N, Array{T, 4}}
 	positions::NTuple{N, Int}
 end
@@ -42,7 +45,7 @@ end
 FockTermS(p::Int, data::AbstractMatrix) = FockTermS((p,), (data,))
 
 
-struct FockTerm{T <: Number} <: AbstractFockTerm{T}
+struct FockTerm{T <: Number} <: GenericFockTerm{T}
 	data::Vector{Array{T, 4}}
 	positions::Vector{Int}
 end
@@ -57,7 +60,7 @@ function FockTerm(positions::AbstractVector{Int}, data::AbstractVector{<:Abstrac
 	return FockTerm(convert(Vector{Array{T, 4}}, data), positions)
 end
 
-function apply!(x::AbstractFockTerm{T}, mps::ProcessTensor) where {T}
+function apply!(x::GenericFockTerm{T}, mps::ProcessTensor) where {T}
 	data = x.data
 	pos = x.positions
 	N = length(data)
@@ -97,7 +100,7 @@ function apply!(x::AbstractFockTerm{T}, mps::ProcessTensor) where {T}
 end
 
 
-struct ProdFockTerm{T <: Number}
+struct ProdFockTerm{T <: Number} <: AbstractProdFockTerm{T}
 	data::Vector{Matrix{T}}
 	positions::Vector{Int}
 end
@@ -112,8 +115,6 @@ function ProdFockTerm(positions::AbstractVector{Int}, data::AbstractVector{<:Abs
 end
 
 ProdFockTerm(pos::Int, data::AbstractMatrix{<:Number}) = ProdFockTerm([pos], [data])
-
-TO.scalartype(::Type{ProdFockTerm{T}}) where {T} = T
 
 apply!(x::ProdFockTerm, mps::ProcessTensor; aheads::Union{AbstractVector{Bool}, Bool}=true) = apply!(x, mps, aheads)
 apply!(x::ProdFockTerm, mps::ProcessTensor, ahead::Bool) = apply!(x, mps, [ahead for i in 1:length(x.positions)])
