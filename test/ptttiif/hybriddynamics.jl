@@ -32,6 +32,8 @@ println("------------------------------------")
 				@test distance(mpsI1, mpsI2) / norm(mpsI1) < rtol
 			end
 
+			mpsI2 = hybriddynamics!(vacuumstate(promote_type(scalartype(lattice), scalartype(corr), T), lattice), lattice, corr, hyb, algs[2])
+			@test distance(mpsI1, mpsI2) / norm(mpsI1) < rtol
 		end
 	end
 end
@@ -74,5 +76,6 @@ end
 		@test distance(mpsI1, mpsI2) / norm(mpsI1) < rtol
 	end
 
-
+	mpsI2 = hybriddynamics!(vacuumstate(lattice), lattice, corr, hyb, alg6)
+	@test distance(mpsI1, mpsI2) / norm(mpsI1) < rtol
 end
