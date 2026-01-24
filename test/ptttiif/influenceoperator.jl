@@ -3,7 +3,7 @@ println("|    TTI-IF InfluenceOperator      |")
 println("------------------------------------")
 
 
-@testset "TTI-IF-InfluenceOperatot: imaginary-time" begin
+@testset "TTI-IF-InfluenceOperator: imaginary-time" begin
 	β = 1
 	δτ = 0.2
 	tol = 1.0e-6
@@ -50,7 +50,7 @@ println("------------------------------------")
 		dt = 0.01
 
 		mpo1 = dt * mpo1 + vacuumstate(lattice)
-		mps0 = influenceoperatorexponential(lattice, corr, dt, hyb, WII(), algexpan=algexpan)
+		mps0, = influenceoperatorexponential(lattice, corr, dt, hyb, WII(), algexpan=algexpan)
 
 		@test distance(mpo1, mps0) / norm(mps0) < dt
 
@@ -69,7 +69,7 @@ println("------------------------------------")
 	end
 end
 
-@testset "TTI-IF-InfluenceOperatot: real-time" begin
+@testset "TTI-IF-InfluenceOperator: real-time" begin
 
 	function __get_contour_op(lattice, ind1::ContourIndex, ind2::ContourIndex, z1::AbstractMatrix, z2::AbstractMatrix, coef)
 		d = lattice.d

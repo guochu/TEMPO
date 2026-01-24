@@ -15,7 +15,7 @@ function influenceoperatorexponential(lattice::ImagADTLattice1Order, corr2::Imag
 	mpoj = pt_ti_mpotensor(corr, op, op, algexpan)
 	mpoj′ = timeevompo(mpoj, dt, alg)
 	mpstensors = _tompsj.(_get_mpo3(mpoj′))
-	return _fit_to_lattice(lattice, mpstensors) 
+	return (_fit_to_lattice(lattice, mpstensors), )
 end
 function influenceoperatorexponential(lattice::ImagADTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper; 
 										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
@@ -31,7 +31,8 @@ end
 function differentialinfluencefunctional(lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper, 
 											algmult::DMRGAlgorithm; 
 											algexpan::ExponentialExpansionAlgorithm=PronyExpansion()) 
-	return influenceoperatorexponential(lattice, corr, dt, hyb, alg; algexpan=algexpan)
+	mpo1, = influenceoperatorexponential(lattice, corr, dt, hyb, alg; algexpan=algexpan)
+	return mpo1
 end
 function differentialinfluencefunctional(lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper, 
 											algmult::DMRGAlgorithm; 

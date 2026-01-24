@@ -54,7 +54,7 @@ function influenceoperatorexponential(lattice::RealADTLattice1Order, corr::RealC
 	mpo2a, mpo2b = _fit_to_lattice_offdiag(lattice, h2a, :+, :-), _fit_to_lattice_offdiag(lattice, h2b, :+, :-) 
 	mpo3a, mpo3b = _fit_to_lattice_offdiag(lattice, h3a, :-, :+), _fit_to_lattice_offdiag(lattice, h3b, :-, :+) 
 	mpo4a, mpo4b = _fit_to_lattice_diag(lattice, h4a, :-, :-), _fit_to_lattice_diag(lattice, h4b, :-, :-) 
-	return (mpo1a, mpo1b), (mpo2a, mpo2b), (mpo3a, mpo3b), (mpo4a, mpo4b)
+	return mpo1a, mpo1b, mpo2a, mpo2b, mpo3a, mpo3b, mpo4a, mpo4b
 end
 
 function differentialinfluencefunctional(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper, 
@@ -67,7 +67,7 @@ function differentialinfluencefunctional(lattice::RealADTLattice1Order, corr::Re
 end
 function differentialinfluencefunctional(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper, 
 											algmult::DMRGAlgorithm; algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
-	(h1a, h1b), (h2a, h2b), (h3a, h3b), (h4a, h4b) = influenceoperatorexponential(lattice, corr, dt, hyb, alg, algexpan=algexpan)
+	h1a, h1b, h2a, h2b, h3a, h3b, h4a, h4b = influenceoperatorexponential(lattice, corr, dt, hyb, alg, algexpan=algexpan)
 	mps = mult(h1b, h1a, algmult)
 
 	mps = mult(h2a, mps, algmult)

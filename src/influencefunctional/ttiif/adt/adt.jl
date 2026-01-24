@@ -2,8 +2,13 @@ include("imag.jl")
 include("real.jl")
 
 function hybriddynamics!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::TranslationInvariantIF)
-	mps = hybriddynamics(lattice, corr, hyb, alg)
-	return mult!(gmps, mps, alg.algmult)
+	if alg.fast
+		mps = hybriddynamics(lattice, corr, hyb, alg)
+		return mult!(gmps, mps, alg.algmult)
+	else
+		(alg.verbosity > 1) && println("Serial scheme using 2^$(alg.k)-1 multiplications")
+		return _hybriddynamics_slow!(gmps, lattice, corr, hyb, alg)
+	end
 end
 
 function hybriddynamics(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::TranslationInvariantIF)
@@ -55,4 +60,30 @@ function _hybriddynamics_slow(lattice::AbstractADTLattice, corr::AbstractCorrela
 		end		
 	end
 	return mps
+end
+
+function _hybriddynamics_slow!(gmps, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::TranslationInvariantIF)
+	algmult = alg.algmult
+	if alg.verbosity > 1
+		t = @elapsed mps_all = influenceoperatorexponential(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algexpan=alg.algexpan)
+		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bond_dimension(mps))
+	else
+		mps_all = influenceoperatorexponential(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algexpan=alg.algexpan)
+	end
+
+	for i in 1:2^(alg.k)-1
+		if alg.verbosity > 1
+			t = @elapsed begin
+				for mps in mps_all
+					mult!(gmps, mps, algmult)
+				end
+			end
+			println("the $i-th iteration takes $t seconds, bond dimension is ", bond_dimension(mps))
+		else
+			for mps in mps_all
+				mult!(gmps, mps, algmult)
+			end
+		end		
+	end
+	return gmps
 end

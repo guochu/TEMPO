@@ -50,6 +50,12 @@ ADT(::Type{T}, L::Int; d::Int=2) where {T <: Number} = ADT(T, [d for i in 1:L])
 ADT(L::Int; d::Int=2) = ADT(Float64, L, d=d)
 
 Base.copy(psi::ADT) = ADT(copy(psi.data), copy(psi.s), scaling=scaling(psi))
+function Base.copy!(a::ADT, b::ADT)
+	a.data .= b.data
+	a.s .= b.s
+	setscaling!(a, scaling(b))
+	return a
+end
 function Base.complex(psi::ADT)
 	if scalartype(psi) <: Real
 		data = [complex(item) for item in psi.data]
