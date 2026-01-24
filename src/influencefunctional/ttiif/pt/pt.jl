@@ -17,7 +17,7 @@ function hybriddynamics(lattice::AbstractPTLattice, corr::AbstractCorrelationFun
 		(alg.verbosity > 1) && println("Tree bipartition scheme using $(alg.k) multiplications")
 		return _hybriddynamics_fast(lattice, corr, hyb, alg)
 	else
-		(alg.verbosity > 1) && println("Serial scheme using 2^$(alg.k)-1 multiplications")
+		(alg.verbosity > 1) && println("Serial scheme using 2^$(alg.k) multiplications")
 		return _hybriddynamics_slow(lattice, corr, hyb, alg)
 	end
 end
@@ -72,7 +72,7 @@ function _hybriddynamics_slow!(gmps, lattice::AbstractPTLattice, corr::AbstractC
 		mps_all = influenceoperatorexponential(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algexpan=alg.algexpan)
 	end
 
-	for i in 1:2^(alg.k)-1
+	for i in 1:2^(alg.k)
 		if alg.verbosity > 1
 			t = @elapsed begin
 				for mps in mps_all
