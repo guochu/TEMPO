@@ -72,10 +72,12 @@ struct NonAdditiveHyb{T<:Number} <: GeneralHybStyle
 
 function NonAdditiveHyb{T}(op::AbstractMatrix) where {T<:Number}
 	(size(op, 1) == size(op, 2)) || throw(ArgumentError("square matrix expected"))
+	ishermitian(op) || throw(ArgumentError("Hermitian matrix required"))
 	new{T}(convert(Matrix{T}, op))
 end
 end
 NonAdditiveHyb(a::AbstractMatrix{T}) where {T<:Number} = NonAdditiveHyb{T}(a)
+NonAdditiveHyb(hyb::AdditiveHyb) = NonAdditiveHyb(Matrix(Diagonal(hyb.op)))
 
 phydim(b::NonAdditiveHyb) = size(b.op, 1)
 
@@ -96,6 +98,8 @@ function NonDiagonalHyb{T}(op::AbstractMatrix) where {T<:Number}
 end
 end
 NonDiagonalHyb(a::AbstractMatrix{T}) where {T<:Number} = NonDiagonalHyb{T}(a)
+NonDiagonalHyb(hyb::AdditiveHyb) = NonDiagonalHyb(Matrix(Diagonal(hyb.op)))
+NonDiagonalHyb(hyb::NonAdditiveHyb) = NonDiagonalHyb(hyb.op)
 
 phydim(b::NonDiagonalHyb) = size(b.op, 1)
 
