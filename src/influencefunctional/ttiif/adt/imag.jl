@@ -2,8 +2,8 @@
 
 function influenceoperator(lattice::ImagADTLattice1Order, corr2::ImagCorrelationFunction, hyb::AdditiveHyb; algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	corr = corr2.data
-	op = Matrix(Diagonal(hyb.op))
-	mpoj = pt_ti_mpotensor(corr, op, op, algexpan)
+	op1, op2 = pairop(hyb)
+	mpoj = pt_ti_mpotensor(corr, op1, op2, algexpan)
 	mpstensors = _tompsj.(_get_mpo3(mpoj))
 	return _fit_to_lattice(lattice, mpstensors) 
 end
@@ -11,8 +11,8 @@ end
 function influenceoperatorexponential(lattice::ImagADTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper; 
 										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	corr = corr2.data
-	op = Matrix(Diagonal(hyb.op))
-	mpoj = pt_ti_mpotensor(corr, op, op, algexpan)
+	op1, op2 = pairop(hyb)
+	mpoj = pt_ti_mpotensor(corr, op1, op2, algexpan)
 	mpoj′ = timeevompo(mpoj, dt, alg)
 	mpstensors = _tompsj.(_get_mpo3(mpoj′))
 	return (_fit_to_lattice(lattice, mpstensors), )
@@ -20,8 +20,8 @@ end
 function influenceoperatorexponential(lattice::ImagADTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper; 
 										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	corr = corr2.data
-	op = Matrix(Diagonal(hyb.op))
-	mpoj = pt_ti_mpotensor(corr, op, op, algexpan)
+	op1, op2 = pairop(hyb)
+	mpoj = pt_ti_mpotensor(corr, op1, op2, algexpan)
 	mpoja, mpojb = timeevompo(mpoj, dt, alg)
 	mpo1, mpo2 = _tompsj.(_get_mpo3(mpoja)), _tompsj.(_get_mpo3(mpojb))
 	return _fit_to_lattice(lattice, mpo1), _fit_to_lattice(lattice, mpo2) 

@@ -1,8 +1,7 @@
 
 function influenceoperator(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, hyb::AdditiveHyb; algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr)
-	op =  Matrix(Diagonal(hyb.op))
-	op1, op2 = op, op
+	op1, op2 = pairop(hyb)
 	mpoj1 = pt_ti_mpotensor(η⁺⁺, op1, op2, algexpan)
 	mpoj2 = pt_ti_mpotensor(η⁺⁻, fused_op(op1, :+), fused_op(op2, :-), algexpan)
 	mpoj3 = pt_ti_mpotensor(η⁻⁺, fused_op(op1, :-), fused_op(op2, :+), algexpan)
@@ -18,8 +17,7 @@ end
 function influenceoperatorexponential(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper; 
 										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr)
-	op =  Matrix(Diagonal(hyb.op))
-	op1, op2 = op, op
+	op1, op2 = pairop(hyb)
 	mpoj1 = pt_ti_mpotensor(η⁺⁺, op1, op2, algexpan)
 	mpoj2 = pt_ti_mpotensor(η⁺⁻, fused_op(op1, :+), fused_op(op2, :-), algexpan)
 	mpoj3 = pt_ti_mpotensor(η⁻⁺, fused_op(op1, :-), fused_op(op2, :+), algexpan)
@@ -36,8 +34,7 @@ end
 function influenceoperatorexponential(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper; 
 										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr)
-	op =  Matrix(Diagonal(hyb.op))
-	op1, op2 = op, op
+	op1, op2 = pairop(hyb)
 	mpoj1 = pt_ti_mpotensor(η⁺⁺, op1, op2, algexpan)
 	mpoj2 = pt_ti_mpotensor(η⁺⁻, fused_op(op1, :+), fused_op(op2, :-), algexpan)
 	mpoj3 = pt_ti_mpotensor(η⁻⁺, fused_op(op1, :-), fused_op(op2, :+), algexpan)
