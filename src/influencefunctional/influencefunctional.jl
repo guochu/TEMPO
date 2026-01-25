@@ -55,6 +55,10 @@ AdditiveHyb(x::AbstractVector{<:Real}) = AdditiveHyb(float(x))
 phydim(b::AdditiveHyb) = length(b.op)
 
 TO.scalartype(::Type{AdditiveHyb}) = Float64
+function pairop(b::AdditiveHyb)
+	op = Matrix(Diagonal(b.op))
+	return op, op
+end
 
 abstract type GeneralHybStyle <: HybridizationStyle end
 
