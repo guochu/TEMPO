@@ -59,6 +59,11 @@ function pairop(b::AdditiveHyb)
 	op = Matrix(Diagonal(b.op))
 	return op, op
 end
+function AdditiveHyb(a::AbstractMatrix)
+	isdiag(a) || throw(ArgumentError("AdditiveHyb requires diagonal matrix"))
+	adiag = [a[i, i] for i in 1:size(a, 1)]
+	return AdditiveHyb(adiag)
+end
 
 abstract type GeneralHybStyle <: HybridizationStyle end
 
