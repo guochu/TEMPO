@@ -6,7 +6,7 @@ end
 
 Base.length(x::PTTransferMatrix) = length(x.states[1])
 TO.scalartype(::Type{PTTransferMatrix{_L, T, N}}) where {_L, T, N} = T
-TEMPO.scaling(x::PTTransferMatrix) = x.scaling
+scaling(x::PTTransferMatrix) = x.scaling
 
 function PTTransferMatrix(lattice::AbstractPTLattice, states::NTuple{N, Vector{Array{T, 4}}}; scaling::Real=1) where {T, N}
 	L = length(states[1])
@@ -15,7 +15,10 @@ function PTTransferMatrix(lattice::AbstractPTLattice, states::NTuple{N, Vector{A
 	end
 	return PTTransferMatrix(lattice, float(scaling), states)
 end 
-function PTTransferMatrix(lattice::_AllowdPTLattices, states::Vararg{ProcessTensor}; scaling::Real=scaling(states...))
+
+const _AllowdFinitePTLattices{O} = Union{ImagPTLattice{O}, RealPTLattice{O}} where {O}
+
+function PTTransferMatrix(lattice::_AllowdFinitePTLattices, states::Vararg{ProcessTensor}; scaling::Real=scaling(states...))
 	(length(states[1]) == length(lattice)) || throw(DimensionMismatch("lattice size mismatch with ProcessTensor size"))
 	return PTTransferMatrix(lattice, map(x->x.data, states), scaling=scaling)
 end 
@@ -24,7 +27,6 @@ end
 # the meaning for imag and real ptlattices are very different!!
 # only support imag and real PT lattices currently
 # support for mixed PT lattices is a bit tricky
-const _AllowdFinitePTLattices{O} = Union{ImagPTLattice{O}, RealPTLattice{O}} where {O}
 
 l_LL(f, m::PTTransferMatrix{L, T, N}) where {L<:_AllowdFinitePTLattices, T, N} = f(T, ntuple(i->space_l(m.states[i][1]), N)..., phydim(m.lattice), phydim(m.lattice))
 r_RR(f, m::PTTransferMatrix{L, T, N}) where {L<:_AllowdFinitePTLattices, T, N} = f(T, ntuple(i->space_r(m.states[i][end]), N)..., phydim(m.lattice), phydim(m.lattice))
@@ -54,17 +56,20 @@ end
 # random_right_boundary(m::PTTransferMatrix) = r_RR(randn, m)
 
 function transfer_left(left::AbstractArray, m::PTTransferMatrix) 
-	for i in 1:m.lattice.k
-		left = transfer_left(left, i, m.lattice, scaling(m), m.states...)
+	for i in 1:m.lattice.N
+		left = transfer_left(left, i, m)
 	end
 	return left
 end
 function transfer_right(m::PTTransferMatrix, right::AbstractArray) 
-	for i in m.lattice.k:-1:1
-		right = transfer_right(right, i, m.lattice, scaling(m), m.states...)
+	for i in m.lattice.N:-1:1
+		right = transfer_right(right, i, m)
 	end
 	return right
 end
+
+transfer_left(left::AbstractArray, i::Int, m::PTTransferMatrix) = transfer_left(left, i, m.lattice, scaling(m), m.states...)
+transfer_right(right::AbstractArray, i::Int, m::PTTransferMatrix) = transfer_right(right, i, m.lattice, scaling(m), m.states...)
 
 # imaginary time 
 function transfer_left(left::DenseMPSTensor, i::Int, lattice::ImagPTLattice, sca, x::Vector{<:DenseMPOTensor})
@@ -76,12 +81,12 @@ function transfer_left(left::DenseMPOTensor, i::Int, lattice::ImagPTLattice, sca
 	return lmul!(sca, tmp)
 end
 
-function transfer_right(right::DenseMPOTensor, i::Int, lattice::ImagPTLattice, sca, x::Vector{<:DenseMPOTensor})
-	@tensor tmp[1,2,5,6] := x[i][1,2,3,4] * right[3,4,5,6]
+function transfer_right(right::DenseMPSTensor, i::Int, lattice::ImagPTLattice, sca, x::Vector{<:DenseMPOTensor})
+	@tensor tmp[1,2,5] := x[i][1,2,3,4] * right[3,4,5]
 	return lmul!(sca, tmp)
 end
 function transfer_right(right::DenseMPOTensor, i::Int, lattice::ImagPTLattice, sca, x::Vector{<:DenseMPOTensor}, y::Vector{<:DenseMPOTensor})
-	@tensor tmp[1,7,2] := x[i][1,2,3,4] * right[3,5,6] * y[i][7,4,5,6]
+	@tensor tmp[1,7,2,8] := x[i][1,2,3,4] * right[3,5,6,8] * y[i][7,4,5,6]
 	return lmul!(sca, tmp)
 end
 
