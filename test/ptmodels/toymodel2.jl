@@ -40,7 +40,7 @@ println("------------------------------------")
 	algexpan = PronyExpansion(n=20, tol=1.0e-8)
 	alg = TranslationInvariantIF(k=5, fast=true, algmult=algmult, algexpan=algexpan)
 	mpsI = hybriddynamics(lattice, corr, hyb, alg)
-	mps = mult!(mpsK, mpsI, trunc=trunc)
+	mps = mult(mpsK, mpsI, trunc=trunc)
 
 	Zval = integrate(lattice, mps)
 
@@ -50,6 +50,8 @@ println("------------------------------------")
 	@test abs(Zval - Zval2) / abs(Zval) < tol
 
 
+	cache1 = environments(lattice, mps)
+	cache2 = environments(lattice, mpsK, mpsI)
 	## diagonal observables
 	op = [-0.73 0; 0 0.5]
 
@@ -57,6 +59,10 @@ println("------------------------------------")
 	t = ContourOperator(ind1, op * op )
 	mps2 = apply!(t, lattice, deepcopy(mps))
 	v = integrate(lattice, mps2) / Zval
+	v1 = expectation(t, cache1)
+	@test abs(v1 - v) / abs(v) < tol
+	v2 = expectation(t, cache2)
+	@test abs(v2 - v) / abs(v) < tol
 
 	corrs = [v]
 	for i in 2:N
@@ -65,6 +71,11 @@ println("------------------------------------")
 		# t = ADTTerm((i,1), reshape(kron(zdiag, zdiag), 2, 2))
 		mps2 = apply!(t, lattice, deepcopy(mps))
 		v = integrate(lattice, mps2) / Zval
+
+		v1 = expectation(t, cache1)
+		@test abs(v1 - v) / abs(v) < tol
+		v2 = expectation(t, cache2)
+		@test abs(v2 - v) / abs(v) < tol		
 		push!(corrs, v)
 	end
 	
@@ -86,6 +97,10 @@ println("------------------------------------")
 	ct = ContourOperator(c1, op1 * op2)
 	mps2 = apply!(ct, lattice, deepcopy(mps))
 	v = integrate(lattice, mps2) / Zval
+	v1 = expectation(ct, cache1)
+	@test abs(v1 - v) / abs(v) < tol
+	v2 = expectation(ct, cache2)
+	@test abs(v2 - v) / abs(v) < tol
 
 	corrs = [v]
 	c2 = ContourIndex(1)
@@ -95,6 +110,12 @@ println("------------------------------------")
 
 		mps2 = apply!(ct, lattice, deepcopy(mps))
 		v = integrate(lattice, mps2) / Zval
+
+		v1 = expectation(ct, cache1)
+		@test abs(v1 - v) / abs(v) < tol
+		v2 = expectation(ct, cache2)
+		@test abs(v2 - v) / abs(v) < tol
+
 		push!(corrs, v)
 	end
 	
@@ -147,13 +168,16 @@ end
 	mpsI = hybriddynamics(lattice, corr, bs, alg)
 	# @test distance(mpsI, mpsI′) / norm(mpsI′) < tol
 	mpsK = sysdynamics(lattice, model, trunc=trunc)
-	mps = mult!(mpsK, mpsI, trunc=trunc)
+	mps = mult(mpsK, mpsI, trunc=trunc)
 
 	ρ1 = zeros(2,2)
 	ρ1[1,1] = 1
 	ρ2 = 0.5 .* one(ρ1)
 
 	for ρimp in [ρ1, _rand_dm(2)]
+
+		cache1 = environments(lattice, mps, ρ₀ = ρimp)
+		cache2 = environments(lattice, mpsK, mpsI, ρ₀ = ρimp)
 
 		tmp = initialstate!(deepcopy(mps), lattice, ρimp)
 		Zval = integrate(lattice, tmp)
@@ -171,6 +195,12 @@ end
 		mps2 = initialstate!(mps2, lattice, ρimp)
 		v = integrate(lattice, mps2) / Zval
 
+		v1 = expectation(m, cache1)
+		@test abs(v1 - v) / abs(v) < tol
+		v2 = expectation(m, cache2)
+		@test abs(v2 - v) / abs(v) < tol
+
+
 		corrs = [v]
 		for i in 2:N
 			ind2 = ContourIndex(i, branch=:+)
@@ -178,6 +208,12 @@ end
 			mps2 = apply!(m, lattice, deepcopy(mps))
 			mps2 = initialstate!(mps2, lattice, ρimp)
 			v = integrate(lattice, mps2) / Zval
+
+			v1 = expectation(m, cache1)
+			@test abs(v1 - v) / abs(v) < tol
+			v2 = expectation(m, cache2)
+			@test abs(v2 - v) / abs(v) < tol
+
 			push!(corrs, v)
 		end
 		
@@ -203,6 +239,11 @@ end
 		mps2 = initialstate!(mps2, lattice, ρimp)
 		v = integrate(lattice, mps2) / Zval
 
+		v1 = expectation(ct, cache1)
+		@test abs(v1 - v) / abs(v) < tol
+		v2 = expectation(ct, cache2)
+		@test abs(v2 - v) / abs(v) < tol
+
 		corrs = [v]
 		c2 = ContourIndex(1, branch=:+)
 		for i in 2:N
@@ -212,6 +253,11 @@ end
 			mps2 = apply!(ct, lattice, deepcopy(mps))
 			mps2 = initialstate!(mps2, lattice, ρimp)
 			v = integrate(lattice, mps2) / Zval
+
+			v1 = expectation(ct, cache1)
+			@test abs(v1 - v) / abs(v) < tol
+			v2 = expectation(ct, cache2)
+			@test abs(v2 - v) / abs(v) < tol
 
 			push!(corrs, v)
 		end
@@ -235,6 +281,11 @@ end
 		mps2 = initialstate!(mps2, lattice, ρimp)
 		v = integrate(lattice, mps2) / Zval
 
+		v1 = expectation(ct, cache1)
+		@test abs(v1 - v) / abs(v) < tol
+		v2 = expectation(ct, cache2)
+		@test abs(v2 - v) / abs(v) < tol
+
 		corrs = [v]
 		for i in 2:N
 			c2 = ContourIndex(i, branch=:+)
@@ -244,6 +295,11 @@ end
 			mps2 = initialstate!(mps2, lattice, ρimp)
 			v = integrate(lattice, mps2) / Zval
 
+			v1 = expectation(ct, cache1)
+			@test abs(v1 - v) / abs(v) < tol
+			v2 = expectation(ct, cache2)
+			@test abs(v2 - v) / abs(v) < tol
+			
 			push!(corrs, v)
 		end
 
