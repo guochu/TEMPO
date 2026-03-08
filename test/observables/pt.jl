@@ -34,11 +34,11 @@ println("------------------------------------")
 		mps′ = apply!(t, copy(mps))
 		v1 = integrate(lattice, mps′) / Zval
 
-		v2 = expectation(t, cache1)
+		v2 = expectationvalue(t, cache1)
 		# println("v1=", v1, " v2=", v2)
 		@test abs(v2 - v1) / abs(v1) < tol
 
-		v2 = expectation(t, cache2)
+		v2 = expectationvalue(t, cache2)
 		# println("v1=", v1, " v2=", v2)
 		@test abs(v2 - v1) / abs(v1) < tol
 	end
@@ -86,9 +86,9 @@ end
 				mps′ = apply!(t, copy(mps))
 				mps′ = initialstate!(mps′, lattice, ρ₀)
 				v1 = integrate(lattice, mps′) / Zval
-				v2 = expectation(t, cache1)
+				v2 = expectationvalue(t, cache1)
 				@test abs(v2 - v1) / abs(v1) < tol
-				v2 = expectation(t, cache2)
+				v2 = expectationvalue(t, cache2)
 				@test abs(v2 - v1) / abs(v1) < tol
 			end
 		end

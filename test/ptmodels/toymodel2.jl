@@ -59,9 +59,9 @@ println("------------------------------------")
 	t = ContourOperator(ind1, op * op )
 	mps2 = apply!(t, lattice, deepcopy(mps))
 	v = integrate(lattice, mps2) / Zval
-	v1 = expectation(t, cache1)
+	v1 = expectationvalue(t, cache1)
 	@test abs(v1 - v) / abs(v) < tol
-	v2 = expectation(t, cache2)
+	v2 = expectationvalue(t, cache2)
 	@test abs(v2 - v) / abs(v) < tol
 
 	corrs = [v]
@@ -72,9 +72,9 @@ println("------------------------------------")
 		mps2 = apply!(t, lattice, deepcopy(mps))
 		v = integrate(lattice, mps2) / Zval
 
-		v1 = expectation(t, cache1)
+		v1 = expectationvalue(t, cache1)
 		@test abs(v1 - v) / abs(v) < tol
-		v2 = expectation(t, cache2)
+		v2 = expectationvalue(t, cache2)
 		@test abs(v2 - v) / abs(v) < tol		
 		push!(corrs, v)
 	end
@@ -97,9 +97,9 @@ println("------------------------------------")
 	ct = ContourOperator(c1, op1 * op2)
 	mps2 = apply!(ct, lattice, deepcopy(mps))
 	v = integrate(lattice, mps2) / Zval
-	v1 = expectation(ct, cache1)
+	v1 = expectationvalue(ct, cache1)
 	@test abs(v1 - v) / abs(v) < tol
-	v2 = expectation(ct, cache2)
+	v2 = expectationvalue(ct, cache2)
 	@test abs(v2 - v) / abs(v) < tol
 
 	corrs = [v]
@@ -111,9 +111,9 @@ println("------------------------------------")
 		mps2 = apply!(ct, lattice, deepcopy(mps))
 		v = integrate(lattice, mps2) / Zval
 
-		v1 = expectation(ct, cache1)
+		v1 = expectationvalue(ct, cache1)
 		@test abs(v1 - v) / abs(v) < tol
-		v2 = expectation(ct, cache2)
+		v2 = expectationvalue(ct, cache2)
 		@test abs(v2 - v) / abs(v) < tol
 
 		push!(corrs, v)
@@ -195,9 +195,9 @@ end
 		mps2 = initialstate!(mps2, lattice, ρimp)
 		v = integrate(lattice, mps2) / Zval
 
-		v1 = expectation(m, cache1)
+		v1 = expectationvalue(m, cache1)
 		@test abs(v1 - v) / abs(v) < tol
-		v2 = expectation(m, cache2)
+		v2 = expectationvalue(m, cache2)
 		@test abs(v2 - v) / abs(v) < tol
 
 
@@ -209,9 +209,9 @@ end
 			mps2 = initialstate!(mps2, lattice, ρimp)
 			v = integrate(lattice, mps2) / Zval
 
-			v1 = expectation(m, cache1)
+			v1 = expectationvalue(m, cache1)
 			@test abs(v1 - v) / abs(v) < tol
-			v2 = expectation(m, cache2)
+			v2 = expectationvalue(m, cache2)
 			@test abs(v2 - v) / abs(v) < tol
 
 			push!(corrs, v)
@@ -239,9 +239,9 @@ end
 		mps2 = initialstate!(mps2, lattice, ρimp)
 		v = integrate(lattice, mps2) / Zval
 
-		v1 = expectation(ct, cache1)
+		v1 = expectationvalue(ct, cache1)
 		@test abs(v1 - v) / abs(v) < tol
-		v2 = expectation(ct, cache2)
+		v2 = expectationvalue(ct, cache2)
 		@test abs(v2 - v) / abs(v) < tol
 
 		corrs = [v]
@@ -254,9 +254,9 @@ end
 			mps2 = initialstate!(mps2, lattice, ρimp)
 			v = integrate(lattice, mps2) / Zval
 
-			v1 = expectation(ct, cache1)
+			v1 = expectationvalue(ct, cache1)
 			@test abs(v1 - v) / abs(v) < tol
-			v2 = expectation(ct, cache2)
+			v2 = expectationvalue(ct, cache2)
 			@test abs(v2 - v) / abs(v) < tol
 
 			push!(corrs, v)
@@ -281,9 +281,9 @@ end
 		mps2 = initialstate!(mps2, lattice, ρimp)
 		v = integrate(lattice, mps2) / Zval
 
-		v1 = expectation(ct, cache1)
+		v1 = expectationvalue(ct, cache1)
 		@test abs(v1 - v) / abs(v) < tol
-		v2 = expectation(ct, cache2)
+		v2 = expectationvalue(ct, cache2)
 		@test abs(v2 - v) / abs(v) < tol
 
 		corrs = [v]
@@ -295,9 +295,9 @@ end
 			mps2 = initialstate!(mps2, lattice, ρimp)
 			v = integrate(lattice, mps2) / Zval
 
-			v1 = expectation(ct, cache1)
+			v1 = expectationvalue(ct, cache1)
 			@test abs(v1 - v) / abs(v) < tol
-			v2 = expectation(ct, cache2)
+			v2 = expectationvalue(ct, cache2)
 			@test abs(v2 - v) / abs(v) < tol
 			
 			push!(corrs, v)

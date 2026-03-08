@@ -37,8 +37,8 @@ end
 
 environments(lattice::AbstractADTLattice, A::ADT, B::Vararg{ADT}) = ADTExpectationCache(lattice, (A, B...))
 
-expectation(m::ADTTerm, cache::ADTExpectationCache) = expectationvalue(m, cache) / Zvalue(cache)
-function expectationvalue(m::ADTTerm, cache::ADTExpectationCache)
+expectationvalue(m::ADTTerm, cache::ADTExpectationCache) = expectation(m, cache) / Zvalue(cache)
+function expectation(m::ADTTerm, cache::ADTExpectationCache)
 	j, k = m.positions[1], m.positions[end]
 	left = leftenv(cache, j)  
 	right = rightenv(cache, k) 

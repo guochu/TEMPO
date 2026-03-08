@@ -29,9 +29,9 @@ println("------------------------------------")
 		t = ADTTerm(i, op)
 		mps′ = apply!(t, copy(mps))
 		v1 = integrate(mps′) / Zval
-		v2 = expectation(t, cache1)
+		v2 = expectationvalue(t, cache1)
 		@test abs(v2 - v1) / abs(v1) < tol
-		v2 = expectation(t, cache2)
+		v2 = expectationvalue(t, cache2)
 		@test abs(v2 - v1) / abs(v1) < tol
 	end
 
@@ -69,9 +69,9 @@ end
 				t = ADTTerm((pos1, pos2), (op1, op2))
 				mps′ = apply!(t, copy(mps))
 				v1 = integrate(mps′) / Zval
-				v2 = expectation(t, cache1)
+				v2 = expectationvalue(t, cache1)
 				@test abs(v2 - v1) / abs(v1) < tol
-				v2 = expectation(t, cache2)
+				v2 = expectationvalue(t, cache2)
 				@test abs(v2 - v1) / abs(v1) < tol
 			end
 		end
@@ -115,9 +115,9 @@ end
 						t = ADTTerm((pos1, pos2), (op1, op2))
 						mps′ = apply!(t, copy(mps))
 						v1 = integrate(mps′) / Zval
-						v2 = expectation(t, cache1)
+						v2 = expectationvalue(t, cache1)
 						@test abs(v2 - v1) / abs(v1) < tol
-						v2 = expectation(t, cache2)
+						v2 = expectationvalue(t, cache2)
 						@test abs(v2 - v1) / abs(v1) < tol
 					end					
 				end

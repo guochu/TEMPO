@@ -40,9 +40,9 @@ end
 environments(lattice::ImagPTLattice, A::ProcessTensor, B::Vararg{ProcessTensor}) = PTExpectationCache(lattice, (A, B...))
 environments(lattice::RealPTLattice, A::ProcessTensor, B::Vararg{ProcessTensor}; ρ₀::AbstractMatrix=_eye(phydim(lattice))) = PTExpectationCache(lattice, (A, B...), ρ₀)
 
-expectation(m::ContourOperator, cache::PTExpectationCache) = expectation(tofockprodterm(m, cache.lattice), cache)
-expectation(m::AbstractFockTerm, cache::PTExpectationCache) = expectationvalue(m, cache) / Zvalue(cache)
-function expectationvalue(m::AbstractFockTerm, cache::PTExpectationCache)
+expectationvalue(m::ContourOperator, cache::PTExpectationCache) = expectationvalue(tofockprodterm(m, cache.lattice), cache)
+expectationvalue(m::AbstractFockTerm, cache::PTExpectationCache) = expectation(m, cache) / Zvalue(cache)
+function expectation(m::AbstractFockTerm, cache::PTExpectationCache)
 	# println("positions ", m.positions)
 	j, k = m.positions[1], m.positions[end]
 	j′ = pos2step(cache.lattice, j)
