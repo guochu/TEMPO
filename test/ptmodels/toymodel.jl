@@ -274,6 +274,7 @@ end
 	chi = 100
 	d = 20
 	tol = 1.0e-2
+	rtol = 1.0e-6
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
 
 	lattice = PTLattice(Nt = Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed)
@@ -316,7 +317,7 @@ end
 	mps = mult!(mps, mpsI2, trunc=trunc)
 	Zval = integrate(lattice, mps)
 
-
+	cache1 = environments(lattice, mps)
 	# H, Hbarebath = rabi_ham_2(Ω, d=d)
 
 
@@ -329,6 +330,8 @@ end
 	ct = ContourOperator(c1, op1 * op2)
 	mps2 = apply!(ct, lattice, deepcopy(mps))
 	v = integrate(lattice, mps2) / Zval
+	v2 = expectationvalue(ct, cache1)
+	@test abs(v2 - v) / abs(v) < rtol
 
 	corrs = [v]
 	c2 = ContourIndex(1, branch=:+)
@@ -338,6 +341,8 @@ end
 
 		mps2 = apply!(ct, lattice, deepcopy(mps))
 		v = integrate(lattice, mps2) / Zval
+		v2 = expectationvalue(ct, cache1)
+		@test abs(v2 - v) / abs(v) < rtol
 
 		push!(corrs, v)
 	end
@@ -361,6 +366,8 @@ end
 
 		mps2 = apply!(ct, lattice, deepcopy(mps))
 		v = integrate(lattice, mps2) / Zval
+		v2 = expectationvalue(ct, cache1)
+		@test abs(v2 - v) / abs(v) < rtol
 
 		push!(corrs, v)
 	end

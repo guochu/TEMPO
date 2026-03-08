@@ -45,7 +45,7 @@ println("------------------------------------")
 
 end
 
-@testset "Cached diagonal observables: real time" begin
+@testset "Cached observables: real time" begin
 	N = 4
 	δt = 0.1
 	tol = 1.0e-6
@@ -93,4 +93,58 @@ end
 			end
 		end
 	end
+end
+
+
+@testset "Cached observables: mixed time" begin
+	Nt = 4
+	Nτ=3
+	δt = 0.1
+	δτ = 0.2
+	tol = 1.0e-6
+	d = 2
+	lattice = PTLattice(Nt=Nt, Nτ=Nτ, δt=δt, δτ=δτ, d=d, contour=:mixed)
+	mps1 = randompt(ComplexF64, length(lattice), D=2, d=phydim(lattice))
+	canonicalize!(mps1)
+	mps2 = randompt(ComplexF64, length(lattice), D=2, d=phydim(lattice))
+	canonicalize!(mps2)
+	mps = mps1 * mps2
+	Zval = integrate(lattice, mps1, mps2)
+	Zval1 = integrate(lattice, mps)
+	@test abs(Zval1 - Zval) / abs(Zval) < tol
+	
+	cache1 = environments(lattice, mps)
+	Zval1 = Zvalue(cache1)
+	# println("Zval=", Zval, " Zval1=", Zval1)
+	@test abs(Zval1 - Zval) / abs(Zval) < tol
+
+	cache2 = environments(lattice, mps1, mps2)
+	Zval1 = Zvalue(cache2)
+	# # println("Zval=", Zval, " Zval1=", Zval1)
+	@test abs(Zval1 - Zval) / abs(Zval) < tol
+
+	op1 = randn(ComplexF64, phydim(lattice), phydim(lattice))
+	op2 = randn(ComplexF64, phydim(lattice), phydim(lattice))
+	for b1 in branches(lattice)
+		N1 = (b1==:τ) ? lattice.Nτ : lattice.Nt
+		for i in 1:N1
+			pos1 = index(lattice, i, branch=b1)
+			for b2 in branches(lattice)
+				N2 = (b2==:τ) ? lattice.Nτ : lattice.Nt
+				for j in 1:N2
+					pos2 = index(lattice, j, branch=b2)
+					if pos1 != pos2
+						t = ProdFockTerm([pos1, pos2], [op1, op2])
+						mps′ = apply!(t, copy(mps))
+						v1 = integrate(lattice, mps′) / Zval
+						v2 = expectationvalue(t, cache1)
+						@test abs(v2 - v1) / abs(v1) < tol
+						v2 = expectationvalue(t, cache2)
+						@test abs(v2 - v1) / abs(v1) < tol
+					end					
+				end
+			end
+		end
+	end
+
 end

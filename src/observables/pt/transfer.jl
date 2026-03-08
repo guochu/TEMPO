@@ -1,3 +1,5 @@
+const ImagAndRealFinitePTLattices{O} = Union{ImagPTLattice{O}, RealPTLattice{O}} where {O}
+
 struct PTTransferMatrix{_LAT <: AbstractPTLattice, T<:Number, N}
 	lattice::_LAT
 	scaling::Float64
@@ -16,9 +18,7 @@ function PTTransferMatrix(lattice::AbstractPTLattice, states::NTuple{N, Vector{A
 	return PTTransferMatrix(lattice, float(scaling), states)
 end 
 
-const _AllowdFinitePTLattices{O} = Union{ImagPTLattice{O}, RealPTLattice{O}} where {O}
-
-function PTTransferMatrix(lattice::_AllowdFinitePTLattices, states::Vararg{ProcessTensor}; scaling::Real=scaling(states...))
+function PTTransferMatrix(lattice::AbstractPTLattice, states::Vararg{ProcessTensor}; scaling::Real=scaling(states...))
 	(length(states[1]) == length(lattice)) || throw(DimensionMismatch("lattice size mismatch with ProcessTensor size"))
 	return PTTransferMatrix(lattice, map(x->x.data, states), scaling=scaling)
 end 
@@ -28,16 +28,16 @@ end
 # only support imag and real PT lattices currently
 # support for mixed PT lattices is a bit tricky
 
-l_LL(f, m::PTTransferMatrix{L, T, N}) where {L<:_AllowdFinitePTLattices, T, N} = f(T, ntuple(i->space_l(m.states[i][1]), N)..., phydim(m.lattice), phydim(m.lattice))
-r_RR(f, m::PTTransferMatrix{L, T, N}) where {L<:_AllowdFinitePTLattices, T, N} = f(T, ntuple(i->space_r(m.states[i][end]), N)..., phydim(m.lattice), phydim(m.lattice))
+l_LL(f, m::PTTransferMatrix{L, T, N}) where {L, T, N} = f(T, ntuple(i->space_l(m.states[i][1]), N)..., phydim(m.lattice), phydim(m.lattice))
+r_RR(f, m::PTTransferMatrix{L, T, N}) where {L, T, N} = f(T, ntuple(i->space_r(m.states[i][end]), N)..., phydim(m.lattice), phydim(m.lattice))
 
 
-function l_LL(m::PTTransferMatrix{<:_AllowdFinitePTLattices, T, N}) where {T, N}
+function l_LL(m::PTTransferMatrix{L, T, N}) where {L, T, N}
 	d = phydim(m.lattice)
 	a = _eye(T, d)
 	return reshape(a, ntuple(x->1, N)..., d, d)
 end 
-function r_RR(m::PTTransferMatrix{<:_AllowdFinitePTLattices, T, N}) where {T, N}
+function r_RR(m::PTTransferMatrix{L, T, N}) where {L, T, N}
 	d = phydim(m.lattice)
 	a = _eye(T, d)
 	return reshape(a, ntuple(x->1, N)..., d, d)
@@ -55,21 +55,24 @@ end
 # random_left_boundary(m::PTTransferMatrix) = l_LL(randn, m)
 # random_right_boundary(m::PTTransferMatrix) = r_RR(randn, m)
 
+num_transfers(lat::ImagAndRealFinitePTLattices) = lat.N
+num_transfers(lat::MixedPTLattice) = lat.Nτ + lat.Nt
+
 function transfer_left(left::AbstractArray, m::PTTransferMatrix) 
-	for i in 1:m.lattice.N
+	for i in 1:num_transfers(m.lattice)
 		left = transfer_left(left, i, m)
 	end
 	return left
 end
 function transfer_right(m::PTTransferMatrix, right::AbstractArray) 
-	for i in m.lattice.N:-1:1
+	for i in num_transfers(m.lattice):-1:1
 		right = transfer_right(right, i, m)
 	end
 	return right
 end
 
-transfer_left(left::AbstractArray, i::Int, m::PTTransferMatrix) = transfer_left(left, i, m.lattice, scaling(m), m.states...)
-transfer_right(right::AbstractArray, i::Int, m::PTTransferMatrix) = transfer_right(right, i, m.lattice, scaling(m), m.states...)
+transfer_left(left::AbstractArray, i::Int, m::PTTransferMatrix{<:ImagAndRealFinitePTLattices}) = transfer_left(left, i, m.lattice, scaling(m), m.states...)
+transfer_right(right::AbstractArray, i::Int, m::PTTransferMatrix{<:ImagAndRealFinitePTLattices}) = transfer_right(right, i, m.lattice, scaling(m), m.states...)
 
 # imaginary time 
 function transfer_left(left::DenseMPSTensor, i::Int, lattice::ImagPTLattice, sca, x::Vector{<:DenseMPOTensor})
