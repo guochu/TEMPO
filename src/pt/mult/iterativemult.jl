@@ -19,6 +19,7 @@ function iterativemult(x::ProcessTensor, y::ProcessTensor, alg::DMRGMultAlgorith
         canonicalize!(z, alg=Orthogonalize(normalize=true))
     elseif alg.initguess == :pre
         z = increase_bond!(copy(x), alg.D)
+        setscaling!(z, 1)
     else
         error("unsupported initguess $(alg.initguess)")
     end

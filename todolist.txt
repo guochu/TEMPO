@@ -1,0 +1,2 @@
+1. More stable iterative mult for ADT and PT (stability)
+2. Direct support for multiple impurity sites instead of a single impurity (efficiency)
