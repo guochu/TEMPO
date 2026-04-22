@@ -2,6 +2,10 @@ println("------------------------------------")
 println("|    TTI-IF InfluenceOperator      |")
 println("------------------------------------")
 
+function __ti_localop(corr::CorrelationMatrix, op1::AbstractMatrix, op2::AbstractMatrix)
+	h1 = corr.ηⱼₖ[1] .* (op1 * op2) + corr.ηₖⱼ[1] .* (op2*op1)
+	return h1
+end
 
 @testset "TTI-IF-InfluenceOperator: imaginary-time" begin
 	β = 1
@@ -25,23 +29,37 @@ println("------------------------------------")
 		local mpo2
 		for i in 1:lattice.N, j in 1:lattice.N
 			ind1, ind2 = ContourIndex(i), ContourIndex(j)
-			coef = index(corr, i, j)
-			if coef != 0
-				if ind1 == ind2
-					m = (coef/2) .* (op1 * op2 + op2 * op1)
-					# m = coef .* op1 * op2 
-					t = FockTermS(lattice[ind1], m)
-				else
-					m = coef .* kron(op2, op1)
-					t = FockTermS((lattice[ind1], lattice[ind2]), reshape(m, (d,d,d,d)))
-				end
-				if @isdefined mpo2
-					mpo2 += apply!(t, vacuumstate(scalartype(hyb), lattice)) 
-				else
-					mpo2 = apply!(t, vacuumstate(scalartype(hyb), lattice)) 
-				end
-
+			if ind1 == ind2
+				m = __ti_localop(corr.data, op1, op2)
+				t = FockTermS(lattice[ind1], m)
+			else
+				coef = index(corr, i, j)
+				m = coef .* kron(op2, op1)
+				t = FockTermS((lattice[ind1], lattice[ind2]), reshape(m, (d,d,d,d)))
 			end
+			if @isdefined mpo2
+				mpo2 += apply!(t, vacuumstate(scalartype(hyb), lattice)) 
+			else
+				mpo2 = apply!(t, vacuumstate(scalartype(hyb), lattice)) 
+			end
+
+			# coef = index(corr, i, j)
+			# if coef != 0
+			# 	if ind1 == ind2
+			# 		m = (coef/2) .* (op1 * op2 + op2 * op1)
+			# 		# m = coef .* op1 * op2 
+			# 		t = FockTermS(lattice[ind1], m)
+			# 	else
+			# 		m = coef .* kron(op2, op1)
+			# 		t = FockTermS((lattice[ind1], lattice[ind2]), reshape(m, (d,d,d,d)))
+			# 	end
+			# 	if @isdefined mpo2
+			# 		mpo2 += apply!(t, vacuumstate(scalartype(hyb), lattice)) 
+			# 	else
+			# 		mpo2 = apply!(t, vacuumstate(scalartype(hyb), lattice)) 
+			# 	end
+
+			# end
 		end
 		canonicalize!(mpo2, alg=Orthogonalize(trunc=trunc))
 		# println(distance(mpo1, mpo2), " ", norm(mpo1), " ", norm(mpo2))
@@ -71,7 +89,7 @@ end
 
 @testset "TTI-IF-InfluenceOperator: real-time" begin
 
-	function __get_contour_op(lattice, ind1::ContourIndex, ind2::ContourIndex, z1::AbstractMatrix, z2::AbstractMatrix, coef)
+	function __get_contour_op(lattice, ind1::ContourIndex, ind2::ContourIndex, z1::AbstractMatrix, z2::AbstractMatrix, corr)
 		d = lattice.d
 		if branch(ind1) == :-
 			z1 = transpose(z1)
@@ -79,15 +97,26 @@ end
 		if branch(ind2) == :-
 			z2 = transpose(z2)
 		end
+		η = branch(corr, branch(ind1), branch(ind2))
 		pos1, pos2 = lattice[ind1], lattice[ind2]
-		if pos1 == pos2
-			m = (coef/2) .* (z1 * z2 + z2 * z1)
+		if ind1 == ind2
+			m = __ti_localop(η, z1, z2)
 			t = FockTermS(pos1, m)
 		else
+			coef = η[ind1.j, ind2.j]
 			zz = kron(z2, z1)
 			m = coef .* zz
 			t = FockTermS((pos1, pos2), reshape(m, (d,d,d,d)))
 		end
+
+		# if pos1 == pos2
+		# 	m = (coef/2) .* (z1 * z2 + z2 * z1)
+		# 	t = FockTermS(pos1, m)
+		# else
+		# 	zz = kron(z2, z1)
+		# 	m = coef .* zz
+		# 	t = FockTermS((pos1, pos2), reshape(m, (d,d,d,d)))
+		# end
 		return t
 	end
 
@@ -120,8 +149,8 @@ end
 		for i in 1:lattice.N, j in 1:lattice.N
 			ind1, ind2 = ContourIndex(i, :+), ContourIndex(j, :+)
 
-			coef = index(corr, i, j, b1=:+, b2=:+)
-			t = __get_contour_op(lattice, ind1, ind2, op1, op2, coef)
+			# coef = index(corr, i, j, b1=:+, b2=:+)
+			t = __get_contour_op(lattice, ind1, ind2, op1, op2, corr)
 
 			if !isnothing(mps2_pp)
 				mps2_pp += apply!(t, vacuumstate(scalartype(hyb), lattice)) 
@@ -136,8 +165,8 @@ end
 		mps2_pm = nothing
 		for i in 1:lattice.N, j in 1:lattice.N
 			ind1, ind2 = ContourIndex(i, :+), ContourIndex(j, :-)
-			coef = index(corr, i, j, b1=:+, b2=:-)
-			t = __get_contour_op(lattice, ind1, ind2, op1, op2, coef)
+			# coef = index(corr, i, j, b1=:+, b2=:-)
+			t = __get_contour_op(lattice, ind1, ind2, op1, op2, corr)
 			if !isnothing(mps2_pm)
 				mps2_pm += apply!(t, vacuumstate(scalartype(hyb), lattice)) 
 			else
@@ -151,8 +180,8 @@ end
 		mps2_mp = nothing
 		for i in 1:lattice.N, j in 1:lattice.N
 			ind1, ind2 = ContourIndex(i, :-), ContourIndex(j, :+)
-			coef = index(corr, i, j, b1=:-, b2=:+)
-			t = __get_contour_op(lattice, ind1, ind2, op1, op2, coef)
+			# coef = index(corr, i, j, b1=:-, b2=:+)
+			t = __get_contour_op(lattice, ind1, ind2, op1, op2, corr)
 			if !isnothing(mps2_mp)
 				mps2_mp += apply!(t, vacuumstate(scalartype(hyb), lattice)) 
 			else
@@ -167,8 +196,8 @@ end
 		for i in 1:lattice.N, j in 1:lattice.N
 			ind1, ind2 = ContourIndex(i, :-), ContourIndex(j, :-)
 
-			coef = index(corr, i, j, b1=:-, b2=:-)
-			t = __get_contour_op(lattice, ind1, ind2, op1, op2, coef)
+			# coef = index(corr, i, j, b1=:-, b2=:-)
+			t = __get_contour_op(lattice, ind1, ind2, op1, op2, corr)
 
 			if !isnothing(mps2_mm)
 				mps2_mm += apply!(t, vacuumstate(scalartype(hyb), lattice)) 

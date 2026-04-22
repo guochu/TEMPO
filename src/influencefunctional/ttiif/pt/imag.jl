@@ -8,7 +8,7 @@ The influenceoperator ΣᵢⱼΔᵢⱼāᵢaⱼ as an MPO, the bond dimension o
 function influenceoperator(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle; algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
-	mpoj = pt_ti_mpotensor(corr, op1, op2, algexpan)
+	mpoj = pt_ti_mpotensor(corr, op1, op2, :τ, :τ, algexpan)
 	mpotensors = _get_mpo3(mpoj)
 	# println(mpotensors[2])
 	return _fit_to_lattice(lattice, mpotensors) 
@@ -18,7 +18,7 @@ function influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagC
 										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
-	mpoj = pt_ti_mpotensor(corr, op1, op2, algexpan)
+	mpoj = pt_ti_mpotensor(corr, op1, op2, :τ, :τ, algexpan)
 	mpoj′ = timeevompo(mpoj, dt, alg)
 	mpotensors = _get_mpo3(mpoj′)
 	return (_fit_to_lattice(lattice, mpotensors),)
@@ -27,7 +27,7 @@ function influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagC
 										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
-	mpoj = pt_ti_mpotensor(corr, op1, op2, algexpan)
+	mpoj = pt_ti_mpotensor(corr, op1, op2, :τ, :τ, algexpan)
 	mpoja, mpojb = timeevompo(mpoj, dt, alg)
 	mpo1, mpo2 = _get_mpo3(mpoja), _get_mpo3(mpojb)
 	return _fit_to_lattice(lattice, mpo1), _fit_to_lattice(lattice, mpo2) 
@@ -67,7 +67,28 @@ function _get_mpo3(mpoj)
 	return tompotensors(h)
 end
 
-function pt_ti_mpotensor(corr::CorrelationMatrix, op1::AbstractMatrix, op2::AbstractMatrix, alg::ExponentialExpansionAlgorithm)
+# function pt_ti_mpotensor(corr::CorrelationMatrix, op1::AbstractMatrix, op2::AbstractMatrix, alg::ExponentialExpansionAlgorithm)
+# 	# m1 = GenericDecayTerm(op1, op2, corr.ηₖⱼ[2:end])
+# 	# m2 = GenericDecayTerm(op2, op1, corr.ηⱼₖ[2:end])
+# 	m1 = GenericDecayTerm(op1, op2, corr.ηⱼₖ[2:end])
+# 	m2 = GenericDecayTerm(op2, op1, corr.ηₖⱼ[2:end])
+
+
+# 	m1s = exponential_expansion(m1, alg=alg)
+# 	m2s = exponential_expansion(m2, alg=alg)
+
+# 	# println("here---", corr.ηₖⱼ[1], " ", corr.ηⱼₖ[1])
+# 	eta = corr.ηₖⱼ[1] + corr.ηⱼₖ[1]
+# 	# h1 = corr.ηₖⱼ[1] * op1 * op2 + corr.ηⱼₖ[1] * op2 * op1
+# 	# h1 = corr.ηₖⱼ[1] * op2 * op1 + corr.ηⱼₖ[1] * op1 * op2
+
+# 	# h1 = (corr.ηₖⱼ[1] + corr.ηⱼₖ[1])  * op1 * op2 
+# 	h1 = (eta/2) .* (op1 * op2 + op2 * op1)
+# 	return SchurMPOTensor(h1, vcat(m1s, m2s))
+# 	# return SchurMPOTensor(h1, [])
+# end
+
+function pt_ti_mpotensor(corr::CorrelationMatrix, op1::AbstractMatrix, op2::AbstractMatrix, b1::Symbol, b2::Symbol, alg::ExponentialExpansionAlgorithm)
 	# m1 = GenericDecayTerm(op1, op2, corr.ηₖⱼ[2:end])
 	# m2 = GenericDecayTerm(op2, op1, corr.ηⱼₖ[2:end])
 	m1 = GenericDecayTerm(op1, op2, corr.ηⱼₖ[2:end])
@@ -77,13 +98,25 @@ function pt_ti_mpotensor(corr::CorrelationMatrix, op1::AbstractMatrix, op2::Abst
 	m1s = exponential_expansion(m1, alg=alg)
 	m2s = exponential_expansion(m2, alg=alg)
 
-	# println("here---", corr.ηₖⱼ[1], " ", corr.ηⱼₖ[1])
-	eta = corr.ηₖⱼ[1] + corr.ηⱼₖ[1]
-	# h1 = corr.ηₖⱼ[1] * op1 * op2 + corr.ηⱼₖ[1] * op2 * op1
-	# h1 = corr.ηₖⱼ[1] * op2 * op1 + corr.ηⱼₖ[1] * op1 * op2
-
-	# h1 = (corr.ηₖⱼ[1] + corr.ηⱼₖ[1])  * op1 * op2 
-	h1 = (eta/2) .* (op1 * op2 + op2 * op1)
+	h1 = ti_localop(corr, op1, op2, b1, b2)
 	return SchurMPOTensor(h1, vcat(m1s, m2s))
-	# return SchurMPOTensor(h1, [])
 end
+
+
+function ti_localop(corr::CorrelationMatrix, op1::AbstractMatrix, op2::AbstractMatrix, b1::Symbol, b2::Symbol)
+	if b1 == b2
+		h1 = corr.ηⱼₖ[1] .* (op1 * op2) + corr.ηₖⱼ[1] .* (op2*op1)
+	else
+		eta = corr.ηₖⱼ[1] + corr.ηⱼₖ[1]
+		h1 = eta .* (op1 * op2)
+	end
+	return h1
+end
+
+function ti_localop(corr::CorrelationMatrix, op1::AbstractMatrix, op2::AbstractMatrix)
+	h1 = corr.ηⱼₖ[1] .* (op1 * op2) + corr.ηₖⱼ[1] .* (op2*op1)
+	return h1
+end
+
+
+
