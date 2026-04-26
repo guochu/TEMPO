@@ -8,11 +8,13 @@ struct TruncateDim <: TruncationScheme
 end
 TruncateDim(;D::Int) = TruncateDim(D)
 truncdim(d::Int) = TruncateDim(d)
+truncdim(; D::Int) = truncdim(D)
 
 struct TruncateCutoff <: TruncationScheme
 	ϵ::Float64
 end
 TruncateCutoff(;ϵ::Real) = TruncateCutoff(convert(Float64, ϵ))
+trunccutoff(; ϵ::Real) = TruncateCutoff(ϵ)
 
 # reserve at least add_back singular values
 struct TruncationDimCutoff <: TruncationScheme

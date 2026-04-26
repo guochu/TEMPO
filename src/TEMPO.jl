@@ -1,7 +1,7 @@
 module TEMPO
 
 # auxiliary
-export TruncationScheme, NoTruncation, TruncationDimCutoff, truncdimcutoff, renyi_entropy
+export TruncationScheme, NoTruncation, TruncationDimCutoff, truncdimcutoff, truncdim, trunccutoff, renyi_entropy
 export SVDCompression, PronyExpansion, DeterminedPronyExpansion, exponential_expansion, expansion_error
 export OrthogonalFactorizationAlgorithm, leftorth!, rightorth!, permute, tsvd!
 # ContourIndex
