@@ -1,0 +1,1 @@
+# time-dependent partial IF algorithm for ADT lattice

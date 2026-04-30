@@ -51,6 +51,9 @@ include("correlationfunction.jl")
 # Feynman-Vernon influence functional 
 include("influencefunctional/influencefunctional.jl")
 
+# Time-dependent Feynman-Vernon influence functional 
+include("tdinfluencefunctional/tdinfluencefunctional.jl")
+
 # boundary condition
 include("boundarycondition.jl")
 
