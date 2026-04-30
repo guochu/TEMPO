@@ -67,6 +67,11 @@ end
 
 abstract type GeneralHybStyle <: HybridizationStyle end
 
+"""
+	struct NonAdditiveTdHyb{F<:Function}
+
+The Impurity-bath coupling is op*(a+a')
+"""
 struct NonAdditiveHyb{T<:Number} <: GeneralHybStyle
 	op::Matrix{T}
 
