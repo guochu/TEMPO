@@ -72,5 +72,4 @@ function pairop(b::NonAdditiveTdHyb, t::Real)
 end 
 
 include("partialif/partialif.jl")
-include("ptpartialif/ptpartialif.jl")
 include("ttiif/ttiif.jl")

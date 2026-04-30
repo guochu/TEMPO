@@ -1,1 +1,0 @@
-# time-dependent partial IF algorithm for PT lattice
