@@ -59,14 +59,14 @@ struct NonDiagonalTdHyb{F<:Function} <: GeneralTdHybStyle
 end
 function NonDiagonalTdHyb(op::AbstractMatrix, f::Function) 
 	(size(op, 1) == size(op, 2)) || throw(ArgumentError("square matrix expected"))
-	return NonAdditiveTdHyb(t->op .* f(t))
+	return NonDiagonalTdHyb(t->op .* f(t))
 end
-NonDiagonalTdHyb(hyb::NonAdditiveTdHyb) = NonDiagonalTdHyb(hyb.op)
+NonDiagonalTdHyb(hyb::NonDiagonalTdHyb) = NonDiagonalTdHyb(hyb.op)
 
 phydim(b::NonDiagonalTdHyb) = size(b(0), 1)
 
-TO.scalartype(t::NonAdditiveTdHyb) = scalartype(t(0.))
-function pairop(b::NonAdditiveTdHyb, t::Real)
+TO.scalartype(t::NonDiagonalTdHyb) = scalartype(t(0.))
+function pairop(b::NonDiagonalTdHyb, t::Real)
     r = b(t)
     return r, r'
 end 
