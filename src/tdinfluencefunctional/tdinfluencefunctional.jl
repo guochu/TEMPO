@@ -41,7 +41,7 @@ function NonAdditiveTdHyb(op::AbstractMatrix, f::Function)
 	ishermitian(op) || throw(ArgumentError("Hermitian matrix required"))
 	return NonAdditiveTdHyb(t->op .* f(t))
 end
-phydim(b::NonAdditiveHyb) = size(b(0), 1)
+phydim(b::NonAdditiveTdHyb) = size(b(0), 1)
 
 TO.scalartype(t::NonAdditiveTdHyb) = scalartype(t(0.))
 function pairop(b::NonAdditiveTdHyb, t::Real)
