@@ -1,4 +1,15 @@
 
+"""
+	integrate(x::ADT)
+
+Fully contract the state represented by the MPS and return the resulting overall scalar value (equivalent to the total coefficient obtained by summing over all sites).
+
+# Arguments
+- `x::ADT`: MPS to contract
+
+# Returns
+Scalar: result of contracting the whole MPS.
+"""
 function integrate(x::ADT)
 	L = length(x)
 	sca = scaling(x)
@@ -11,6 +22,18 @@ function integrate(x::ADT)
 end
 
 
+"""
+	integrate(x::ADT, y::ADT)
+
+Compute the overlap scalar between two MPS of equal length.
+
+# Arguments
+- `x::ADT`: first MPS
+- `y::ADT`: second MPS, must have the same length as `x`
+
+# Returns
+Scalar: the inner product obtained by contracting `x` with `y`.
+"""
 function integrate(x::ADT, y::ADT)
 	(length(x) == length(y)) || throw(DimensionMismatch("adt size mismatch"))
 	sca = scaling(x) * scaling(y)

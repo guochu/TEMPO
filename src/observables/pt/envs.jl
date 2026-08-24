@@ -8,6 +8,11 @@ struct PTExpectationCache{M<:ProcessTensor, G<:Tuple, L<:AbstractPTLattice, Hl, 
 end
 
 Base.length(x::PTExpectationCache) = length(x.lattice)
+"""
+	Zvalue(cache::PTExpectationCache)
+
+PT version of `Zvalue`: contraction of the left and right environments at the boundary (including the ρ₀ boundary condition in the real-time case).
+"""
 Zvalue(x::PTExpectationCache) = contract_center(x.hleft[1], x.hright[1])
 Zvalue2(x::PTExpectationCache) = contract_center(x.hleft[end], x.hright[end])
 leftenv(x::PTExpectationCache, j::Int) = x.hleft[j]
@@ -67,12 +72,34 @@ end
 # 	return PTMixedExpectationCache(first(As), Base.tail(As), lattice, hleft, hright)
 # end
 
+"""
+	environments(lattice::ImagPTLattice, A::ProcessTensor, B::ProcessTensor...)
+	environments(lattice::MixedPTLattice, A::ProcessTensor, B::ProcessTensor...)
+
+`environments` methods on PT lattices (imaginary-time/mixed-time), returning a `PTExpectationCache`.
+"""
 environments(lattice::ImagPTLattice, A::ProcessTensor, B::Vararg{ProcessTensor}) = PTExpectationCache(lattice, (A, B...))
 environments(lattice::MixedPTLattice, A::ProcessTensor, B::Vararg{ProcessTensor}) = PTExpectationCache(lattice, (A, B...))
+"""
+	environments(lattice::RealPTLattice, A::ProcessTensor, B::ProcessTensor...; ρ₀::AbstractMatrix=_eye(phydim(lattice)))
+
+`environments` method on real-time PT lattices: the keyword argument `ρ₀` (default identity matrix) specifies the initial density matrix used as the right boundary condition.
+"""
 environments(lattice::RealPTLattice, A::ProcessTensor, B::Vararg{ProcessTensor}; ρ₀::AbstractMatrix=_eye(phydim(lattice))) = PTExpectationCache(lattice, (A, B...), ρ₀)
 
+"""
+	expectationvalue(m::ContourOperator, cache::PTExpectationCache)
+	expectationvalue(m::AbstractFockTerm, cache::PTExpectationCache)
+
+PT version of `expectationvalue`: a `ContourOperator` is first converted to a `ProdFockTerm` before evaluation.
+"""
 expectationvalue(m::ContourOperator, cache::PTExpectationCache) = expectationvalue(tofockprodterm(m, cache.lattice), cache)
 expectationvalue(m::AbstractFockTerm, cache::PTExpectationCache) = expectation(m, cache) / Zvalue(cache)
+"""
+	expectation(m::AbstractFockTerm, cache::PTExpectationCache)
+
+PT version of the unnormalized expectation value `expectation`.
+"""
 function expectation(m::AbstractFockTerm, cache::PTExpectationCache)
 	# println("positions ", m.positions)
 	j, k = m.positions[1], m.positions[end]

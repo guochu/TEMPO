@@ -1,10 +1,43 @@
+"""
+	AbstractADTTerm
+
+Abstract supertype of `ADTTerm`, representing a multi-local operator term acting on an `ADT` (MPS).
+"""
 abstract type AbstractADTTerm end
 
+"""
+	ADTTerm{N, T<:Number} <: AbstractADTTerm
+
+Multi-local operator term acting on an `ADT` (MPS), consisting of a set of rank-3 site tensors together with their acting positions.
+
+`ADTTerm` represents a product of operators of the form `O_{p1} ⊗ O_{p2} ⊗ ...`, with each factor stored in MPO form (a column of rank-3 tensors).
+
+# Fields
+- `data::Vector{Array{T,3}}`: list of operator tensors in MPO form
+- `positions::NTuple{N,Int}`: site positions on which each operator factor acts
+
+Main constructor: `ADTTerm(positions::NTuple{N,Int}, data::AbstractArray{T,N})`.
+"""
 struct ADTTerm{N, T <: Number} <: AbstractADTTerm
 	data::Vector{Array{T, 3}}
 	positions::NTuple{N, Int}
 end
 
+"""
+	ADTTerm(positions::NTuple{N,Int}, data::AbstractArray{T,N}) where {N, T<:Number}
+
+Construct an `ADTTerm` from the full-rank tensor `data`: decompose `data` into MPO form and sort it according to `positions`.
+
+# Arguments
+- `positions`: site position of each physical index (duplicates not allowed)
+- `data`: rank-`N` tensor whose `i`-th index corresponds to the operator at `positions[i]`
+
+# Returns
+`ADTTerm{N,T}`.
+
+# Throws
+- `ArgumentError`: `positions` contains duplicate positions
+"""
 function ADTTerm(positions::NTuple{N, Int}, data::AbstractArray{T, N}) where {N, T<:Number}
 	(length(Set(positions)) == N) || throw(ArgumentError("multiple n̂ on the same position not allowed"))
 	# iseven(N) || throw(ArgumentError("even number of variables expected"))
@@ -13,7 +46,17 @@ function ADTTerm(positions::NTuple{N, Int}, data::AbstractArray{T, N}) where {N,
 	data = permute(data, p)
 	return ADTTerm(decompose_to_mps(data), positions)
 end
+"""
+	ADTTerm(p::Int, data::AbstractVector{<:Number})
+
+Construct a diagonal operator term acting on the single position `p`.
+"""
 ADTTerm(p::Int, data::AbstractVector{<:Number}) = ADTTerm((p,), data)
+"""
+	ADTTerm(p::Int, data::DenseMPSTensor)
+
+Construct an operator term acting on position `p` from a single rank-3 MPO site tensor.
+"""
 ADTTerm(p::Int, data::DenseMPSTensor) = ADTTerm((p,), [data])
 function ADTTerm(positions::NTuple{N, Int}, data::AbstractVector{<:AbstractArray{T, 3}}) where {N, T}
 	if issorted(positions)	
@@ -37,6 +80,16 @@ end
 
 TO.scalartype(::Type{ADTTerm{N, T}}) where {N, T} = T
 
+"""
+	apply!(x::ADTTerm{N,T}, mps::ADT) where {N, T}
+
+Apply the operator represented by `ADTTerm` to the `ADT` (MPS), modifying `mps` in place and returning it.
+
+Sites outside the positions given by `x.positions` are filled with identity operators.
+
+# Returns
+`mps` itself.
+"""
 function apply!(x::ADTTerm{N, T}, mps::ADT) where {N, T}
 	data = x.data
 	pos = x.positions

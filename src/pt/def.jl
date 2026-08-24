@@ -1,28 +1,40 @@
 
 """
-	ProcessTensor{A <: MPOTensor}
-Finite Matrix Product Operator which stores a chain of rank-4 site tensors.
+	ProcessTensor{T<:Number, R<:Real}
+
+One-dimensional dense tensor network (`Dense1DTN`) type representing a finite matrix product operator (MPO), storing a column of rank-4 site tensors.
+
+# Fields
+- `data::Vector{Array{T,4}}`: list of site tensors
+- `s::Vector{Union{Missing, Vector{R}}}`: singular (Schmidt) vectors; `missing` when uninitialized
+- `scaling::Ref{Float64}`: overall scaling factor
+
+# Examples
+```julia
+julia> h = ProcessTensor(4, d=2)   # construct a ProcessTensor with 4 sites and physical dimension 2 (identity operator)
+julia> h = randompt(4, D=8)        # construct a random ProcessTensor with 4 sites and bond dimension 8
+```
 """
 struct ProcessTensor{T<:Number,  R<:Real} <: Dense1DTN{T}
 	data::Vector{Array{T, 4}}
 	s::Vector{Union{Missing, Vector{R}}}
 	scaling::Ref{Float64}
 """
-	DenseMPO{A}(mpotensors::Vector)
-Constructor entrance for MPO, which only supports strictly quantum number conserving operators
+	ProcessTensor{T, R}(data::AbstractVector, svectors::Vector, scaling::Ref{R}) where {T<:Number, R<:Number}
 
-site tensor convention:
-i mean in arrow, o means out arrow
-    o 
-    |
-    2
-o-1   3-i
-	4
-	|
-	i
-The left and right boundaries are always vacuum.
-The case that the right boundary is not vacuum corresponds to operators which do not conserve quantum number, 
-such as a†, this case is implemented with another MPO object.
+Inner constructor of `ProcessTensor`; only supports operators with strictly conserved quantum numbers.
+
+Site tensor index convention (i denotes the input arrow, o the output arrow):
+
+	    o
+	    |
+	    2
+	o-1   3-i
+	    4
+	    |
+	    i
+
+Both left and right boundaries are vacuum (dimension 1). A non-vacuum right boundary corresponds to operators that do not conserve quantum numbers (e.g., a†); such operators must be represented in other MPO forms.
 """
 function ProcessTensor{T, R}(data::AbstractVector, svectors::Vector, scaling::Ref{R}) where {T<:Number, R<:Number}
 	(R == real(T)) || throw(ArgumentError("scalar type for singular vectors must be real"))
@@ -111,9 +123,38 @@ function _check_mpo_space(mpotensors::Vector)
 	return true
 end
 
+"""
+	isleftcanonical(a::ProcessTensor; kwargs...)
+
+Check whether all site tensors of the `ProcessTensor` are left-canonical.
+
+# Returns
+`true` if every site tensor satisfies the left-canonical condition (keyword arguments are passed to `isapprox` as tolerances).
+"""
 isleftcanonical(a::ProcessTensor; kwargs...) = all(x->isleftcanonical(x; kwargs...), a.data)
+"""
+	isrightcanonical(a::ProcessTensor; kwargs...)
+
+Check whether all site tensors of the `ProcessTensor` are right-canonical.
+
+# Returns
+`true` if every site tensor satisfies the right-canonical condition (keyword arguments are passed to `isapprox` as tolerances).
+"""
 isrightcanonical(a::ProcessTensor; kwargs...) = all(x->isrightcanonical(x; kwargs...), a.data)
 
+"""
+	iscanonical(psi::ProcessTensor; kwargs...)
+
+Check whether the MPO is in canonical form: all site tensors are right-canonical and the singular vectors are the correct Schmidt numbers.
+
+# Returns
+`true` if all of the following hold:
+- all site tensors are right-canonical;
+- the singular vectors are initialized (not cleared by `unset_svectors!`);
+- for every bond, the squared singular vectors agree with the corresponding left contraction environment.
+
+The canonical form improves the numerical stability of time evolution and enables efficient computation of observables for unitary systems.
+"""
 function iscanonical(psi::ProcessTensor; kwargs...)
 	isrightcanonical(psi) || return false
 	# we also check whether the singular vectors are the correct Schmidt numbers
@@ -131,7 +172,21 @@ end
 
 """
 	randompt(::Type{T}, ds::Vector{Int}; D::Int) where {T<:Number}
-	dy are the input dimensions, dx are the output dimensions
+
+Generate a randomly initialized `ProcessTensor` (MPO) with physical dimensions given by `ds` and bond dimension `D` at every bond.
+
+# Arguments
+- `T`: element type (e.g. `Float64`, `ComplexF64`)
+- `ds::Vector{Int}`: physical dimension of each site
+- `D::Int`: bond dimension
+
+# Returns
+A `ProcessTensor` with random tensor entries.
+
+# Examples
+```julia
+julia> h = randompt(ComplexF64, [2, 2, 2], D=16)
+```
 """
 function randompt(::Type{T}, ds::Vector{Int}; D::Int) where {T<:Number}
 	L = length(ds)

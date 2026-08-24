@@ -1,3 +1,8 @@
+"""
+	AbstractFockTerm{T<:Number}
+
+Abstract supertype of Fock-space operator terms (`FockTermS`, `FockTerm`, `ProdFockTerm`, etc.), representing operator terms acting on a `ProcessTensor` (MPO).
+"""
 abstract type AbstractFockTerm{T<:Number} end
 TO.scalartype(::Type{<:AbstractFockTerm{T}}) where {T} = T
 # num_terms(t::AbstractFockTerm) = length(t.positions)
@@ -5,6 +10,19 @@ TO.scalartype(::Type{<:AbstractFockTerm{T}}) where {T} = T
 abstract type GenericFockTerm{T<:Number} <: AbstractFockTerm{T} end
 abstract type AbstractProdFockTerm{T<:Number} <: AbstractFockTerm{T} end
 
+"""
+	FockTermS{N, T<:Number} <: GenericFockTerm{T}
+
+Multi-local Fock-space operator term, with each local factor stored as a rank-4 tensor (MPO site tensor) and positions stored in a tuple.
+
+Suitable for cases where the number of factors is known at compile time (`N` fixed).
+
+# Fields
+- `data::NTuple{N,Array{T,4}}`: tuple of operator tensors in MPO form
+- `positions::NTuple{N,Int}`: site positions on which each operator factor acts
+
+Main constructor: `FockTermS(positions::NTuple{N,Int}, data::AbstractArray{T,M})`.
+"""
 struct FockTermS{N, T <: Number} <: GenericFockTerm{T}
 	data::NTuple{N, Array{T, 4}}
 	positions::NTuple{N, Int}
@@ -45,6 +63,19 @@ end
 FockTermS(p::Int, data::AbstractMatrix) = FockTermS((p,), (data,))
 
 
+"""
+	FockTerm{T<:Number} <: GenericFockTerm{T}
+
+Multi-local Fock-space operator term, with each local factor stored as a rank-4 tensor (MPO site tensor) and positions stored in a vector.
+
+In contrast to `FockTermS`, the number of factors is determined at runtime.
+
+# Fields
+- `data::Vector{Array{T,4}}`: list of operator tensors in MPO form
+- `positions::Vector{Int}`: site positions on which each operator factor acts
+
+Main constructor: `FockTerm(positions::AbstractVector{Int}, data::AbstractVector{<:AbstractArray{T,4}})`.
+"""
 struct FockTerm{T <: Number} <: GenericFockTerm{T}
 	data::Vector{Array{T, 4}}
 	positions::Vector{Int}
@@ -60,6 +91,16 @@ function FockTerm(positions::AbstractVector{Int}, data::AbstractVector{<:Abstrac
 	return FockTerm(convert(Vector{Array{T, 4}}, data), positions)
 end
 
+"""
+	apply!(x::GenericFockTerm{T}, mps::ProcessTensor) where {T}
+
+Apply the operator represented by a `GenericFockTerm` (`FockTermS` or `FockTerm`) to the `ProcessTensor` (MPO), modifying `mps` in place and returning it.
+
+Sites outside the positions given by `x.positions` are filled with identity operators.
+
+# Returns
+`mps` itself.
+"""
 function apply!(x::GenericFockTerm{T}, mps::ProcessTensor) where {T}
 	data = x.data
 	pos = x.positions
@@ -100,6 +141,17 @@ function apply!(x::GenericFockTerm{T}, mps::ProcessTensor) where {T}
 end
 
 
+"""
+	ProdFockTerm{T<:Number} <: AbstractProdFockTerm{T}
+
+Fock-space operator product term: each local factor is a single 2×2 matrix (acting on one site), and the factors combine by ordinary matrix multiplication.
+
+# Fields
+- `data::Vector{Matrix{T}}`: list of local operator matrices
+- `positions::Vector{Int}`: site positions on which each local operator acts
+
+Main constructor: `ProdFockTerm(positions::AbstractVector{Int}, data::AbstractVector{<:AbstractMatrix{T}})`.
+"""
 struct ProdFockTerm{T <: Number} <: AbstractProdFockTerm{T}
 	data::Vector{Matrix{T}}
 	positions::Vector{Int}
@@ -116,6 +168,17 @@ end
 
 ProdFockTerm(pos::Int, data::AbstractMatrix{<:Number}) = ProdFockTerm([pos], [data])
 
+"""
+	apply!(x::ProdFockTerm, mps::ProcessTensor; aheads::Union{AbstractVector{Bool},Bool}=true)
+
+Apply the local operators of `ProdFockTerm` one by one to the `ProcessTensor` (MPO), modifying `mps` in place and returning it.
+
+# Arguments
+- `aheads`: a scalar or a vector of booleans, controlling whether each local operator acts on the left (`true`) or the right (`false`) of the MPO tensor
+
+# Returns
+`mps` itself.
+"""
 apply!(x::ProdFockTerm, mps::ProcessTensor; aheads::Union{AbstractVector{Bool}, Bool}=true) = apply!(x, mps, aheads)
 apply!(x::ProdFockTerm, mps::ProcessTensor, ahead::Bool) = apply!(x, mps, [ahead for i in 1:length(x.positions)])
 function apply!(x::ProdFockTerm, mps::ProcessTensor, aheads::AbstractVector{Bool}) 

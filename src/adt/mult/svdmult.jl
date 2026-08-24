@@ -1,3 +1,19 @@
+"""
+	mult!(x::ADT, y::ADT; trunc::TruncationScheme=DefaultTruncation, verbosity::Int=0)
+
+Compute the product (tensor contraction) of two MPS in place on `x`, compress the result, and return `x`.
+
+Algorithm: accumulate left-to-right QR decompositions, then orthogonalize right-to-left with `SVD` and truncate according to `trunc`; the resulting scaling factor is `scaling(x) * scaling(y)`.
+
+# Arguments
+- `x::ADT`: first MPS, also used as the output storage
+- `y::ADT`: second MPS, must have the same length as `x`
+- `trunc`: SVD truncation scheme (e.g., `truncdim(D)`, `trunccutoff(ε)`)
+- `verbosity::Int`: verbosity level
+
+# Returns
+`x` itself (its content is overwritten by the product).
+"""
 function mult!(x::ADT, y::ADT; trunc::TruncationScheme=DefaultTruncation, verbosity::Int=0)
     (length(x) == length(y)) || throw(DimensionMismatch())
     T = promote_type(scalartype(x), scalartype(y))
@@ -19,4 +35,14 @@ function mult!(x::ADT, y::ADT; trunc::TruncationScheme=DefaultTruncation, verbos
     setscaling!(x, scaling(x) * scaling(y))
     return x
 end
+"""
+	mult(x::ADT, y::ADT; kwargs...)
+
+Compute the product of two MPS and compress it, returning a new `ADT` (inputs are not modified).
+
+Equivalent to `mult!(copy(x), y; kwargs...)`; arguments as in `mult!`.
+
+# Returns
+The product `ADT`.
+"""
 mult(x::ADT, y::ADT; kwargs...) = mult!(copy(x), y; kwargs...)

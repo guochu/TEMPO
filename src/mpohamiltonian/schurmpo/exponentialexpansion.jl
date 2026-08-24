@@ -2,20 +2,44 @@ abstract type ExponentialExpansionAlgorithm end
 abstract type AbstractPronyExpansion <: ExponentialExpansionAlgorithm end
 
 # hankel expansion
+"""
+    PronyExpansion(n=10, stepsize=1, tol=1e-8, verbosity=1)
+    PronyExpansion(; n=10, stepsize=1, tol=1e-8, verbosity=1)
+
+Parameters for the Prony expansion algorithm: fits a data sequence to a sum of exponentials using the least-squares Prony method.
+`n` is the maximum number of terms, `stepsize` the sampling step, `tol` the convergence error, and `verbosity` controls the output verbosity.
+"""
 struct PronyExpansion <: AbstractPronyExpansion
     n::Int 
     stepsize::Int
     tol::Float64
     verbosity::Int
 end
+"""
+    PronyExpansion(; n=10, stepsize=1, tol=1e-8, verbosity=1)
+
+Keyword constructor for `PronyExpansion`.
+"""
 PronyExpansion(; n::Int=10, stepsize::Int=1, tol::Real = 1.0e-8, verbosity::Int=1) = PronyExpansion(n, stepsize, convert(Float64, tol), verbosity)
 
+"""
+    DeterminedPronyExpansion(n=10, stepsize=1, tol=1e-8, verbosity=1)
+    DeterminedPronyExpansion(; n=10, stepsize=1, tol=1e-8, verbosity=1)
+
+Parameters for the deterministic Prony expansion algorithm: fits a data sequence to a sum of exponentials using the exact Hankel method (rather than least squares).
+The parameters have the same meaning as in `PronyExpansion`.
+"""
 struct DeterminedPronyExpansion <: AbstractPronyExpansion
     n::Int 
     stepsize::Int
     tol::Float64
     verbosity::Int
 end
+"""
+    DeterminedPronyExpansion(; n=10, stepsize=1, tol=1e-8, verbosity=1)
+
+Keyword constructor for `DeterminedPronyExpansion`.
+"""
 DeterminedPronyExpansion(; n::Int=10, stepsize::Int=1, tol::Real = 1.0e-8, verbosity::Int=1) = DeterminedPronyExpansion(n, stepsize, convert(Float64, tol), verbosity)
 
 
@@ -91,6 +115,12 @@ exponential_expansion_n(f::Vector, p::Int, alg::DeterminedPronyExpansion) = pron
 #     return α, z, E
 # end
 
+"""
+    exponential_expansion(f::Vector{<:Number}, alg::AbstractPronyExpansion)
+
+Fit the data sequence `f` to a sum of exponentials via Prony expansion, returning `(xs, lambdas)`
+such that `f(k) ≈ Σᵢ xs[i] * lambdas[i]^k`.
+"""
 function exponential_expansion(f::Vector{<:Number}, alg::AbstractPronyExpansion)
     (length(f) > 1) || throw(ArgumentError("length of data should be larger than 1"))
     xs, lambdas = _exponential_expansion_impl(f, alg)
@@ -155,12 +185,22 @@ function _predict(x, p)
     return r
 end
 
+"""
+    expansion_error(f, p)
+
+Compute the 2-norm error between the sequence predicted by the parameters `p` (coefficients and bases concatenated alternately) and the true sequence `f`.
+"""
 function expansion_error(f::Vector{<:Number}, p::Vector{<:Number})
     T = eltype(f)
     xdata = [convert(T, i) for i in 1:length(f)]
     f_pred = _predict(xdata, p)
     return norm(f_pred - f)
 end
+"""
+    expansion_error(f, coeffs, alphas)
+
+Version in which the coefficients and bases are passed separately, equivalent to `expansion_error(f, vcat(coeffs, alphas))`.
+"""
 expansion_error(f::Vector{<:Number}, coeffs::Vector{<:Number}, alphas::Vector{<:Number}) = expansion_error(f, vcat(coeffs, alphas))
 
 # # least square expansion
@@ -211,11 +251,17 @@ expansion_error(f::Vector{<:Number}, coeffs::Vector{<:Number}, alphas::Vector{<:
 # end
 
 """
-    exponential_expansion(f::Vector{<:Number}; alg::ExponentialExpansionAlgorithm=PronyExpansion())
+    exponential_expansion(f::Vector{<:Number}; alg=PronyExpansion())
+    exponential_expansion(f, L::Int; alg=PronyExpansion())
 
-Return a list of αᵢ and βᵢ which satisfy:
-f(x) = ∑ᵢ αᵢ × (βᵢ)ˣ, for 1 ≤ x ≤ N
+Return coefficients `αᵢ` and bases `βᵢ` such that
+f(x) = ∑ᵢ αᵢ × (βᵢ)ˣ, for 1 ≤ x ≤ N.
 """
 exponential_expansion(f::Vector{<:Number}; alg::ExponentialExpansionAlgorithm=PronyExpansion()) = exponential_expansion(f, alg)
+"""
+    exponential_expansion(f, L::Int, alg)
+
+Sample the function `f` on `1:L` first, then perform the exponential expansion.
+"""
 exponential_expansion(f, L::Int, alg::ExponentialExpansionAlgorithm) = exponential_expansion([f(k) for k in 1:L], alg)
 exponential_expansion(f, L::Int; alg::ExponentialExpansionAlgorithm=PronyExpansion()) = exponential_expansion(f, L, alg)

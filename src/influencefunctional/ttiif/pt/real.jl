@@ -1,4 +1,9 @@
 # real-time
+"""
+	influenceoperator(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::GeneralHybStyle; algexpan=PronyExpansion())
+
+`influenceoperator` method on real-time PT lattices, returning a tuple of 4 branch MPOs ((+,+), (+,−), (−,+), (−,−)).
+"""
 function influenceoperator(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::GeneralHybStyle; algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr)
 	op1, op2 = pairop(hyb)
@@ -14,6 +19,11 @@ function influenceoperator(lattice::RealPTLattice1Order, corr::RealCorrelationFu
 	return mpo1, mpo2, mpo3, mpo4
 end
 
+"""
+	influenceoperatorexponential(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm; algexpan=PronyExpansion())
+
+`influenceoperatorexponential` method on real-time PT lattices. `FirstOrderStepper` returns 4 MPOs and `ComplexStepper` returns 8 (one before and one after evolution for each branch).
+"""
 function influenceoperatorexponential(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper; 
 										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr)
@@ -55,6 +65,11 @@ function influenceoperatorexponential(lattice::RealPTLattice1Order, corr::RealCo
 end
 
 
+"""
+	differentialinfluencefunctional(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm; algexpan=PronyExpansion())
+
+`differentialinfluencefunctional` method on real-time PT lattices: multiply the branch differential IFs in successively to construct the full differential influence functional.
+"""
 function differentialinfluencefunctional(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper, 
 											algmult::DMRGAlgorithm; algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	h1, h2, h3, h4 = influenceoperatorexponential(lattice, corr, dt, hyb, alg, algexpan=algexpan)

@@ -2,9 +2,10 @@
 
 # coeff * α^n, α must be in [0, 1]
 """
-	struct ExponentialDecayTerm{M1, M, M2, T <:Number}
+    ExponentialDecayTerm(a, b; middle=_eye(size(a, 1)), α=1.0, coeff=1.0)
 
-Exponential decay of the form coeff * [â ⊗ (αm̂)^⊗n ⊗ b̂]
+An exponentially decaying long-range interaction term of the form `coeff * [â ⊗ (α m̂)^⊗n ⊗ b̂]`,
+where `a`, `m`, `b` are matrix operators, `α` is the decay factor (which must satisfy |α| ≤ 1), and `coeff` is the coefficient.
 """
 struct ExponentialDecayTerm{M1<:AbstractMatrix, M<:AbstractMatrix, M2, T <:Number} <: AbstractLongRangeTerm
     a::M1
@@ -14,6 +15,11 @@ struct ExponentialDecayTerm{M1<:AbstractMatrix, M<:AbstractMatrix, M2, T <:Numbe
     coeff::T
 end
 
+"""
+    ExponentialDecayTerm(a, b; middle=_eye(size(a, 1)), α=1.0, coeff=1.0)
+
+Keyword constructor for `ExponentialDecayTerm`: `middle` defaults to the identity matrix.
+"""
 function ExponentialDecayTerm(a::AbstractMatrix, b::AbstractMatrix; middle::AbstractMatrix=_eye(size(a, 1)), α::Number=1., coeff::Number=1.) 
     T = promote_type(typeof(α), typeof(coeff))
     return ExponentialDecayTerm(a, middle, b, convert(T, α), convert(T, coeff))
@@ -52,10 +58,11 @@ end
 
 
 """
-    SchurMPOTensor(h1::ScalarSiteOp, h2s::Vector{<:ExponentialDecayTerm})
+    SchurMPOTensor(h1::AbstractMatrix{<:Number}, h2s::Vector{<:ExponentialDecayTerm})
     SchurMPOTensor(h2s::Vector{<:ExponentialDecayTerm})
 
-Return an SchurMPOTensor, with outer matrix size (N+2)×(N+2) (N=length(h2s))
+Construct a `SchurMPOTensor` from a single-site operator `h1` (default 0) and a list of exponentially decaying terms `h2s`,
+with an outer matrix of size (N+2)×(N+2) (N = length(h2s)).
 Algorithm reference: "Time-evolving a matrix product state with long-ranged interactions"
 """
 SchurMPOTensor(h1::AbstractMatrix{<:Number}, h2s::Vector) = _longrange_schurmpo_util(h1, h2s)

@@ -1,14 +1,22 @@
 # ADT
 """
-	sysdynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::ImpurityHamiltonian; kwargs...)
+	sysdynamics!(gmps::ADT, lattice::ImagADTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation)
 
-The inplace version of the function sysdynamics, which applys the bare impurity onto the given GMPS
+In-place version of [`sysdynamics`](@ref): apply the bare impurity Hamiltonian `model` to the given ADT `gmps`,
+applying the propagator step by step along the imaginary-time branch with truncated orthogonalization.
 """
 function sysdynamics!(gmps::ADT, lattice::ImagADTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation)
 	return sysdynamics_imaginary!(gmps, lattice, model, args...; trunc=trunc)
 end 
 
 
+"""
+    sysdynamics!(gmps::ADT, lattice::RealADTLattice, model::ImpurityHamiltonian, args...;
+                 branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+
+Apply system dynamics in place on the real-time contour: with `branch=nothing`, acts successively on the `:+` (forward) and `:-` (backward) branches;
+when `branch` is specified, acts only on the corresponding branch.
+"""
 function sysdynamics!(gmps::ADT, lattice::RealADTLattice, model::ImpurityHamiltonian, args...; 
 						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
 	if isnothing(branch)
@@ -20,6 +28,13 @@ function sysdynamics!(gmps::ADT, lattice::RealADTLattice, model::ImpurityHamilto
 	end
 end 
 
+"""
+    sysdynamics!(gmps::ADT, lattice::MixedADTLattice, model::ImpurityHamiltonian, args...;
+                 branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+
+Apply system dynamics in place on the mixed contour: with `branch=nothing`, acts successively on the forward, backward and imaginary-time branches;
+when `branch` (`:+`, `:-` or `:τ`) is specified, acts only on the corresponding branch.
+"""
 function sysdynamics!(gmps::ADT, lattice::MixedADTLattice, model::ImpurityHamiltonian, args...; 
 						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
 	if isnothing(branch)

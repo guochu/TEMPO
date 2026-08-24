@@ -2,6 +2,21 @@ abstract type DMRGMultAlgorithm <: DMRGAlgorithm end
 
 const AllowedInitGuesses = (:svd, :pre, :rand)
 
+"""
+	DMRGMult1 <: DMRGMultAlgorithm
+
+Configuration of an MPS product compression algorithm based on DMRG iterative sweeping.
+
+# Fields
+- `trunc::TruncationDimCutoff`: truncation scheme (bond dimension and truncation error)
+- `maxiter::Int`: maximum number of iterations
+- `tol::Float64`: convergence tolerance
+- `initguess::Symbol`: initial guess, one of `:svd`, `:pre`, `:rand`
+- `verbosity::Int`: verbosity level
+- `callback::Function`: callback function
+
+Main constructor: `DMRGMult1(trunc; maxiter=5, tol=1e-12, initguess=:svd, verbosity=0, callback=Returns(nothing))`.
+"""
 struct DMRGMult1 <: DMRGMultAlgorithm
     trunc::TruncationDimCutoff 
     maxiter::Int
@@ -10,10 +25,28 @@ struct DMRGMult1 <: DMRGMultAlgorithm
     verbosity::Int 
     callback::Function
 end
+"""
+	DMRGMult1(trunc::TruncationDimCutoff; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0, callback::Function=Returns(nothing))
+
+Construct a `DMRGMult1` algorithm configuration.
+
+# Arguments
+- `trunc::TruncationDimCutoff`: truncation scheme (can be constructed with `truncdimcutoff(D, ϵ)`)
+- `maxiter::Int`: maximum number of iterations
+- `tol::Float64`: convergence tolerance
+- `initguess::Symbol`: initial guess, must be one of `:svd`, `:pre`, `:rand`, otherwise an `ArgumentError` is thrown
+- `verbosity::Int`: verbosity level
+- `callback::Function`: callback function
+"""
 function DMRGMult1(trunc::TruncationDimCutoff; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0, callback::Function=Returns(nothing))
     (initguess in AllowedInitGuesses) || throw(ArgumentError("initguess must be one of $(AllowedInitGuesses)"))
     return DMRGMult1(trunc, maxiter, tol, initguess, verbosity, callback)
 end 
+"""
+	DMRGMult1(; trunc::TruncationDimCutoff=DefaultITruncation, kwargs...)
+
+Construct a `DMRGMult1` from keyword arguments, with default truncation scheme `DefaultITruncation`.
+"""
 DMRGMult1(; trunc::TruncationDimCutoff=DefaultITruncation, kwargs...) = DMRGMult1(trunc; kwargs...)
 Base.similar(x::DMRGMult1; trunc::TruncationDimCutoff=x.trunc, maxiter::Int=x.maxiter, tol::Float64=x.tol, initguess::Symbol=x.initguess, verbosity::Int=x.verbosity, callback=x.callback) = DMRGMult1(
             trunc=trunc, maxiter=maxiter, tol=tol, initguess=initguess, verbosity=verbosity, callback=callback)

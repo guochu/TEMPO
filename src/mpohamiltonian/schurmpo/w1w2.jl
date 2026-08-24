@@ -1,20 +1,53 @@
 # arXiv:1407.1832v1 "Time-evolving a matrix product state with long-ranged interactions"
 abstract type TimeEvoMPOAlgorithm <: MPSAlgorithm end
+"""
+    FirstOrderStepper
+
+Abstract type for first-order time evolution stepping algorithms; concrete implementations include `WI` and `WII`.
+"""
 abstract type FirstOrderStepper <: TimeEvoMPOAlgorithm end
 abstract type SecondOrderStepper <: TimeEvoMPOAlgorithm end
 
+"""
+    WI(tol, maxiter)
+    WI(; tol=Defaults.tol, maxiter=Defaults.maxiter)
+
+Parameters for the first-order W-type (WI) time evolution stepping algorithm: `tol` is the truncation error and `maxiter` the maximum number of iterations.
+"""
 struct WI <: FirstOrderStepper
 	tol::Float64
 	maxiter::Int
 end
+"""
+    WI(; tol=Defaults.tol, maxiter=Defaults.maxiter)
+
+Keyword constructor for `WI`; the default values are taken from `Defaults`.
+"""
 WI(; tol::Real=Defaults.tol, maxiter::Int=Defaults.maxiter) = WI(convert(Float64, tol), maxiter)
 
+"""
+    WII(tol, maxiter)
+    WII(; tol=Defaults.tol, maxiter=Defaults.maxiter)
+
+Parameters for the first-order W-type (WII) time evolution stepping algorithm: `tol` is the truncation error and `maxiter` the maximum number of iterations.
+"""
 struct WII <: FirstOrderStepper
 	tol::Float64 
 	maxiter::Int 
 end
+"""
+    WII(; tol=Defaults.tol, maxiter=Defaults.maxiter)
+
+Keyword constructor for `WII`; the default values are taken from `Defaults`.
+"""
 WII(; tol::Real=Defaults.tol, maxiter::Int=Defaults.maxiter) = WII(convert(Float64, tol), maxiter)
 
+"""
+    ComplexStepper(stepper)
+
+Combine a first-order stepper `stepper` into a second-order complex-time stepper:
+evolving twice with `dt₁=(1-im)*dt/2` and `dt₂=(1+im)*dt/2` yields second-order accuracy.
+"""
 struct ComplexStepper{F<:FirstOrderStepper} <: SecondOrderStepper
 	stepper::F
 end
@@ -66,6 +99,13 @@ function _sqrt2(dt::Real)
 	end 
 end
 
+"""
+    timeevompo(m, dt, alg)
+
+Evolve a `SchurMPOTensor` or `MPOHamiltonian` by one step `dt` according to the time evolution stepping algorithm `alg`,
+returning a new MPO tensor (or `MPOHamiltonian`). `alg` can be `WI`, `WII`, `ComplexStepper`,
+or any `FirstOrderStepper`.
+"""
 function timeevompo(m::SchurMPOTensor, dt::Number, alg::WI)
 	WA = get_A(m)
 	δ₁, δ₂ = _sqrt2(dt)
@@ -76,6 +116,11 @@ function timeevompo(m::SchurMPOTensor, dt::Number, alg::WI)
 	return _SiteW_impl(WA, WB, WC, WD)
 end
 
+"""
+    timeevompo(m::SchurMPOTensor, dt, alg::WII)
+
+The `WII` stepper: constructs an MPO block containing the matrix exponential for each site.
+"""
 function timeevompo(m::SchurMPOTensor, dt::Number, alg::WII)
 	A, B, C, D = get_A(m), get_B(m), get_C(m), get_D(m)
 	Ddt = dt * D
@@ -104,11 +149,26 @@ function timeevompo(m::SchurMPOTensor, dt::Number, alg::WII)
 	return _SiteW_impl(WA, WB, WC, WD)
 end
 
+"""
+    timeevompo(m::MPOHamiltonian{<:SchurMPOTensor}, dt, alg::FirstOrderStepper)
+
+Evolve each site tensor of the `MPOHamiltonian` site by site.
+"""
 timeevompo(m::MPOHamiltonian{<:SchurMPOTensor}, dt::Number, alg::FirstOrderStepper) = MPOHamiltonian([timeevompo(mj, dt, alg) for mj in m.data])
+"""
+    timeevompo(h, dt, alg::ComplexStepper)
+
+Evolve using the second-order complex-time stepper, returning the two evolution results `(U₁, U₂)`.
+"""
 function timeevompo(h::Union{SchurMPOTensor, MPOHamiltonian{<:SchurMPOTensor}}, dt::Number, alg::ComplexStepper)
 	dt1, dt2 = complex_stepper(dt)
 	return timeevompo(h, dt1, alg.stepper), timeevompo(h, dt2, alg.stepper)
 end
+"""
+    timeevompo(m::MPOHamiltonian{<:SchurMPOTensor}, dt; alg=WII())
+
+Keyword version of `timeevompo`, which defaults to `WII()`.
+"""
 timeevompo(m::MPOHamiltonian{<:SchurMPOTensor}, dt::Number; alg::TimeEvoMPOAlgorithm = WII()) = timeevompo(m, dt, alg)
 
 """

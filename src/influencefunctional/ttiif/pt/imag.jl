@@ -1,9 +1,9 @@
 # imaginary-time
 
 """
-	influenceoperator(lattice::ImagGrassmannLattice1Order{<:A1Ā1B1B̄1}, corr2::ImagCorrelationFunction; algexpan)
+	influenceoperator(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle; algexpan=PronyExpansion())
 
-The influenceoperator ΣᵢⱼΔᵢⱼāᵢaⱼ as an MPO, the bond dimension of MPO is 2n, where n is number of the prony expansion
+`influenceoperator` method on imaginary-time PT lattices: construct ΣᵢⱼΔᵢⱼ āᵢaⱼ as an MPO (`ProcessTensor`), whose bond dimension is 2n, with n the number of Prony expansion terms.
 """
 function influenceoperator(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle; algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	corr = corr2.data
@@ -14,6 +14,11 @@ function influenceoperator(lattice::ImagPTLattice1Order, corr2::ImagCorrelationF
 	return _fit_to_lattice(lattice, mpotensors) 
 end
 
+"""
+	influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm; algexpan=PronyExpansion())
+
+`influenceoperatorexponential` method on imaginary-time PT lattices. `FirstOrderStepper` returns 1 MPO and `ComplexStepper` returns 2 (one before and one after evolution).
+"""
 function influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper; 
 										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	corr = corr2.data
@@ -34,6 +39,11 @@ function influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagC
 end
 
 
+"""
+	differentialinfluencefunctional(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm; algexpan=PronyExpansion())
+
+`differentialinfluencefunctional` method on imaginary-time PT lattices.
+"""
 function differentialinfluencefunctional(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper, 
 											algmult::DMRGAlgorithm; 
 											algexpan::ExponentialExpansionAlgorithm=PronyExpansion()) 

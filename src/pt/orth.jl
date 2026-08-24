@@ -1,5 +1,17 @@
 # orthogonalize mps to be left-canonical or right-canonical
 
+"""
+	leftorth!(h::ProcessTensor; alg::Orthogonalize=Orthogonalize())
+
+Orthogonalize the MPO into left-canonical form, modifying `h` in place and returning it.
+
+# Arguments
+- `h::ProcessTensor`: MPO to orthogonalize
+- `alg::Orthogonalize`: orthogonalization algorithm configuration; `SVD` without truncation by default
+
+# Returns
+`h` itself.
+"""
 leftorth!(h::ProcessTensor; alg::Orthogonalize = Orthogonalize()) = _leftorth!(h, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
 function _leftorth!(psi::ProcessTensor, alg::QR, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
 	!isa(trunc, NoTruncation) &&  @warn "truncation has no effect with QR"
@@ -37,6 +49,18 @@ function _leftorth!(psi::ProcessTensor, alg::SVD, trunc::TruncationScheme, norma
 	return psi
 end
 
+"""
+	rightorth!(h::ProcessTensor; alg::Orthogonalize=Orthogonalize())
+
+Orthogonalize the MPO into right-canonical form, modifying `h` in place and returning it.
+
+# Arguments
+- `h::ProcessTensor`: MPO to orthogonalize
+- `alg::Orthogonalize`: orthogonalization algorithm configuration; `SVD` without truncation by default
+
+# Returns
+`h` itself.
+"""
 rightorth!(h::ProcessTensor; alg::Orthogonalize = Orthogonalize()) = _rightorth!(h, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
 function _rightorth!(psi::ProcessTensor, alg::QR, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
 	!isa(trunc, NoTruncation) &&  @warn "truncation has no effect with QR"
@@ -74,6 +98,16 @@ function _rightorth!(psi::ProcessTensor, alg::SVD, trunc::TruncationScheme, norm
 end
 
 canonicalize(psi::ProcessTensor; kwargs...) = canonicalize!(deepcopy(psi); kwargs...)
+"""
+	canonicalize!(psi::ProcessTensor; alg::Orthogonalize=Orthogonalize(trunc=DefaultTruncation, normalize=false))
+
+Transform the MPO into canonical form, modifying `psi` in place and returning it.
+
+Internally performs a left orthogonalization with `QR` (without truncation) first, then orthogonalizes from right to left using the algorithm specified by `alg` with truncation. Note: enabling normalization (`normalize=true`) is not recommended for `ProcessTensor`.
+
+# Returns
+`psi` itself.
+"""
 function canonicalize!(psi::ProcessTensor; alg::Orthogonalize = Orthogonalize(trunc=DefaultTruncation, normalize=false))
 	alg.normalize && @warn "canonicalize with renormalization not recommanded for ProcessTensor"
 	L = length(psi)

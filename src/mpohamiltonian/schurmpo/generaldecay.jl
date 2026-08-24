@@ -1,9 +1,11 @@
 
 
 """
-    struct GenericDecayTerm{M1, M<:MPSBondTensor, M2, F, T <: Number}
+    GenericDecayTerm(a, b, f; middle=_eye(size(a, 1)), coeff=1.0)
+    GenericDecayTerm(a, b; middle=_eye(size(a, 1)), f, coeff=1.0)
 
-Generic decay of the form coeff * [â ⊗ f(n)*m̂^⊗n ⊗ b̂]
+A generic decaying long-range interaction term of the form `coeff * [â ⊗ f(n) * m̂^⊗n ⊗ b̂]`,
+where `f` is a function decaying with the distance `n` (or a pre-sampled vector).
 """
 struct GenericDecayTerm{M1<:AbstractMatrix, M<:AbstractMatrix, M2, F, T <: Number} <: AbstractLongRangeTerm
     a::M1
@@ -13,8 +15,18 @@ struct GenericDecayTerm{M1<:AbstractMatrix, M<:AbstractMatrix, M2, F, T <: Numbe
     coeff::T
 end
 
+"""
+    GenericDecayTerm(a, b, f; middle=_eye(size(a, 1)), coeff=1.0)
+
+Convenience constructor for `GenericDecayTerm` in which `f` is passed as a positional argument.
+"""
 GenericDecayTerm(a::AbstractMatrix, b::AbstractMatrix, f; middle::AbstractMatrix = _eye(size(a, 1)), coeff::Number=1.) = GenericDecayTerm(a, middle, b, f, coeff)
 
+"""
+    GenericDecayTerm(a, b; middle=_eye(size(a, 1)), f, coeff=1.0)
+
+Keyword constructor for `GenericDecayTerm` in which `f` is passed as a keyword argument.
+"""
 function GenericDecayTerm(a::AbstractMatrix, b::AbstractMatrix; 
                             middle::AbstractMatrix = _eye(size(a, 1)), f, coeff::Number=1.) 
     GenericDecayTerm(a, middle, b, f, coeff)
@@ -27,10 +39,10 @@ Base.adjoint(x::GenericDecayTerm) = GenericDecayTerm(_op_adjoint(x.a, x.m, x.b).
 _conj(f) = x->conj(x.f(x))
 _conj(f::AbstractVector) = conj(f)
 
-""" 
-    PowerlawDecayTerm(a::M, b::M; α::Number=1., kwargs...)
+"""
+    PowerlawDecayTerm(a::AbstractMatrix, b::AbstractMatrix; α::Number=1., kwargs...)
 
-coeff * n^α, α should be negative in principle (diverging otherwise)
+A power-law decaying long-range interaction term with `f(n) = n^α`. In principle `α` should be negative (otherwise it diverges with distance).
 """
 PowerlawDecayTerm(a::AbstractMatrix, b::AbstractMatrix; α::Number=1., kwargs...) = GenericDecayTerm(a, b; f=x->x^α, kwargs...)
 
@@ -39,9 +51,10 @@ PowerlawDecayTerm(a::AbstractMatrix, b::AbstractMatrix; α::Number=1., kwargs...
 # L is the number of sites
 
 """
-    exponential_expansion(x::GenericDecayTerm{M, T, F}; len::Int, alg)
+    exponential_expansion(x::GenericDecayTerm; len, alg=PronyExpansion())
 
-Convert a GenericDecayTerm into a list of ExponentialDecayTerm
+Convert a `GenericDecayTerm` into a list of `ExponentialDecayTerm`s.
+When `x.f` is a vector, `len` is ignored; when `x.f` is a function, `len` is the sampling length.
 """
 function exponential_expansion(x::GenericDecayTerm{M1, M, M2, F, T}; len::Union{Int, Nothing}=nothing, alg::ExponentialExpansionAlgorithm=PronyExpansion()) where {M1, M, M2, F, T}
     if F <: AbstractVector

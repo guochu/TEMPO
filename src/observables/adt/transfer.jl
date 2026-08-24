@@ -59,6 +59,19 @@ r_RR(f, m::ADTTransferMatrix{T, N}) where {T, N} = f(T, ntuple(i->space_r(m.stat
 l_LL(m::ADTTransferMatrix{T, N}) where {T, N} = l_LL(ones, m)
 r_RR(m::ADTTransferMatrix{T, N}) where {T, N} = r_RR(ones, m)
 
+"""
+	TransferMatrix(states::ADT...)
+	TransferMatrix(j::Int, states::ADT...)
+
+Construct the ADT transfer matrix (`ADTTransferMatrix`): assemble a set of `ADT`s with the same physical dimension into a transfer operator, used to compute expectation values and partition functions. The version with position `j` uses only the `j`-th tensor of each `ADT` (for single-site operators).
+
+# Arguments
+- `states::ADT...`: a set of `ADT`s entering the contraction.
+- `j::Int`: use only the `j`-th tensor of each `ADT`.
+
+# Returns
+An `ADTTransferMatrix`.
+"""
 TransferMatrix(states::Vararg{M, N}) where {M <: ADT, N} = ADTTransferMatrix(map(x->x.data, states), scaling(states...))
 TransferMatrix(j::Int, states::Vararg{M, N}) where {M <: ADT, N} = ADTTransferMatrix(map(x->[x[j]], states), scaling(states...))
 

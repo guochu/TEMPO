@@ -1,3 +1,8 @@
+"""
+	hybriddynamics!(gmps::ADT, lattice::RealADTLattice, corr::RealCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
+
+`hybriddynamics!` method for the real-time contour (`RealADTLattice`).
+"""
 function hybriddynamics!(gmps::ADT, lattice::RealADTLattice, corr::RealCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
 	op = hyb.op
 	(lattice.d == length(op)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))

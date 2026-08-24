@@ -12,14 +12,49 @@
 # end
 
 
+"""
+	integrate(lat::ImagPTLattice, x::ProcessTensor)
+	integrate(lat::RealPTLattice, x::ProcessTensor)
+	integrate(lat::MixedPTLattice, x::ProcessTensor)
+	integrate(lat, x::ProcessTensor, y::ProcessTensor)
+
+Contract (integrate) a process tensor (or the product of two process tensors) over the full contour, obtaining the partition function / normalization scalar. Imaginary-time lattices are traced via `meanforcestate`, real-time lattices via `rdm`, and mixed-time lattices are contracted first along the imaginary-time branch and then along the real-time branch before tracing.
+
+# Arguments
+- `lat`: PT contour lattice (`ImagPTLattice`/`RealPTLattice`/`MixedPTLattice`).
+- `x::ProcessTensor`: the process tensor entering the contraction.
+- `y::ProcessTensor`: (optional) second process tensor, for ⟨x|y⟩-type overlaps.
+
+# Returns
+A scalar (partition function or normalization constant).
+"""
 integrate(lat::ImagPTLattice, x::ProcessTensor) = tr(meanforcestate(lat, x))
+"""
+	integrate(lat::ImagPTLattice, x::ProcessTensor, y::ProcessTensor)
+
+Integral of two imaginary-time process tensors: tr(meanforcestate(lat, x, y)).
+"""
 integrate(lat::ImagPTLattice, x::ProcessTensor, y::ProcessTensor) = tr(meanforcestate(lat, x, y))
 
+"""
+	mfs(lat::ImagPTLattice, x::Vararg{ProcessTensor})
+
+Alias for `meanforcestate`, returning the mean-force (Gibbs) state.
+"""
 mfs(lat::ImagPTLattice, x::Vararg{ProcessTensor}) = meanforcestate(lat, x...)
 """
 	meanforcestate(lat::ImagPTLattice, x::ProcessTensor)
+	meanforcestate(lat::ImagPTLattice, x::ProcessTensor, y::ProcessTensor)
 
-return the mean force gibbs state
+Mean-force Gibbs state obtained by contracting an imaginary-time process tensor: ρ_mfs = tr_bath[ρ_total].
+
+# Arguments
+- `lat::ImagPTLattice`: imaginary-time PT lattice.
+- `x::ProcessTensor`: the process tensor entering the contraction.
+- `y::ProcessTensor`: (optional) second process tensor (for ⟨x|y⟩-type contractions).
+
+# Returns
+The reduced density matrix of the system (a matrix).
 """
 function meanforcestate(lat::ImagPTLattice, x::ProcessTensor)
 	(length(lat) == length(x)) || throw(DimensionMismatch("lattice size mismatch with PT size"))
@@ -34,6 +69,11 @@ function meanforcestate(lat::ImagPTLattice, x::ProcessTensor)
     return v
 end
 
+"""
+	meanforcestate(lat::ImagPTLattice, x::ProcessTensor, y::ProcessTensor)
+
+Mean-force state of two imaginary-time process tensors: tr_bath[|x⟩⟨y|].
+"""
 function meanforcestate(lat::ImagPTLattice, x::ProcessTensor, y::ProcessTensor)
 	(length(lat) == length(x) == length(y)) || throw(DimensionMismatch("lattice size mismatch with PT size"))
 	L = length(x)
@@ -94,6 +134,12 @@ end
 #     end
 #     return tr(dropdims(tmp, dims=3))
 # end
+"""
+	integrate(lat::RealPTLattice, x::ProcessTensor)
+	integrate(lat::RealPTLattice, x::ProcessTensor, y::ProcessTensor)
+
+Real-time PT lattice integral: tr(rdm(lat, x)); with two process tensors, tr(rdm(lat, x, y)).
+"""
 integrate(lat::RealPTLattice, x::ProcessTensor) = tr(rdm(lat, x))
 integrate(lat::RealPTLattice, x::ProcessTensor, y::ProcessTensor) = tr(rdm(lat, x, y))
 
@@ -101,8 +147,17 @@ integrate(lat::RealPTLattice, x::ProcessTensor, y::ProcessTensor) = tr(rdm(lat, 
 
 """
 	rdm(lat::RealPTLattice, x::ProcessTensor)
+	rdm(lat::RealPTLattice, x::ProcessTensor, y::ProcessTensor)
 
-The final output quantum state
+Reduced density matrix (reduced quantum state) obtained by contracting a real-time PT lattice.
+
+# Arguments
+- `lat::RealPTLattice`: real-time PT lattice.
+- `x::ProcessTensor`: the process tensor entering the contraction.
+- `y::ProcessTensor`: (optional) second process tensor (for ⟨x|y⟩-type contractions).
+
+# Returns
+The reduced density matrix of the system (a matrix).
 """
 function rdm(lat::RealPTLattice, x::ProcessTensor)
 	(length(lat) == length(x)) || throw(DimensionMismatch("lattice size mismatch with PT size"))
@@ -121,6 +176,11 @@ function rdm(lat::RealPTLattice, x::ProcessTensor)
     return dropdims(tmp, dims=1)
 end
 
+"""
+	rdm(lat::RealPTLattice, x::ProcessTensor, y::ProcessTensor)
+
+Reduced density matrix of two real-time process tensors.
+"""
 function rdm(lat::RealPTLattice, x::ProcessTensor, y::ProcessTensor)
 	(length(lat) == length(x) == length(y)) || throw(DimensionMismatch("lattice size mismatch with PT size"))
     L = lat.N
@@ -140,6 +200,14 @@ function rdm(lat::RealPTLattice, x::ProcessTensor, y::ProcessTensor)
     return dropdims(tmp, dims=(1,2))
 end
 
+"""
+	quantummap(lat::RealPTLattice, x::ProcessTensor)
+
+Contract a real-time PT tensor into a quantum map tensor: the input/output double indices are kept without tracing, which can be used to extract the dynamical map.
+
+# Returns
+The quantum map tensor.
+"""
 function quantummap(lat::RealPTLattice, x::ProcessTensor)
 	(length(lat) == length(x)) || throw(DimensionMismatch("lattice size mismatch with PT size"))
     L = lat.N
@@ -158,6 +226,11 @@ function quantummap(lat::RealPTLattice, x::ProcessTensor)
 	
 end
 
+"""
+	integrate(lat::MixedPTLattice, x::ProcessTensor)
+
+Mixed-time PT lattice integral: contract first along the imaginary-time branch, then along the real-time branch, and trace.
+"""
 function integrate(lat::MixedPTLattice, x::ProcessTensor)
 	(length(lat) == length(x)) || throw(DimensionMismatch("lattice size mismatch with PT size"))
 	sca = scaling(x)
@@ -181,6 +254,11 @@ function integrate(lat::MixedPTLattice, x::ProcessTensor)
 	return tr(dropdims(v2, dims=3))
 end
 
+"""
+	integrate(lat::MixedPTLattice, x::ProcessTensor, y::ProcessTensor)
+
+Integral of two mixed-time process tensors.
+"""
 function integrate(lat::MixedPTLattice, x::ProcessTensor, y::ProcessTensor)
 	(length(lat) == length(x) == length(y)) || throw(DimensionMismatch("lattice size mismatch with PT size"))
 	sca = scaling(x) * scaling(y)

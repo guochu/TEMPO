@@ -1,3 +1,18 @@
+"""
+	partialif_naive(lattice::AbstractADTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
+
+Naively construct the partial influence functional (partial IF) associated with the single contour index `rowind`: apply the exp(ηᵢⱼ op⊗op) gates successively for each column index, orthogonalizing/truncating along the way.
+
+# Arguments
+- `lattice::AbstractADTLattice`: ADT contour lattice.
+- `rowind::ContourIndex`: contour index (row) associated with the partial IF.
+- `corr::AbstractCorrelationFunction`: bath correlation function.
+- `hyb::AdditiveHyb`: additive (diagonal) system-bath coupling.
+- `trunc::TruncationScheme=DefaultITruncation`: truncation scheme used during orthogonalization.
+
+# Returns
+The partial IF, represented as an `ADT`.
+"""
 function partialif_naive(lattice::AbstractADTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::AdditiveHyb; 
 						trunc::TruncationScheme=DefaultITruncation)
 	ds = [lattice.d for i in 1:length(lattice)]
@@ -34,6 +49,14 @@ function partialif_naive(lattice::AbstractADTLattice, rowind::ContourIndex, corr
 	return tmp
 end
 
+"""
+	partialif(lattice::AbstractADTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::AdditiveHyb)
+
+Construct the partial influence functional (partial IF) associated with the contour index `rowind`, with bond dimension 2, using the algorithm of Strathearn et al. (2018) (see `partialif_densemps`).
+
+# Returns
+The partial IF, represented as an `ADT`.
+"""
 function partialif(lattice::AbstractADTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::AdditiveHyb)
 	ds = [lattice.d for i in 1:length(lattice)]
 	b1 = branch(rowind)

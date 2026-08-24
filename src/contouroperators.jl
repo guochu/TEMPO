@@ -1,3 +1,16 @@
+"""
+	ContourOperator{T<:Number}
+
+A set of operator matrices indexed by `ContourIndex`, representing a multi-local operator acting on a `ProcessTensor`.
+
+Each operator matrix (2×2) corresponds to a `ContourIndex` (with branch `:τ`, `:+`, or `:-`) and is applied to the `ProcessTensor` via `apply!`.
+
+# Fields
+- `indices::Vector{ContourIndex}`: contour indices of the operators
+- `ops::Vector{Matrix{T}}`: list of local operator matrices
+
+Main constructor: `ContourOperator(idx::AbstractVector{ContourIndex}, data::AbstractVector{<:AbstractMatrix{T}})`.
+"""
 struct ContourOperator{T<:Number}
 	indices::Vector{ContourIndex}
 	ops::Vector{Matrix{T}}
@@ -12,6 +25,19 @@ ContourOperator(p::ContourIndex, data::AbstractMatrix) = ContourOperator([p], [d
 
 TO.scalartype(::Type{ContourOperator{T}}) where {T} = T
 
+"""
+	apply!(x::ContourOperator, lat::AbstractPTLattice, mps::ProcessTensor; aheads::Union{AbstractVector{Bool},Bool}=true)
+
+Map the operators in `ContourOperator` to their positions on the lattice `lat` via their `ContourIndex`, apply them to the `ProcessTensor` (MPO), modify `mps` in place, and return it.
+
+Operators on the negative branch (`:-`) are automatically transposed to match the time ordering.
+
+# Arguments
+- `aheads`: a scalar or a vector of booleans, controlling whether each local operator acts on the left (`true`) or the right (`false`) of the MPO tensor
+
+# Returns
+`mps` itself.
+"""
 apply!(x::ContourOperator, lat::AbstractPTLattice, mps::ProcessTensor; aheads::Union{AbstractVector{Bool}, Bool}=true) = apply!(x, lat, mps, aheads)
 
 # function apply!(x::ContourOperator, lat::AbstractPTLattice, mps::ProcessTensor, aheads::AbstractVector{Bool})

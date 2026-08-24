@@ -1,6 +1,16 @@
 include("imag.jl")
 include("real.jl")
 
+"""
+	hybriddynamics!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::TranslationInvariantIF)
+
+Construct the influence functional using the `TranslationInvariantIF` algorithm and multiply it in-place into `gmps`: if `alg.fast=true`, first build the full translationally invariant MPO and multiply it in a single step; otherwise multiply in successively (2^k multiplications).
+
+# Returns
+The modified `gmps`.
+
+See also [`TranslationInvariantIF`](@ref).
+"""
 function hybriddynamics!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::TranslationInvariantIF)
 	if alg.fast
 		mps = hybriddynamics(lattice, corr, hyb, alg)
@@ -11,6 +21,14 @@ function hybriddynamics!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractC
 	end
 end
 
+"""
+	hybriddynamics(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::TranslationInvariantIF)
+
+Construct the influence functional using the `TranslationInvariantIF` algorithm: if `alg.fast=true`, use the tree bipartition scheme (k multiplications); otherwise use the sequential scheme (2^k-1 multiplications).
+
+# Returns
+The influence functional, represented as an `ADT`.
+"""
 function hybriddynamics(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::TranslationInvariantIF)
 	if alg.fast
 		(alg.verbosity > 1) && println("Tree bipartition scheme using $(alg.k) multiplications")

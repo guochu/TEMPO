@@ -2,6 +2,14 @@ include("imag.jl")
 include("real.jl")
 # TTI-IF support for L-shaped is possible for finite MPS, but TTI is destroyed and the algorithm is not elegant, so it is not implemented for now
 
+"""
+	hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::TranslationInvariantIF)
+
+In-place version of the `TranslationInvariantIF` algorithm on PT lattices: supports `GeneralHybStyle` (e.g. `NonAdditiveHyb`, `NonDiagonalHyb`) coupling, with the same behavior as the ADT version.
+
+# Returns
+The modified `gmps`.
+"""
 function hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::TranslationInvariantIF)
 	if alg.fast
 		mps = hybriddynamics(lattice, corr, hyb, alg)
@@ -12,6 +20,14 @@ function hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::
 	end
 end
 
+"""
+	hybriddynamics(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::TranslationInvariantIF)
+
+`TranslationInvariantIF` algorithm version on PT lattices: supports `GeneralHybStyle` coupling.
+
+# Returns
+The influence functional, represented as a `ProcessTensor`.
+"""
 function hybriddynamics(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::TranslationInvariantIF)
 	if alg.fast
 		(alg.verbosity > 1) && println("Tree bipartition scheme using $(alg.k) multiplications")

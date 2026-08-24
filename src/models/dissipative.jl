@@ -4,6 +4,12 @@
 # 	sysdynamics!(vacuumstate(T, lattice), lattice, model, args...; kwargs...)
 # end 
 
+"""
+    sysdynamics!(mps::ADT, lattice::RealADTLattice1Order, model::ImpurityLindbladian; trunc::TruncationScheme=DefaultKTruncation)
+
+Apply Lindblad-type dissipative dynamics in place on a real-time ADT lattice: at each time step the superoperator `exp(δt * L)`
+acts on the `:+`/`:-` four indices, followed by truncated orthogonalization.
+"""
 function sysdynamics!(mps::ADT, lattice::RealADTLattice1Order, model::ImpurityLindbladian; trunc::TruncationScheme=DefaultKTruncation)
 	alg = Orthogonalize(SVD(), trunc)
 	U = _get_dissipative_adt_propagator(model.m, lattice.δt)
@@ -17,6 +23,11 @@ function sysdynamics!(mps::ADT, lattice::RealADTLattice1Order, model::ImpurityLi
 	return mps
 end
 
+"""
+    sysdynamics!(mps::ADT, lattice::RealADTLattice1Order, model::ImpurityLindbladian, op::ContourOperator; trunc::TruncationScheme=DefaultKTruncation)
+
+Apply Lindblad dissipative dynamics in place on a real-time ADT lattice with operator insertions; `op` provides the contour operators inserted at each time step.
+"""
 function sysdynamics!(mps::ADT, lattice::RealADTLattice1Order, model::ImpurityLindbladian, op::ContourOperator; trunc::TruncationScheme=DefaultKTruncation)
 	alg = Orthogonalize(SVD(), trunc)
 	U = _get_dissipative_adt_propagator(model.m, lattice.δt)
@@ -64,6 +75,11 @@ end
 # end 
 
 
+"""
+    sysdynamics!(mps::ProcessTensor, lattice::RealPTLattice1Order, model::ImpurityLindbladian; trunc::TruncationScheme=DefaultKTruncation)
+
+Apply Lindblad-type dissipative dynamics in place on a real-time PT lattice: at each time step the superoperator acts on the `:+`/`:-` indices, followed by tensor decomposition.
+"""
 function sysdynamics!(mps::ProcessTensor, lattice::RealPTLattice1Order, model::ImpurityLindbladian; trunc::TruncationScheme=DefaultKTruncation)
 	alg = Orthogonalize(SVD(), trunc)
 	U = _get_dissipative_pt_propagator(model.m, lattice.δt)

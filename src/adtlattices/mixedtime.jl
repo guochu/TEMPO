@@ -1,11 +1,36 @@
+"""
+    MixedADTLattice{O<:MixedFockOrdering} <: AbstractADTLattice{O}
+
+Abstract ADT lattice type on the mixed (Kadanoff-Baym, real-time + imaginary-time) contour: scalar type `ComplexF64`,
+containing the `:+`, `:-` and `:τ` branches.
+"""
 abstract type MixedADTLattice{O<:MixedFockOrdering} <: AbstractADTLattice{O} end
 TO.scalartype(::Type{<:MixedADTLattice}) = ComplexF64
+"""
+    branches(::Type{<:MixedADTLattice})
+
+Tuple of branch symbols of the mixed ADT lattice, `(:+, :-, :τ)`.
+"""
 branches(::Type{<:MixedADTLattice}) = (:+, :-, :τ)
 
 """
-	struct MixedGrassmannLattice1Order <: MixedGrassmannLattice
+	struct MixedADTLattice1Order{O<:MixedFockOrdering} <: MixedADTLattice{O}
 
-First order splitting of the real-time contour
+First-order ADT lattice on the mixed contour: discretizes the real-time interval `[0, t]` into `Nt` steps (size `δt`) and
+the imaginary-time interval `[0, β]` into `Nτ` steps (size `δτ`).
+
+# Fields
+- `δt::Float64`: real-time step size.
+- `Nt::Int`: number of real-time discretization steps.
+- `δτ::Float64`: imaginary-time step size.
+- `Nτ::Int`: number of imaginary-time discretization steps.
+- `d::Int`: physical dimension.
+- `ordering::O`: Fock ordering (default [`M2M1_m1M1m2M2`](@ref)).
+
+# Derived attributes
+- `t = Nt * δt`: total evolution time; `β = Nτ * δτ`: inverse temperature; `T = 1/β`.
+- `ts = 0:δt:t`: real-time grid; `τs = 0:δτ:β`: imaginary-time grid.
+- `kt = Nt + 1`, `kτ = Nτ + 1`: number of lattice indices per branch (including boundary points).
 """
 struct MixedADTLattice1Order{O<:MixedFockOrdering} <: MixedADTLattice{O}
 	δt::Float64
@@ -20,12 +45,22 @@ struct MixedADTLattice1Order{O<:MixedFockOrdering} <: MixedADTLattice{O}
 end
 
 # the default is that the system starts from 0 temperature (state 0)
+"""
+    MixedADTLattice1Order(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, d::Int=2, ordering::MixedFockOrdering=M2M1_m1M1m2M2())
+
+Convenience constructor for a first-order mixed ADT lattice.
+"""
 MixedADTLattice1Order(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, d::Int=2, ordering::MixedFockOrdering=M2M1_m1M1m2M2()) = MixedADTLattice1Order(
 							δt, Nt, δτ, Nτ, d, ordering)
 Base.similar(x::MixedADTLattice1Order; δt::Real=x.δt, Nt::Int=x.Nt, δτ::Real=x.δτ, Nτ::Int=x.Nτ, d::Int=x.d, ordering::MixedFockOrdering=x.ordering) = MixedADTLattice1Order(
 			δt, Nt, δτ, Nτ, d, ordering)
 
 
+"""
+    MixedADTLattice(; order::Int=1, kwargs...)
+
+Construct a mixed ADT lattice; `order` specifies the splitting order (currently only first order is supported, i.e. `order == 1`).
+"""
 function MixedADTLattice(; order::Int=1, kwargs...)
 	(order in (1, 2)) || throw(ArgumentError("order must be 1 or 2"))
 	if order == 1
@@ -80,6 +115,11 @@ end
 
 
 # key is timestep, conj, branch, band
+"""
+    indexmappings(lattice::MixedADTLattice1Order)
+
+Return a `Dict{Tuple{Int, Symbol}, Int}` mapping `(time step, branch)` to the global index of the mixed ADT lattice.
+"""
 function indexmappings(lattice::MixedADTLattice1Order)
 	r = Dict{Tuple{Int, Symbol}, Int}()
 	for i in 1:lattice.kτ

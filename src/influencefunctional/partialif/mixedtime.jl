@@ -1,3 +1,8 @@
+"""
+	hybriddynamics!(gmps::ADT, lattice::MixedADTLattice1Order, corr::AbstractMixedCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
+
+`hybriddynamics!` method for the mixed-time contour (`MixedADTLattice1Order`, containing both imaginary-time and real-time branches).
+"""
 function hybriddynamics!(gmps::ADT, lattice::MixedADTLattice1Order, corr::AbstractMixedCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
 	op = hyb.op
 	(lattice.d == length(op)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))

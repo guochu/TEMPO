@@ -1,6 +1,11 @@
 using LinearAlgebra: LAPACK, triu!, BlasFloat
 
 abstract type FactorizationAlgorithm end
+"""
+    OrthogonalFactorizationAlgorithm
+
+Abstract type for orthogonal factorization algorithms; concrete algorithms include `QR`, `QRpos`, `LQ`, `LQpos`, `SVD`, `SDD`, and `Polar`.
+"""
 abstract type OrthogonalFactorizationAlgorithm <: FactorizationAlgorithm end
 
 struct QRpos <: OrthogonalFactorizationAlgorithm
@@ -39,6 +44,14 @@ end
 safesign(s::Real) = ifelse(s < zero(s), -one(s), +one(s))
 safesign(s::Complex) = ifelse(iszero(s), one(s), s / abs(s))
 
+"""
+    leftorth!(A, alg, atol=0)
+
+Left-orthogonalize the matrix `A` into `(Q, R)` such that `A = Q * R` with `Q` having orthonormal columns.
+`alg` may be `QR`/`QRpos` (QR factorization, `atol` must be 0), `SVD`/`SDD` (singular value
+decomposition, where small singular values below `atol` are truncated), or `Polar` (polar
+decomposition). Returns `(Q, R)`.
+"""
 function leftorth!(A::StridedMatrix{<:BlasFloat}, alg::Union{QR,QRpos}, atol::Real=zero(float(real(scalartype(A)))))
     iszero(atol) || throw(ArgumentError("nonzero atol not supported by $alg"))
     m, n = size(A)
@@ -69,6 +82,11 @@ function leftorth!(A::StridedMatrix{<:BlasFloat}, alg::Union{QR,QRpos}, atol::Re
     return Q, R
 end
 
+"""
+    leftorth!(A, alg::Union{SVD,SDD,Polar}, atol=0)
+
+SVD/polar version of `leftorth!`: `SVD` and `SDD` support truncating small singular values below `atol`.
+"""
 function leftorth!(A::StridedMatrix{<:BlasFloat}, alg::Union{SVD,SDD,Polar}, atol::Real=zero(float(real(scalartype(A)))))
     U, S, V = alg isa SVD ? LAPACK.gesvd!('S', 'S', A) : LAPACK.gesdd!('S', A)
     if isa(alg, Union{SVD,SDD})
@@ -89,6 +107,14 @@ function leftorth!(A::StridedMatrix{<:BlasFloat}, alg::Union{SVD,SDD,Polar}, ato
     end
 end
 
+"""
+    rightorth!(A, alg, atol=0)
+
+Right-orthogonalize the matrix `A` into `(L, Q)` such that `A = L * Q` with `Q` having orthonormal rows.
+`alg` may be `LQ`/`LQpos` (LQ factorization, `atol` must be 0), `SVD`/`SDD` (singular value
+decomposition, where small singular values below `atol` are truncated), or `Polar` (polar
+decomposition). Returns `(L, Q)`.
+"""
 function rightorth!(A::StridedMatrix{<:BlasFloat}, alg::Union{LQ,LQpos},
                     atol::Real=zero(float(real(scalartype(A)))))
     iszero(atol) || throw(ArgumentError("nonzero atol not supported by $alg"))
@@ -136,6 +162,11 @@ function rightorth!(A::StridedMatrix{<:BlasFloat}, alg::Union{LQ,LQpos},
     # end
 end
 
+"""
+    rightorth!(A, alg::Union{SVD,SDD,Polar}, atol=0)
+
+SVD/polar version of `rightorth!`: `SVD` and `SDD` support truncating small singular values below `atol`.
+"""
 function rightorth!(A::StridedMatrix{<:BlasFloat}, alg::Union{SVD,SDD,Polar}, atol::Real=zero(float(real(scalartype(A)))))
     U, S, V = alg isa SVD ? LAPACK.gesvd!('S', 'S', A) : LAPACK.gesdd!('S', A)
     if isa(alg, Union{SVD,SDD})

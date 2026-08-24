@@ -18,6 +18,12 @@ space_l(m::DenseMPSTensor) = size(m, 1)
 space_r(m::DenseMPSTensor) = size(m, 3)
 space_l(m::AbstractMatrix) = size(m, 1)
 space_r(m::AbstractMatrix) = size(m, 2)
+"""
+    phydim(m::DenseMPSTensor)
+    phydim(m::DenseMPOTensor)
+
+Return the physical dimension of a single site tensor (dimension 2 of a rank-3 MPS tensor; dimension 2 of a rank-4 MPO tensor).
+"""
 phydim(m::DenseMPSTensor) = size(m, 2)
 space_l(m::DenseMPOTensor) = size(m, 1)
 space_r(m::DenseMPOTensor) = size(m, 3)
@@ -31,6 +37,12 @@ l_LL(psiA::Dense1DTN, psiB::Dense1DTN) = _eye(promote_type(scalartype(psiA), sca
 l_LL(psi::Dense1DTN) = ones(scalartype(psi), space_l(psi))
 
 
+"""
+    scaling(x::Dense1DTN)
+
+Return the overall numerical scaling factor of a tensor network (`ADT` / `ProcessTensor`), used for stabilization against numerical overflow/underflow.
+All operations such as `mult` and `integrate` multiply the input `scaling` factors and include them in the result.
+"""
 scaling(x::Dense1DTN) = x.scaling[]
 setscaling!(x::Dense1DTN, scaling::Real) = (x.scaling[] = scaling)
 
@@ -39,6 +51,16 @@ function LinearAlgebra.normalize!(x::Dense1DTN)
 	return x
 end
 
+"""
+    bond_dimension(psi::Dense1DTN[, bond::Int])
+    bond_dimensions(psi::Dense1DTN)
+
+Query the bond dimensions of the auxiliary bonds of a tensor network.
+
+- `bond_dimension(psi, bond)`: dimension of the `bond`-th bond (throws `BoundsError` if out of range);
+- `bond_dimension(psi)`: maximum over all bonds;
+- `bond_dimensions(psi)`: vector of all bond dimensions.
+"""
 bond_dimension(psi::Dense1DTN, bond::Int) = begin
 	((bond >= 1) && (bond <= length(psi))) || throw(BoundsError(1:length(psi), bond))
 	space_r(psi[bond])
@@ -47,6 +69,15 @@ bond_dimensions(psi::Dense1DTN) = [bond_dimension(psi, i) for i in 1:length(psi)
 bond_dimension(psi::Dense1DTN) = maximum(bond_dimensions(psi))
 latticedims(psi::Dense1DTN) = [size(m, 2) for m in psi.data]
 
+"""
+    phydim(psi::Dense1DTN[, bond::Int])
+    phydims(psi::Dense1DTN)
+
+Query the physical dimensions of the sites of a tensor network.
+
+- `phydim(psi, bond)`: physical dimension of the `bond`-th site (throws `BoundsError` if out of range);
+- `phydims(psi)`: vector of all physical dimensions.
+"""
 phydim(psi::Dense1DTN, bond::Int) = begin
 	((bond >= 1) && (bond <= length(psi))) || throw(BoundsError(1:length(psi), bond))
 	phydim(psi[bond])

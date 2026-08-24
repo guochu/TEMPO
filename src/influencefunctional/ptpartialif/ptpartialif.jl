@@ -3,12 +3,27 @@ include("imaginarytime.jl")
 include("realtime.jl")
 include("mixedtime.jl")
 
+"""
+	hybriddynamics(lattice, corr, hyb, alg::PartialIF)
+
+Construct the influence functional using the `PartialIF` algorithm, with the truncation scheme taken from `alg.trunc`. ADT lattices correspond to `AdditiveHyb` coupling; PT lattices (`AbstractPTLattice`) correspond to `NonAdditiveHyb` coupling.
+
+See also [`hybriddynamics`](@ref) and [`PartialIF`](@ref).
+"""
 function hybriddynamics(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::PartialIF)
 	T = promote_type(scalartype(lattice), scalartype(hyb), scalartype(corr))
 	return hybriddynamics!(vacuumstate(T, lattice), lattice, corr, hyb, alg)
 end 
 hybriddynamics(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::PartialIF) = hybriddynamics!(
 				copy(gmps), lattice, corr, hyb, alg)
+"""
+	hybriddynamics!(gmps, lattice, corr, hyb, alg::PartialIF)
+
+In-place version of `hybriddynamics` (with the `PartialIF` algorithm): multiply the partial IFs directly into `gmps`, with the truncation scheme taken from `alg.trunc`.
+
+# Returns
+The modified `gmps`.
+"""
 hybriddynamics!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::PartialIF) = hybriddynamics!(
 				gmps, lattice, corr, hyb, trunc=alg.trunc)
 
@@ -23,17 +38,48 @@ hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractC
 				gmps, lattice, corr, hyb, trunc=alg.trunc)
 
 hybriddynamics(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, bs::NonAdditiveHyb; kwargs...) = hybriddynamics!(copy(gmps), lattice, corr, bs; kwargs...)
+"""
+	hybriddynamics(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; kwargs...)
+	hybriddynamics(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; kwargs...)
+
+Entry point of `hybriddynamics` on PT (`ProcessTensor`) lattices: start from `vacuumstate(lattice)` (or from a copy of the supplied `gmps`) and multiply in the partial IF of each contour lattice point successively to construct the full influence functional.
+
+# Arguments
+- `gmps::ProcessTensor`: initial process tensor (multiplication is performed on a copy; the original object is left unchanged).
+- `lattice::AbstractPTLattice`: PT contour lattice (imaginary-time/real-time/mixed-time).
+- `corr::AbstractCorrelationFunction`: bath correlation function.
+- `hyb::NonAdditiveHyb`: non-additive (symmetric) system-bath coupling.
+- `kwargs...`: keyword arguments passed to `hybriddynamics!` (e.g. `trunc=...`).
+
+# Returns
+The influence functional, represented as a `ProcessTensor`.
+"""
 function hybriddynamics(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, bs::NonAdditiveHyb; kwargs...)
 	T = promote_type(scalartype(lattice), scalartype(bs), scalartype(corr))
 	return hybriddynamics!(vacuumstate(T, lattice), lattice, corr, bs; kwargs...)
 end 
 
+"""
+	hybriddynamics_naive(lattice, corr, hyb, alg::PartialIF)
+
+Naive `hybriddynamics` using the `PartialIF` algorithm: with `alg.trunc` as the truncation scheme, construct a partial IF for each contour lattice point and multiply them in successively (N² gate operations in total).
+
+See also [`hybriddynamics`](@ref) and [`hybriddynamics_naive!`](@ref).
+"""
 function hybriddynamics_naive(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb, alg::PartialIF)
 	T = promote_type(scalartype(lattice), scalartype(hyb), scalartype(corr))
 	return hybriddynamics_naive!(vacuumstate(T, lattice), lattice, corr, hyb, alg)
 end 
 hybriddynamics_naive(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb, alg::PartialIF) = hybriddynamics_naive!(
 						copy(gmps), lattice, corr, hyb, alg)
+"""
+	hybriddynamics_naive!(gmps, lattice, corr, hyb, alg::PartialIF)
+
+In-place version of `hybriddynamics_naive` (with the `PartialIF` algorithm), with the truncation scheme taken from `alg.trunc`.
+
+# Returns
+The modified `gmps`.
+"""
 hybriddynamics_naive!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb, alg::PartialIF) = hybriddynamics_naive!(
 						gmps, lattice, corr, hyb, trunc=alg.trunc)
 

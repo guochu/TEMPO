@@ -5,6 +5,13 @@ function LinearAlgebra.norm(psi::Dense1DTN)
     a = (abs(a) >= 1.0e-14) ? a : zero(a)
 	return sqrt(a) * scaling(psi)^(length(psi))
 end
+"""
+    distance(a::Dense1DTN, b::Dense1DTN)
+    distance2(a::Dense1DTN, b::Dense1DTN)
+
+Distance between two tensor networks (`ADT` / `ProcessTensor`), based on the inner products of the site tensors and including the overall `scaling` factors.
+`distance = sqrt(distance2)`. Commonly used to verify the accuracy of multiplication/compression.
+"""
 distance(a::Dense1DTN, b::Dense1DTN) = _distance(a, b)
 distance2(a::Dense1DTN, b::Dense1DTN) = _distance2(a, b)
 

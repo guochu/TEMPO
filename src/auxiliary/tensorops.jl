@@ -8,7 +8,17 @@ using LinearAlgebra.BLAS: gemm, gemm!
 
 scalar(x::AbstractArray{T}) where {T<:Number} = only(x)
 
+"""
+    permute(m::AbstractArray, perm)
+
+Return a view of `m` with its dimensions permuted according to `perm` (a `PermutedDimsArray`), without copying data.
+"""
 permute(m::AbstractArray, perm) = PermutedDimsArray(m, perm)
+"""
+    permute(m::AbstractArray, left, right)
+
+Group the dimensions into `left` and `right` and place them in that order, equivalent to `permute(m, (left..., right...))`.
+"""
 permute(m::AbstractArray, left, right) = permute(m, (left..., right...))
 
 function random_hermitian(::Type{T}, n::Int) where {T <: Number}
@@ -161,6 +171,12 @@ function stable_svd!(a::StridedArray{T, 2}, workspace::AbstractVector{T}) where 
     end
 end
 
+"""
+    tsvd!(a, workspace=similar(a, length(a)); trunc=NoTruncation())
+
+Perform a truncated singular value decomposition of the matrix `a`, returning `(u, s, v, err)`,
+where `err` is the truncation error (2-norm of the discarded singular values) and `trunc` specifies the truncation scheme.
+"""
 function tsvd!(a::StridedArray{T, 2}, workspace::AbstractVector{T}=similar(a, length(a)); trunc::TruncationScheme=NoTruncation()) where {T}
     u, s, v = stable_svd!(a, workspace)
     d_old = length(s)
@@ -173,6 +189,12 @@ function tsvd!(a::StridedArray{T, 2}, workspace::AbstractVector{T}=similar(a, le
     end
 end
 
+"""
+    tsvd!(a, left, right, workspace=similar(a, length(a)); trunc=NoTruncation())
+
+Perform a truncated singular value decomposition of the tensor `a` with dimensions grouped into `left`/`right`,
+returning `(u, s, v, err)`, where `u` and `v` are the left and right singular tensors.
+"""
 function tsvd!(a::StridedArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N2, Int}, workspace::AbstractVector{T}=similar(a, length(a)); 
     trunc::TruncationScheme=NoTruncation()) where {T <: Number, N, N1, N2}
     if length(workspace) <= length(a)
@@ -267,7 +289,18 @@ function texp(a::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N1, I
     return reshape(t2, shape_a)
 end
 
+"""
+    leftorth!(A; alg=QRpos(), atol=0)
+
+Keyword version of `leftorth!` acting on plain matrices, equivalent to `leftorth!(A, alg, atol)`.
+"""
 leftorth!(A::StridedMatrix; alg::Union{QR,QRpos,SVD,SDD,Polar}=QRpos(), atol::Real=zero(float(real(scalartype(A))))) = leftorth!(A, alg, atol)
+"""
+    leftorth!(A, left, right; alg=QRpos(), atol=0)
+
+Left-orthogonalize the tensor `A` with dimensions grouped into `left`/`right`, returning `(u, v)`,
+where `u` has dimensions `(left..., s)` and `v` has dimensions `(s, right...)`.
+"""
 function leftorth!(A::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N2, Int};
                     alg::Union{QR,QRpos,SVD,SDD,Polar}=QRpos(), atol::Real=zero(float(real(scalartype(A))))) where {T, N, N1, N2}
     A2, dimu, dimv = _tomat(A, left, right)
@@ -279,7 +312,18 @@ function leftorth!(A::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{
     return reshape(u, dimu..., s), reshape(v, s, dimv...)
 end
 
+"""
+    rightorth!(A; alg=LQpos(), atol=0)
+
+Keyword version of `rightorth!` acting on plain matrices, equivalent to `rightorth!(A, alg, atol)`.
+"""
 rightorth!(A::StridedMatrix; alg::Union{LQ,LQpos,SVD,SDD,Polar}=LQpos(), atol::Real=zero(float(real(scalartype(A))))) = rightorth!(A, alg, atol)
+"""
+    rightorth!(A, left, right; alg=LQpos(), atol=0)
+
+Right-orthogonalize the tensor `A` with dimensions grouped into `left`/`right`, returning `(u, v)`,
+where `u` has dimensions `(left..., s)` and `v` has dimensions `(s, right...)`.
+"""
 function rightorth!(A::AbstractArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N2, Int};
                     alg::Union{LQ,LQpos,SVD,SDD,Polar}=LQpos(), atol::Real=zero(float(real(scalartype(A))))) where {T, N, N1, N2}
     A2, dimu, dimv = _tomat(A, left, right)
@@ -308,10 +352,11 @@ end
 
 
 """
-    renyi_entropy(v::AbstractVector{<:Real}; α::Real=1) 
+    renyi_entropy(v::AbstractVector{<:Real}; α::Real=1)
 
-Compute the renyi entropy of a vector "v"
-Requirement: sum of v should be 1
+Compute the Rényi entropy of the vector `v`. For `α=1` this reduces to the Shannon entropy `-Σᵢ vᵢ log(vᵢ)`,
+and otherwise it is `1/(1-α) * log(Σᵢ vᵢ^α)`.
+The entries of `v` must be nonnegative and sum to 1 (e.g. normalized squared singular values).
 """
 function renyi_entropy(v::AbstractVector{<:Real}; α::Real=1) 
     α = convert(eltype(v), α)

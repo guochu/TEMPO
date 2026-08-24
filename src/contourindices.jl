@@ -1,6 +1,18 @@
 abstract type AbstractFockLatticeIndex end
 # band(x::AbstractLatticeIndex) = x.band
 
+"""
+	ContourIndex <: AbstractFockLatticeIndex
+
+Index on the Keldysh contour, consisting of a discrete time step `j` and a branch `branch`, used to index positions on a PTLattice.
+
+Branch meanings:
+- `:τ`: imaginary-time branch
+- `:+`: forward real-time branch
+- `:-`: backward real-time branch
+
+Main constructor: `ContourIndex(j::Int; branch::Symbol=:τ)`.
+"""
 struct ContourIndex <: AbstractFockLatticeIndex
 	j::Int
 	branch::Symbol
@@ -12,6 +24,14 @@ function ContourIndex(j::Int, branch::Symbol)
 end
 
 end
+"""
+	ContourIndex(j::Int; branch::Symbol=:τ)
+
+Construct a contour index, with default branch `:τ` (imaginary time).
+
+# Throws
+- `ArgumentError`: `branch` is not one of `:τ`, `:+`, `:-`
+"""
 ContourIndex(j::Int; branch::Symbol=:τ) = ContourIndex(j, branch)
 branch(x::ContourIndex) = x.branch
 

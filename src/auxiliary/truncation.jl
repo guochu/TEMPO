@@ -1,29 +1,71 @@
+"""
+    TruncationScheme
+
+Abstract type for tensor truncation schemes, specifying how singular values are truncated (by dimension, by truncation error, or both).
+"""
 abstract type TruncationScheme end
 
 
+"""
+    NoTruncation()
+
+A truncation scheme that performs no truncation, keeping all singular values.
+"""
 struct NoTruncation <: TruncationScheme end
 
 struct TruncateDim <: TruncationScheme
 	D::Int
 end
 TruncateDim(;D::Int) = TruncateDim(D)
+"""
+    truncdim(d::Int)
+
+Construct a dimension-truncated scheme `TruncateDim(d)` that keeps only the `d` largest singular values.
+"""
 truncdim(d::Int) = TruncateDim(d)
+"""
+    truncdim(; D::Int)
+
+Keyword form of the dimension-truncation scheme constructor, equivalent to `truncdim(D)`.
+"""
 truncdim(; D::Int) = truncdim(D)
 
 struct TruncateCutoff <: TruncationScheme
 	ϵ::Float64
 end
 TruncateCutoff(;ϵ::Real) = TruncateCutoff(convert(Float64, ϵ))
+"""
+    trunccutoff(; ϵ::Real)
+
+Construct a cutoff-truncated scheme `TruncateCutoff(ϵ)` that discards singular values with relative norm below `ϵ`.
+"""
 trunccutoff(; ϵ::Real) = TruncateCutoff(ϵ)
 
 # reserve at least add_back singular values
+"""
+    TruncationDimCutoff(D, ϵ, add_back=0)
+    TruncationDimCutoff(; D, ϵ, add_back=0)
+
+A truncation scheme combining dimension and cutoff: the truncation point is first determined by the relative norm `ϵ`,
+then capped at `D` singular values while keeping at least `add_back` of them.
+"""
 struct TruncationDimCutoff <: TruncationScheme
     D::Int
     ϵ::Float64
     add_back::Int
 end
 TruncationDimCutoff(;D::Int, ϵ::Real, add_back::Int=0) = TruncationDimCutoff(D, float(ϵ), min(add_back, D))
+"""
+    truncdimcutoff(D, ϵ, add_back=0)
+
+Positional-argument convenience constructor for `TruncationDimCutoff`, equivalent to `TruncationDimCutoff(D, ϵ, add_back)`.
+"""
 truncdimcutoff(D::Int, epsilon::Real; add_back::Int=0) = TruncationDimCutoff(D, epsilon, add_back)
+"""
+    truncdimcutoff(; D, ϵ, add_back=0)
+
+Keyword convenience constructor for `TruncationDimCutoff`, equivalent to `TruncationDimCutoff(D, ϵ, add_back)`.
+"""
 truncdimcutoff(; D::Int, ϵ::Real, add_back::Int=0) = TruncationDimCutoff(D, float(ϵ), min(add_back, D))
 
 

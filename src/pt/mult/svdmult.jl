@@ -1,3 +1,19 @@
+"""
+	mult!(x::ProcessTensor, y::ProcessTensor; trunc::TruncationScheme=DefaultTruncation, verbosity::Int=0)
+
+Compute the product (tensor contraction) of two MPO in place on `x`, compress the result, and return `x`.
+
+Algorithm: accumulate left-to-right QR decompositions, then orthogonalize right-to-left with `SVD` and truncate according to `trunc`; the resulting scaling factor is `scaling(x) * scaling(y)`.
+
+# Arguments
+- `x::ProcessTensor`: first MPO, also used as the output storage
+- `y::ProcessTensor`: second MPO, must have the same length as `x`
+- `trunc`: SVD truncation scheme (e.g., `truncdim(D)`, `trunccutoff(ε)`)
+- `verbosity::Int`: verbosity level
+
+# Returns
+`x` itself (its content is overwritten by the product).
+"""
 function mult!(x::ProcessTensor, y::ProcessTensor; trunc::TruncationScheme=DefaultTruncation, verbosity::Int=0)
     (length(x) == length(y)) || throw(DimensionMismatch())
     T = promote_type(scalartype(x), scalartype(y))
@@ -19,6 +35,16 @@ function mult!(x::ProcessTensor, y::ProcessTensor; trunc::TruncationScheme=Defau
     setscaling!(x, scaling(x) * scaling(y))
     return x
 end
+"""
+	mult(x::ProcessTensor, y::ProcessTensor; kwargs...)
+
+Compute the product of two MPO and compress it, returning a new `ProcessTensor` (inputs are not modified).
+
+Equivalent to `mult!(copy(x), y; kwargs...)`; arguments as in `mult!`.
+
+# Returns
+The product `ProcessTensor`.
+"""
 mult(x::ProcessTensor, y::ProcessTensor; kwargs...) = mult!(copy(x), y; kwargs...)
 
 

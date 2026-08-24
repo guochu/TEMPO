@@ -2,7 +2,17 @@
 abstract type MatrixProductOrthogonalAlgorithm  end
 
 """
-	struct MatrixProductOrthogonalize{A<:Union{QR, SVD}, T<:TruncationScheme}
+	Orthogonalize{A<:Union{QR, SVD}, T<:TruncationScheme}
+
+Configuration of the orthogonalization scheme, used by orthogonalization algorithms such as `leftorth!`, `rightorth!`, and `canonicalize!`.
+
+# Fields
+- `orth::A`: underlying orthogonalization algorithm (`QR` or `SVD`)
+- `trunc::T`: truncation scheme (`TruncationScheme`); only effective with `SVD`, truncation has no effect with `QR`
+- `normalize::Bool`: whether to normalize
+- `verbosity::Int`: verbosity level
+
+Main constructor: `Orthogonalize(; alg=SVD(), trunc=NoTruncation(), normalize=false, verbosity=0)`.
 """
 struct Orthogonalize{A<:Union{QR, SVD}, T<:TruncationScheme} <: MatrixProductOrthogonalAlgorithm
 	orth::A
@@ -15,6 +25,18 @@ Orthogonalize(a::Union{QR, SVD}; trunc::TruncationScheme=NoTruncation(), normali
 Orthogonalize(; alg::Union{QR, SVD} = SVD(), trunc::TruncationScheme=NoTruncation(), normalize::Bool=false, verbosity::Int=0) = Orthogonalize(alg, trunc, normalize, verbosity)
 
 
+"""
+	leftorth!(psi::ADT; alg::Orthogonalize=Orthogonalize())
+
+Orthogonalize the MPS into left-canonical form, modifying `psi` in place and returning it.
+
+# Arguments
+- `psi::ADT`: MPS to orthogonalize
+- `alg::Orthogonalize`: orthogonalization algorithm configuration; `SVD` without truncation by default
+
+# Returns
+`psi` itself.
+"""
 leftorth!(psi::ADT; alg::Orthogonalize = Orthogonalize()) = _leftorth!(psi, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
 function _leftorth!(psi::ADT, alg::QR, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
 	!isa(trunc, NoTruncation) &&  @warn "truncation has no effect with QR"
@@ -54,6 +76,18 @@ function _leftorth!(psi::ADT, alg::SVD, trunc::TruncationScheme, normalize::Bool
 	return psi
 end
 
+"""
+	rightorth!(psi::ADT; alg::Orthogonalize=Orthogonalize())
+
+Orthogonalize the MPS into right-canonical form, modifying `psi` in place and returning it.
+
+# Arguments
+- `psi::ADT`: MPS to orthogonalize
+- `alg::Orthogonalize`: orthogonalization algorithm configuration; `SVD` without truncation by default
+
+# Returns
+`psi` itself.
+"""
 rightorth!(psi::ADT; alg::Orthogonalize = Orthogonalize()) = _rightorth!(psi, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
 function _rightorth!(psi::ADT, alg::QR, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
 	!isa(trunc, NoTruncation) &&  @warn "truncation has no effect with QR"
@@ -92,6 +126,20 @@ function _rightorth!(psi::ADT, alg::SVD, trunc::TruncationScheme, normalize::Boo
 end
 
 canonicalize(psi::ADT; kwargs...) = canonicalize!(deepcopy(psi); kwargs...)
+"""
+	canonicalize!(psi::ADT; alg::Orthogonalize=Orthogonalize(trunc=DefaultTruncation, normalize=false))
+
+Transform the MPS into canonical form, modifying `psi` in place and returning it.
+
+Internally performs a left orthogonalization with `QR` (without truncation) first, then orthogonalizes from right to left using the algorithm specified by `alg` with truncation. Note: enabling normalization (`normalize=true`) is not recommended for `ADT`.
+
+# Arguments
+- `psi::ADT`: MPS to orthogonalize
+- `alg::Orthogonalize`: algorithm configuration for the right-orthogonalization stage
+
+# Returns
+`psi` itself.
+"""
 function canonicalize!(psi::ADT; alg::Orthogonalize = Orthogonalize(trunc=DefaultTruncation, normalize=false))
 	alg.normalize && @warn "canonicalize with renormalization not recommanded for ADT"
 	L = length(psi)

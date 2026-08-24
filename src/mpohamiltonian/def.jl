@@ -1,11 +1,11 @@
 """
-	struct MPOHamiltonian{M <: AbstractSparseMPOTensor}
+    MPOHamiltonian{M <: AbstractSparseMPOTensor}
+    MPOHamiltonian(data::AbstractVector{M})
 
-A generic MPO which stores a chain of AbstractSparseMPOTensor (Matrix of MPOTensors)
+A general MPO (matrix product operator) storing a list of `AbstractSparseMPOTensor` (MPOTensor matrices).
 
-For finite system, the first site tensor is understood as the first row of the 
-first AbstractSparseMPOTensor, and the last site tensor is understood as the last 
-column of the last AbstractSparseMPOTensor
+For a finite system, the first site tensor is treated as the first row of the first `AbstractSparseMPOTensor`,
+and the last site tensor as the last column of the last `AbstractSparseMPOTensor`.
 """
 struct MPOHamiltonian{M <: AbstractSparseMPOTensor}
 	data::Vector{M}
@@ -42,9 +42,11 @@ Base.getindex(x::MPOHamiltonian, i::Colon, j::Int, k::Int) = [getindex(x, i,j,k)
 
 
 """
-	MPO(h::MPOHamiltonian, L::Int) 
-	
-Conversion of an MPOHamiltonian into a finite dense MPO
+    tompotensors(h::MPOHamiltonian{<:SchurMPOTensor})
+    tompotensors(h::MPOHamiltonian{<:SparseMPOTensor}; rowl::Int=1, colr::Int=1)
+
+Convert an `MPOHamiltonian` to a finite dense MPO (a list of site tensors of the form `Vector{Array{T,4}}`).
+`rowl` and `colr` specify the row and column extracted from the first and last tensors, respectively.
 """
 tompotensors(h::MPOHamiltonian{<:SchurMPOTensor}) = _tompotensors(h, 1, size(h[end], 2))
 tompotensors(h::MPOHamiltonian{<:SparseMPOTensor}; rowl::Int=1, colr::Int=1) = _tompotensors(h, rowl, colr)

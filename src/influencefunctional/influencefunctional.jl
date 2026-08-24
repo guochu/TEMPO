@@ -1,20 +1,38 @@
 abstract type InfluenceFunctionalAlgorithm end
 """
-	struct PartialIF
+	PartialIF(; trunc::TruncationDimCutoff=DefaultITruncation)
 
-Build the IF as the product of partial MPOs, each with D=2
-see [SciPost Phys. Core 7, 063 (2024)]
+Construct the full influence functional as a product of partial influence functionals (partial IFs), each with bond dimension D=2.
+
+See [SciPost Phys. Core 7, 063 (2024)].
+
+# Arguments
+- `trunc::TruncationDimCutoff=DefaultITruncation`: truncation scheme used when multiplying the partial IFs successively into the full IF.
 """
 struct PartialIF <: InfluenceFunctionalAlgorithm 
 	trunc::TruncationDimCutoff
 end
+"""
+	PartialIF(; trunc::TruncationDimCutoff=DefaultITruncation)
+
+Keyword constructor for `PartialIF`; the truncation scheme is specified by `trunc`.
+"""
 PartialIF(; trunc::TruncationDimCutoff=DefaultITruncation) = PartialIF(trunc)
 
 """
-	struct TranslationInvariantIF
+	TranslationInvariantIF(; algexpan, algevo, algmult, k, fast, verbosity)
 
-Build the IF as a translational variant MPO
-see [SciPost Phys. Core 7, 063 (2024)]
+Construct the influence functional as a translationally invariant MPO: first build the differential influence functional of width dt/2^k, then repeatedly square it k times (`fast=true`) via the tree bipartition scheme to obtain the full-length influence functional.
+
+See [SciPost Phys. Core 7, 063 (2024)].
+
+# Fields
+- `algexpan::ExponentialExpansionAlgorithm`: exponential (Prony) expansion algorithm for the bath correlation function.
+- `algevo::TimeEvoMPOAlgorithm`: time-evolution algorithm for the differential influence functional (`FirstOrderStepper` or `ComplexStepper`).
+- `algmult::DMRGAlgorithm`: MPO multiplication (compression) algorithm.
+- `k::Int`: number of tree bipartition iterations, corresponding to 2^k time steps.
+- `fast::Bool`: if `true`, use the fast tree bipartition scheme (k multiplications); otherwise use the sequential scheme (2^k-1 multiplications).
+- `verbosity::Int`: verbosity level of the output.
 """
 struct TranslationInvariantIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm, M<:DMRGAlgorithm} <: InfluenceFunctionalAlgorithm 
 	algexpan::T
@@ -25,6 +43,11 @@ struct TranslationInvariantIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlg
 	fast::Bool
 	verbosity::Int
 end
+"""
+	TranslationInvariantIF(; algexpan, algevo, algmult, k, fast, verbosity)
+
+Keyword constructor for `TranslationInvariantIF`; all parameters have default values and usually need not be passed explicitly.
+"""
 TranslationInvariantIF(; algexpan::ExponentialExpansionAlgorithm=PronyExpansion(n=15, tol=1.0e-4, verbosity=0), 
 						 algevo::TimeEvoMPOAlgorithm=WII(), 
 						 algmult::DMRGAlgorithm=DefaultMultAlg,
@@ -43,9 +66,27 @@ end
 
 
 
+"""
+	HybridizationStyle
+
+Abstract type describing the form of the system-bath hybridization. The concrete styles are given by [`AdditiveHyb`](@ref) (additive/diagonal), [`NonAdditiveHyb`](@ref) (non-additive symmetric) and [`NonDiagonalHyb`](@ref) (off-diagonal).
+"""
 abstract type HybridizationStyle end
 
 
+"""
+	AdditiveHyb(op::AbstractVector{<:Real})
+	AdditiveHyb(a::AbstractMatrix)
+
+Additive (diagonal) system-bath hybridization style: the system-bath interaction takes the form V(a+a†), where the coupling operator V = Diagonal(op) is a diagonal matrix.
+
+# Arguments
+- `op::AbstractVector{<:Real}`: vector of diagonal elements, of length equal to the dimension of the system Hilbert space (i.e. `lattice.d`).
+- `a::AbstractMatrix`: must be a diagonal matrix (otherwise an `ArgumentError` is thrown); its diagonal elements are extracted at construction.
+
+# Notes
+- `pairop(b::AdditiveHyb)` returns `(op, op)` with `op = Diagonal(b.op)`.
+"""
 struct AdditiveHyb <: HybridizationStyle
 	op::Vector{Float64}
 end
@@ -55,6 +96,15 @@ AdditiveHyb(x::AbstractVector{<:Real}) = AdditiveHyb(float(x))
 phydim(b::AdditiveHyb) = length(b.op)
 
 TO.scalartype(::Type{AdditiveHyb}) = Float64
+"""
+	pairop(hyb::HybridizationStyle)
+
+Return the pair of system-bath coupling operators `(op1, op2)` such that the interaction term takes the form op1*a + op2*a′ (a is the fermionic annihilation operator).
+
+- `AdditiveHyb`: returns `(Diagonal(op), Diagonal(op))`.
+- `NonAdditiveHyb`: returns `(op, op)` (symmetric coupling).
+- `NonDiagonalHyb`: returns `(op, op')` (op and its transpose couple to a and a′, respectively).
+"""
 function pairop(b::AdditiveHyb)
 	op = Matrix(Diagonal(b.op))
 	return op, op
@@ -68,9 +118,16 @@ end
 abstract type GeneralHybStyle <: HybridizationStyle end
 
 """
-	struct NonAdditiveTdHyb{F<:Function}
+	NonAdditiveHyb(op::AbstractMatrix{T}) where {T<:Number}
 
-The Impurity-bath coupling is op*(a+a')
+Non-additive (symmetric) system-bath hybridization style: the system-bath interaction takes the form op*(a+a'), i.e. the system operator op couples to both the fermionic annihilation operator a and the creation operator a'.
+
+# Arguments
+- `op::AbstractMatrix{T}`: square matrix (n x n) that must be Hermitian (otherwise an `ArgumentError` is thrown), where n equals the dimension of the system Hilbert space.
+
+# Notes
+- Can be converted from `AdditiveHyb` via `NonAdditiveHyb(hyb::AdditiveHyb)`.
+- `pairop(b::NonAdditiveHyb)` returns `(op, op)`.
 """
 struct NonAdditiveHyb{T<:Number} <: GeneralHybStyle
 	op::Matrix{T}
@@ -90,9 +147,16 @@ TO.scalartype(::Type{NonAdditiveHyb{T}}) where T = T
 pairop(b::NonAdditiveHyb) = b.op, b.op
 
 """
-	struct NonDiagonalHyb{T<:Number}
+	NonDiagonalHyb(op::AbstractMatrix{T}) where {T<:Number}
 
-The Impurity-bath coupling is op*a + op'*a'
+Off-diagonal system-bath hybridization style: the system-bath interaction takes the form op*a + op'*a', i.e. the system operator op couples to a and its transpose couples to a'.
+
+# Arguments
+- `op::AbstractMatrix{T}`: square matrix (n x n), where n equals the dimension of the system Hilbert space. Unlike `NonAdditiveHyb`, no Hermiticity is required here, so asymmetric (e.g. chiral) couplings can be described.
+
+# Notes
+- Can be converted from other styles via `NonDiagonalHyb(hyb::AdditiveHyb)` or `NonDiagonalHyb(hyb::NonAdditiveHyb)`.
+- `pairop(b::NonDiagonalHyb)` returns `(op, op')`.
 """
 struct NonDiagonalHyb{T<:Number} <: GeneralHybStyle
 	op::Matrix{T}
