@@ -1,3 +1,41 @@
+#=
+    jctype.jl — JC-type spin-boson model (off-diagonal coupling, RWA)
+
+Tutorial example: real-time dynamics of a spin-1/2 impurity coupled to a
+bosonic bath through a *non-diagonal* (conjugate-pair) coupling, obtained from
+the spin-boson model by the rotating-wave approximation (RWA). Demonstrates the
+Process-Tensor (PT) TEMPO path of the package for off-diagonal system-bath
+coupling on the real-time (Keldysh) contour.
+
+Model (Jaynes-Cummings type):
+    H = Δ σ_z/2 ⊗ 1 + 1 ⊗ H_bath + g Σ_k (σ₊ b_k + σ₋ b_k†)
+
+with sub-Ohmic spectral density
+    J(ω) = 2π α ω^s ω_c^{1-s},   0 ≤ ω ≤ ω_c,
+inverse temperature β = 2.5, and initial impurity state ρ_imp = |+⟩⟨+|.
+
+Pipeline:
+  1. Build the real-time PT lattice: `PTLattice(N=Nt, δt=δt, contour=:real)`.
+  2. Bath: `bath = bosonicbath(spectrum, β)`, `corr = correlationfunction(bath, lattice)`.
+  3. Non-diagonal coupling: `hyb = NonDiagonalHyb(sp)` with sp = σ₊/2.
+  4. Influence functional (translation-invariant, XTRG-style):
+     `alg = TranslationInvariantIF(k=k, fast=true, algmult=DMRGMult1(...), algexpan=PronyExpansion(...))`,
+     `mpsI = hybriddynamics(lattice, corr, hyb, alg)` (cached to `data/jc_... .mps`).
+  5. System propagator: `mpsK = sysdynamics(lattice, model, trunc=trunc)` with
+     `model = ImpurityHamiltonian(Δ .* z)`.
+  6. Full tensor: `mps = mult!(mpsK, mpsI, trunc=trunc)`;
+     `cache = environments(lattice, mps, ρ₀=ρimp)`.
+  7. Observables: ⟨σ_x(t)⟩ at every time step via `ContourOperator` and
+     `expectationvalue(m, cache)`.
+
+Output:
+  - `data/jc_... .mps`   : cached influence functional (ProcessTensor/MPO).
+  - `result/jc_... .json`: `{"ts": [...], "z": [[Re,Im], ...]}`,
+     real/imag parts of ⟨σ_x(t)⟩ on the time grid.
+
+Run:   include("jctype.jl");  main(1.0)
+=#
+
 # push!(LOAD_PATH, "../../src")
 
 using TEMPO, ImpurityModelBase, LinearAlgebra
@@ -27,6 +65,44 @@ end
 subomic_spectrum(w, α, s, wc) = 2π*α * w^s * wc^(1-s)
 
 
+"""
+    main(t; δt=0.05, Δ=1., β=2.5, α=0.1, s=0.5, wc=5., n=20, k=7, chi=100)
+
+Run the JC-type (RWA spin-boson, off-diagonal coupling) example on the real-time contour.
+
+The system is a spin-1/2 with Hamiltonian `Δ σ_z/2`, coupled to a sub-Ohmic
+bosonic bath through the raising operator `σ₊` (`NonDiagonalHyb`). The
+influence functional is built with the translation-invariant (XTRG-style) path
+`TranslationInvariantIF`: the differential influence functional of width
+`dt/2^k` is constructed by exponential expansion and WII time evolution, then
+squared `k` times by the fast tree-bipartition scheme.  The observable
+`⟨σ_x(t)⟩` is measured at every time step.
+
+# Arguments
+- `t::Real`: total real-time evolution time.
+- `δt::Real=0.05`: real-time step size.
+- `Δ::Real=1.0`: energy splitting (system Hamiltonian `Δ σ_z/2`).
+- `β::Real=2.5`: inverse temperature of the bath.
+- `α::Real=0.1`: dimensionless coupling strength (prefactor of the spectral density).
+- `s::Real=0.5`: spectral density exponent (sub-Ohmic for `0 < s < 1`).
+- `wc::Real=5.0`: spectral cutoff frequency.
+- `n::Int=20`: number of Prony expansion terms (`PronyExpansion(n=n, tol=1e-8)`).
+- `k::Int=7`: number of squaring steps of the fast tree-bipartition scheme
+  (differential influence functional width `dt/2^k`).
+- `chi::Int=100`: bond dimension cutoff `D` of the SVD truncation
+  (`truncdimcutoff(D=chi, ϵ=1e-14)`).
+
+# Returns
+A `Dict` with
+- `"ts"::Vector{Float64}`: time grid `0:δt:t`;
+- `"z"::Matrix{Float64}`: `Nt × 2` matrix whose columns are the real and
+  imaginary parts of `⟨σ_x(t)⟩` at each time step.
+
+The same dictionary is also written to
+`result/jc_β{β}_t{t}_dt{δt}_Δ{Δ}_α{α}_s{s}_wc{wc}_k{k}_n{n}_chi{chi}.json`,
+and the influence functional is cached to `data/jc_... .mps` (computed only on
+first run, loaded afterwards).
+"""
 function main(t; δt = 0.05, Δ = 1., β = 2.5, α=0.1, s=0.5, wc = 5., n=20, k=7, chi = 100)
 	Nt = round(Int, t/δt)
 	println("t=", t, " δt=", δt, " Δ=", Δ, " β=", β, " α=", α, " s=", s, " wc=", wc,  " n=", n, " k=", k, " chi=", chi)
