@@ -16,7 +16,7 @@
 
 ---
 
-> 全部导出符号的逐项 API 参考见 [api_reference.md](api_reference.md)。
+> 全部导出符号的逐项 API 参考见 [api_reference.md](api_reference.md)；内部数据结构、算法流程与张量约定见 [implementation_details.md](implementation_details.md)。
 
 ## 目录
 
