@@ -127,3 +127,36 @@ end
 
 	end
 end
+
+@testset "expectation and TransferMatrix" begin
+	N = 3
+	δt = 0.1
+	tol = 1.0e-4
+	lattice = ADTLattice(N=N, δt=δt, contour=:real)
+	mps1 = randomadt(ComplexF64, length(lattice), D=4, d=2)
+	canonicalize!(mps1)
+	mps2 = randomadt(ComplexF64, length(lattice), D=3, d=2)
+	canonicalize!(mps2)
+	mps = mult(mps1, mps2)
+	Zval = integrate(mps)
+	cache = environments(lattice, mps1, mps2)
+	@test abs(Zvalue(cache) - Zval) / abs(Zval) < tol
+
+	m = TransferMatrix(mps)
+	@test length(m) == length(lattice)
+	@test scaling(m) ≈ scaling(mps)
+	@test only(l_LL(m) * m) ≈ integrate(mps)
+	m12 = TransferMatrix(mps1, mps2)
+	@test length(m12) == length(lattice)
+	@test scaling(m12) ≈ scaling(mps1) * scaling(mps2)
+	@test l_LL(m12) * m12 ≈ cache.hleft[end]
+	m12j = TransferMatrix(2, mps1, mps2)
+	@test length(m12j) == 1
+
+	op = randn(Float64, 2)
+	pos = index(lattice, 1, branch=:+)
+	t = ADTTerm(pos, op)
+	e1 = expectation(t, cache)
+	@test e1 ≈ expectationvalue(t, cache) * Zvalue(cache)
+	@test abs(e1 - integrate(apply!(t, copy(mps)))) / abs(e1) < tol
+end

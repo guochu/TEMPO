@@ -148,3 +148,33 @@ end
 	end
 
 end
+
+@testset "FockTerm / FockTermS      " begin
+	N = 3
+	δτ = 0.1
+	tol = 1.0e-6
+	lattice = PTLattice(N=N, δτ=δτ, contour=:imag)
+	mps = randompt(ComplexF64, length(lattice), D=3, d=2)
+	canonicalize!(mps)
+	cache = environments(lattice, mps)
+	Zval = Zvalue(cache)
+
+	z = pauli_z()
+	pos = 1
+	ft = FockTermS(pos, z)
+	@test ft isa FockTermS
+	@test ft isa AbstractFockTerm
+	ft3 = FockTerm([pos], [reshape(ComplexF64.(z), 1, 2, 1, 2)])
+	@test ft3 isa FockTerm
+	# FockTermS and FockTerm share the same application machinery
+	v1 = expectationvalue(ft, cache)
+	v2 = expectationvalue(ft3, cache)
+	@test v1 ≈ v2
+	# self-consistent reference: apply the term and integrate
+	ref = integrate(lattice, apply!(ft, copy(mps))) / Zval
+	@test abs(v1 - ref) / abs(ref) < tol
+	# a ContourOperator maps to a ProdFockTerm at the same lattice position
+	c = ContourIndex(1, branch=:τ)
+	p1 = lattice[c]
+	@test expectationvalue(ContourOperator(c, z), cache) ≈ expectationvalue(ProdFockTerm(p1, z), cache)
+end

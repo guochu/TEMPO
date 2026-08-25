@@ -13,3 +13,5 @@ include("quantumcontrol.jl")
 
 include("toymodel.jl")
 include("toymodel2.jl")
+
+include("meanforcestate.jl")

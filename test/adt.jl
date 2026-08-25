@@ -102,3 +102,33 @@ end
 	end
 
 end
+
+@testset "accessors: scaling, phydims, indexmappings" begin
+	lattice = ADTLattice(N=3, δt=0.1, contour=:real)
+	mps = randomadt(ComplexF64, length(lattice), D=4, d=2)
+	@test scaling(mps) isa Float64
+	@test all(phydims(mps) .== 2)
+	@test phydim(mps, 1) == 2
+	@test phydim(mps, length(lattice)) == 2
+
+	map_ = indexmappings(lattice)
+	@test length(map_) == 2 * lattice.k
+	for i in 1:lattice.k, f in (:+, :-)
+		@test map_[(i, f)] == index(lattice, i, branch=f)
+	end
+
+	latt2 = ADTLattice(N=3, δτ=0.1, contour=:imag)
+	map2 = indexmappings(latt2)
+	@test length(map2) == latt2.k
+	for i in 1:latt2.k
+		@test map2[(i, :τ)] == index(latt2, i)
+	end
+
+	mps2 = randomadt(ComplexF64, length(lattice), D=3, d=2)
+	canonicalize!(mps2)
+	@test scaling(mps, mps2) ≈ scaling(mps) * scaling(mps2)
+	m = mult(mps, mps2)
+	# the total contraction is invariant under the renormalization performed inside mult!
+	@test abs(integrate(m) - integrate(mps, mps2)) / abs(integrate(mps, mps2)) < 1.0e-4
+	@test scaling(TransferMatrix(mps, mps2)) ≈ scaling(mps) * scaling(mps2)
+end

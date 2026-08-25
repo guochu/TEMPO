@@ -8,3 +8,5 @@ include("rabimodel.jl")
 include("independentbosons.jl")
 
 include("toymodel.jl")
+
+include("basic.jl")
