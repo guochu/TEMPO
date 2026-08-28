@@ -60,7 +60,7 @@ TruncationDimCutoff(;D::Int, ϵ::Real, add_back::Int=0) = TruncationDimCutoff(D,
 
 Positional-argument convenience constructor for `TruncationDimCutoff`, equivalent to `TruncationDimCutoff(D, ϵ, add_back)`.
 """
-truncdimcutoff(D::Int, epsilon::Real; add_back::Int=0) = TruncationDimCutoff(D, epsilon, add_back)
+truncdimcutoff(D::Int, epsilon::Real; add_back::Int=0) = TruncationDimCutoff(D, epsilon, min(add_back, D))
 """
     truncdimcutoff(; D, ϵ, add_back=0)
 
@@ -90,10 +90,10 @@ end
 function _truncate!(v::AbstractVector{<:Real}, trunc::TruncationDimCutoff, p::Real=2)
 	sca = norm(v, p)
 	dtrunc = findlast(Base.Fix2(>, sca * trunc.ϵ), v)
-	if isnothing(dtrunc)
-		dtrunc = trunc.add_back
-	end
-	v, err = _truncate!(v, TruncateDim(min(trunc.D, dtrunc)), p)
+	dtrunc = isnothing(dtrunc) ? 0 : dtrunc
+	dtrunc = max(dtrunc, trunc.add_back)   # keep at least add_back singular values
+	dtrunc = min(dtrunc, trunc.D)          # but never more than D
+	v, err = _truncate!(v, TruncateDim(dtrunc), p)
 	return v, err / sca
 end
 

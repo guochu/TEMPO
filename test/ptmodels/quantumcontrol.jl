@@ -40,8 +40,6 @@ end
 		apply!(op, lattice, adt)
 		initialstate!(adt, lattice, ρimp)
 		rho1 = rdm(lattice, adt)
-		rho1 ./= 2
-
 
 		rho2 = seq[i] * ρ * seq[i]'
 		rho2 = Uop * rho2 * Uop'
@@ -102,7 +100,6 @@ end
 		apply!(op, lattice, adt)
 		initialstate!(adt, lattice, ρimp)
 		rho1 = rdm(lattice, adt)
-		rho1 ./= 2
 
 		ρ4 = reshape(ρ, d, 2, d, 2)
 		@tensor tmp4[3,1,4,6] := seq[i][1,2] * ρ4[3,2,4,5] * conj(seq[i][6,5])

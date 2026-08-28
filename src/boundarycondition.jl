@@ -68,10 +68,11 @@ end
 """
     initialstate!(x::ProcessTensor, lattice::RealPTLattice1Order, ρ0::AbstractMatrix)
 
-Apply the initial density matrix `ρ0` in place to the first `:+`/`:-` index pair of the real-time PT lattice (absorbing it into the process tensor via tensor decomposition).
+Apply the initial density matrix `ρ0` (normalized to `ρ0/tr(ρ0)`) in place to the first `:+`/`:-` index pair of the real-time PT lattice (absorbing it into the process tensor via tensor decomposition).
 """
 function initialstate!(x::ProcessTensor, lattice::RealPTLattice1Order, ρ0::AbstractMatrix)
 	(size(ρ0, 1) == size(ρ0, 2) == lattice.d) || throw(DimensionMismatch("diagonal element size mismatch with phydim"))
+	ρ0 = ρ0 / tr(ρ0)   # normalize the initial density matrix
 	pos1, pos2 = index(lattice, 1, branch=:+), index(lattice, 1, branch=:-)
 	@assert pos1 + 1 == pos2
 	@tensor tmp[3,4,6,7] := ρ0[1,2] * x[pos1][3,4,5,1] * x[pos2][5,6,7,2] 

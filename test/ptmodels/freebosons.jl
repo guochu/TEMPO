@@ -4,6 +4,35 @@ println("------------------------------------")
 
 omic_spectrum(w, α, wc) = 2α * w * exp(-w/wc)
 
+# Exact reference for the free-boson impurity model
+#
+#     H = ϵ_d a†a + Σₖ ωₖ bₖ†bₖ + Σₖ gₖ (a†bₖ + a bₖ†)
+#
+# The Hamiltonian is quadratic in bosons and has no pairing terms, so the exact
+# Green's functions follow from the (N+1)×(N+1) hopping matrix
+#
+#     A = [ϵ_d  gᵀ; g  diag(ω)].
+#
+# The couplings g are `spectrumcouplings(bath)`; note that `spectrumvalues`
+# returns the spectral values |gₖ|² (the coupling squared), hence the square
+# root. The TEMPO results are compared against the ImpurityModelBase exact
+# diagonalization helpers `freebosons_Gτ` (imaginary time, thermal
+# equilibrium) and `freebosons_greater_lesser` (real time; non-equilibrium
+# version seeded with the initial correlation matrix
+# ρ₀ = diag(n_imp, n_B(ω₁), ..., n_B(ω_N))).
+function hoppingmatrix(bath, ϵ_d)
+	ws, gs = frequencies(bath), spectrumcouplings(bath)
+	n = length(ws)
+	A = zeros(n + 1, n + 1)
+	A[1, 1] = ϵ_d
+	for k in 1:n
+		A[1, 1+k] = gs[k]
+		A[1+k, 1] = gs[k]
+		A[1+k, 1+k] = ws[k]
+	end
+	return A
+end
+
 @testset "Freebosons: imaginary-time" begin
 	δτ=0.1
 	N = 10
@@ -66,9 +95,9 @@ omic_spectrum(w, α, wc) = 2α * w * exp(-w/wc)
 	end
 
 	b2 = discretebath(bath, δw=dw)
-	exact_model = Toulouse(b2, ϵ_d=ϵ_d)
+	A = hoppingmatrix(b2, ϵ_d)
 
-	corrs2 = toulouse_Gτ(exact_model, 0:δτ:β)
+	corrs2 = freebosons_Gτ(A, collect(0:δτ:β), 1, 1; β=β)
 	corrs2 = corrs2[1:length(corrs)]
 
 	@test norm(corrs - corrs2) / norm(corrs2) < tol		
@@ -115,8 +144,8 @@ end
 
 	adt = mpsK * mpsI
 
-	tmp = initialstate!(copy(adt), lattice, ρimp)
-	Zval = integrate(lattice, adt)
+	adt0 = initialstate!(copy(adt), lattice, ρimp)
+	Zval = integrate(lattice, adt0)
 
 	# Green's function
 	op1 = adag'
@@ -162,9 +191,11 @@ end
 
 
 	b2 = discretebath(bath, δw=dw)
-	exact_model = Toulouse(b2, ϵ_d=ϵ_d)
+	A = hoppingmatrix(b2, ϵ_d)
+	ws2 = frequencies(b2)
+	ρ₀ = Matrix(Diagonal([1.0; [boseeinstein(β, ωₖ) for ωₖ in ws2]]))
 
-	gt_corrs2, lt_corrs2 = toulouse_neq_greater_lesser(exact_model, 0:δt:t, nsys=1)
+	gt_corrs2, lt_corrs2 = freebosons_greater_lesser(A, ρ₀, collect(0:δt:t), 1, 1)
 	gt_corrs2 = gt_corrs2[1:length(gt_corrs)]
 	lt_corrs2 = lt_corrs2[1:length(lt_corrs)]
 

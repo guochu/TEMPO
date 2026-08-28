@@ -368,7 +368,7 @@ function renyi_entropy(v::AbstractVector{<:Real}; α::Real=1)
     if α==one(α)
         return -dot(a, log.(a))
     else
-        a = v.^(α)
+        a = a.^(α)
         return (1/(1-α)) * log(sum(a))
     end
 end
