@@ -68,12 +68,12 @@ end
 	cache1 = environments(lattice, mps1, mps2, ρ₀=ρ₀)
 	Zval1 = Zvalue(cache1)
 	# println("Zval=", Zval, " Zval1=", Zval1)
-	@test abs(Zval1 * d - Zval) / abs(Zval) < tol
+	@test abs(Zval1 - Zval) / abs(Zval) < tol
 
 	cache2 = environments(lattice, mps, ρ₀=ρ₀)
 	Zval1 = Zvalue(cache2)
 	# println("Zval=", Zval, " Zval1=", Zval1)
-	@test abs(Zval1 * d - Zval) / abs(Zval) < tol
+	@test abs(Zval1 - Zval) / abs(Zval) < tol
 
 	op1 = randn(Float64, phydim(lattice), phydim(lattice))
 	op2 = randn(Float64, phydim(lattice), phydim(lattice))

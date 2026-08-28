@@ -2,6 +2,10 @@
 	hybriddynamics!(gmps::ADT, lattice::MixedADTLattice1Order, corr::AbstractMixedCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
 
 `hybriddynamics!` method for the mixed-time contour (`MixedADTLattice1Order`, containing both imaginary-time and real-time branches).
+
+The mixed contour stores `kτ = Nτ + 1` imaginary-time points; correlation indices on the `:τ` branch map to lattice
+index `j+1` (position `kτ - j`), and when a partial-IF row lies on the `:τ` branch all column indices (real-time
+branches included) are shifted by one time step as well. See the `MixedADTLattice1Order` docstring for details.
 """
 function hybriddynamics!(gmps::ADT, lattice::MixedADTLattice1Order, corr::AbstractMixedCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
 	op = hyb.op

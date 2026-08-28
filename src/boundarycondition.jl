@@ -77,9 +77,7 @@ function initialstate!(x::ProcessTensor, lattice::RealPTLattice1Order, ρ0::Abst
 	@tensor tmp[3,4,6,7] := ρ0[1,2] * x[pos1][3,4,5,1] * x[pos2][5,6,7,2] 
 	u, s, v = tsvd!(tmp, (1,2), (3,4), trunc=DefaultIntegrationTruncation)
 
-	I2 = one(ρ0)
-	# I2 ./= sqrt(size(ρ0, 1))
-	# I2 ./= tr(I2)
+	I2 = one(ρ0) ./ sqrt(size(ρ0, 1))   # each inserted identity contributes a factor tr(I₂)=d on contraction; √d on each site cancels it
 	s2 = Matrix(Diagonal(s))
 	@tensor a[1,2,4,5,6] := u[1,2,3] * s2[3,4] * I2[5,6]
 	@tensor b[1,4,2,3,5] := v[1,2,3] * I2[4,5]

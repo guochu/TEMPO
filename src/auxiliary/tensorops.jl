@@ -176,6 +176,8 @@ end
 
 Perform a truncated singular value decomposition of the matrix `a`, returning `(u, s, v, err)`,
 where `err` is the truncation error (2-norm of the discarded singular values) and `trunc` specifies the truncation scheme.
+
+Note: the first argument `a` is used as the internal workspace and may be **destroyed/overwritten** in place; pass a copy if the input must be preserved.
 """
 function tsvd!(a::StridedArray{T, 2}, workspace::AbstractVector{T}=similar(a, length(a)); trunc::TruncationScheme=NoTruncation()) where {T}
     u, s, v = stable_svd!(a, workspace)
@@ -194,6 +196,8 @@ end
 
 Perform a truncated singular value decomposition of the tensor `a` with dimensions grouped into `left`/`right`,
 returning `(u, s, v, err)`, where `u` and `v` are the left and right singular tensors.
+
+Note: the first argument `a` is used as the internal workspace and may be **destroyed/overwritten** in place; pass a copy if the input must be preserved.
 """
 function tsvd!(a::StridedArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N2, Int}, workspace::AbstractVector{T}=similar(a, length(a)); 
     trunc::TruncationScheme=NoTruncation()) where {T <: Number, N, N1, N2}

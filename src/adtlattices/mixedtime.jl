@@ -31,6 +31,22 @@ the imaginary-time interval `[0, β]` into `Nτ` steps (size `δτ`).
 - `t = Nt * δt`: total evolution time; `β = Nτ * δτ`: inverse temperature; `T = 1/β`.
 - `ts = 0:δt:t`: real-time grid; `τs = 0:δτ:β`: imaginary-time grid.
 - `kt = Nt + 1`, `kτ = Nτ + 1`: number of lattice indices per branch (including boundary points).
+
+# Indexing convention
+
+Although the imaginary-time evolution only has `Nτ` steps, the lattice stores `kτ = Nτ + 1` imaginary-time points
+(the extra one is the boundary point, which the boundary condition connects to the real-time ends).
+Consequently, every operation that maps a correlation-function index to a lattice position on the mixed contour
+shifts the indices by **one time step** whenever the operation involves the imaginary-time branch:
+
+- a correlation index `i` on the `:τ` branch maps to the lattice index `i+1`, i.e. to position `kτ - i` (the same
+  `index(lattice, i+1)` convention as the imaginary-time-only lattice);
+- when the partial-IF row lies on the `:τ` branch, **all** column indices `j` (including real-time-branch columns)
+  are likewise taken at `j+1`;
+- rows and columns on the real-time branches (`:+`, `:-`) use no offset (`index(lattice, i)`).
+
+This convention is applied uniformly in `partialif`/`partialif_naive`/`hybriddynamics!` on the mixed contour
+(see `src/influencefunctional/partialif/util.jl` and `src/influencefunctional/partialif/mixedtime.jl`).
 """
 struct MixedADTLattice1Order{O<:MixedFockOrdering} <: MixedADTLattice{O}
 	δt::Float64
