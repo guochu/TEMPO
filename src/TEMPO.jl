@@ -2,13 +2,14 @@ module TEMPO
 
 # auxiliary
 export TruncationScheme, NoTruncation, TruncationDimCutoff, truncdimcutoff, truncdim, trunccutoff, renyi_entropy
+export TruncateDim, TruncateCutoff
 export SVDCompression, PronyExpansion, DeterminedPronyExpansion, exponential_expansion, expansion_error
 export OrthogonalFactorizationAlgorithm, leftorth!, rightorth!, permute, tsvd!
 # ContourIndex
 export ContourIndex, branch, scalartype
 # MPOHamiltonian
-export MPOHamiltonian, tompotensors, timeevompo, WI, WII, ComplexStepper, FirstOrderStepper
-export SchurMPOTensor, ExponentialDecayTerm, GenericDecayTerm, PowerlawDecayTerm
+export MPOHamiltonian, tompotensors, timeevompo, WI, WII, ComplexStepper, FirstOrderStepper, complex_stepper
+export SchurMPOTensor, SparseMPOTensor, ExponentialDecayTerm, GenericDecayTerm, PowerlawDecayTerm
 
 # ADT
 export space_l, space_r, bond_dimension, bond_dimensions, scaling, phydim, phydims
@@ -44,6 +45,7 @@ export boundarycondition, boundarycondition!, initialstate!
 export sysdynamics, sysdynamics!, ImpurityHamiltonian, ImpurityLindbladian
 # observables
 export environments, expectationvalue, Zvalue, expectation, TransferMatrix
+export l_LL, r_RR
 
 
 

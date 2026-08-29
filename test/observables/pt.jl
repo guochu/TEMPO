@@ -2,6 +2,8 @@ println("------------------------------------")
 println("|           Process Tensor         |")
 println("------------------------------------")
 
+using TEMPO: Zvalue2
+
 @testset "Cached observables: imaginary time" begin
 	N = 3
 	δτ = 0.1
