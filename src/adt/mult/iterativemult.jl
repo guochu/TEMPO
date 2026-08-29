@@ -134,7 +134,17 @@ function iterative_compute!(m, alg)
     finalize!(m ,alg)
     return kvals
 end
-iterative_error_2(m::AbstractVector) = std(m) / abs(mean(m))
+"""
+	iterative_error_2(m)
+
+Relative fluctuation of the values in `m`, defined as `std(m) / abs(mean(m))`,
+where `std` is the (corrected) sample standard deviation.
+"""
+function iterative_error_2(m::AbstractVector)
+	μ = sum(m) / length(m)
+	σ = sqrt(sum(abs2(x - μ) for x in m) / (length(m) - 1))
+	return σ / abs(μ)
+end
 
 sweep!(m::ADTIterativeMultCache, alg::DMRGMultAlgorithm) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
 

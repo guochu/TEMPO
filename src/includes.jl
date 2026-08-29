@@ -1,4 +1,4 @@
-using Polynomials, Statistics
+using ExpExp
 
 using ImpurityModelBase, QuAPI
 import QuAPI: branch, index

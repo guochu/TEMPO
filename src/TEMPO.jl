@@ -3,7 +3,7 @@ module TEMPO
 # auxiliary
 export TruncationScheme, NoTruncation, TruncationDimCutoff, truncdimcutoff, truncdim, trunccutoff, renyi_entropy
 export TruncateDim, TruncateCutoff
-export SVDCompression, PronyExpansion, DeterminedPronyExpansion, exponential_expansion, expansion_error
+export SVDCompression
 export OrthogonalFactorizationAlgorithm, leftorth!, rightorth!, permute, tsvd!
 # ContourIndex
 export ContourIndex, branch, scalartype
@@ -50,7 +50,13 @@ export l_LL, r_RR
 
 
 
-using Polynomials, Statistics
+using ExpExp
+
+# re-export the exponential expansion API
+import ExpExp: ExponentialExpansionAlgorithm, PronyExpansion, DeterminedPronyExpansion,
+	exponential_expansion, expansion_error
+export ExponentialExpansionAlgorithm, PronyExpansion, DeterminedPronyExpansion,
+	exponential_expansion, expansion_error
 
 using ImpurityModelBase, QuAPI
 import QuAPI: branch, index
