@@ -181,7 +181,7 @@ corr = correlationfunction(bath, lattice)
 # IF 构建算法：平移不变 IF（XTRG 式），
 # 使用 DMRG 型 MPO-MPO 乘法 + Prony 指数展开
 algmult  = DMRGMult1(trunc, maxiter=10)
-algexpan = PronyExpansion(n=n, tol=1.0e-8, verbosity=2)
+algexpan = OverDeterminedProny(n=n, tol=1.0e-8, verbosity=2)
 alg = TranslationInvariantIF(k=k, fast=true, algmult=algmult, algexpan=algexpan, verbosity=2)
 
 mpsI = hybriddynamics(lattice, corr, hyb, alg)   # 得到 ProcessTensor (MPO)
@@ -239,7 +239,7 @@ lattice = PTLattice(N=N, δt=δt, d=d, contour=:real)
 hyb  = NonDiagonalHyb(a')
 alg  = TranslationInvariantIF(k=5, fast=true,
                              algmult=DMRGMult1(trunc, initguess=:rand),
-                             algexpan=PronyExpansion(n=20, tol=1.0e-8))
+                             algexpan=OverDeterminedProny(n=20, tol=1.0e-8))
 mpsI = hybriddynamics(lattice, corr, hyb, alg)
 ```
 
@@ -326,7 +326,7 @@ alg = PartialIF(trunc=trunc)
 
 # 2) 平移不变影响泛函（TTI-IF，XTRG 式），文献推荐
 alg = TranslationInvariantIF(;
-    algexpan = PronyExpansion(n=20, tol=1.0e-8, verbosity=2),  # 混合化函数指数展开
+    algexpan = OverDeterminedProny(n=20, tol=1.0e-8, verbosity=2),  # 混合化函数指数展开
     algevo   = WII(),        # 或 WI()、ComplexStepper()、FirstOrderStepper()
     algmult  = DMRGMult1(trunc, initguess=:rand, maxiter=10),   # 或 SVDCompression(trunc)
     k        = 7,            # XTRG 步数：时间步长 1/2^k
@@ -335,7 +335,7 @@ alg = TranslationInvariantIF(;
 )
 ```
 
-- `algexpan`：`ExponentialExpansionAlgorithm`，包括 `PronyExpansion`、`DeterminedPronyExpansion`（`exponential_expansion`、`expansion_error` 可用于误差分析）；
+- `algexpan`：`ExponentialExpansionAlgorithm`，包括 `OverDeterminedProny`、`DeterminedProny`（`exponential_expansion`、`expansion_error` 可用于误差分析）；
 - `algevo`：`TimeEvoMPOAlgorithm`，把 $\hat{H}_{\text{eff}}$ 指数化为 MPO 的步进器（`WI`/`WII`/`FirstOrderStepper`/`ComplexStepper`）；
 - `algmult`：`DMRGAlgorithm`，MPO-MPO 乘法的压缩算法，`DMRGMult1`（单站点 DMRG 迭代，`initguess ∈ {:svd, :pre, :rand}`，`maxiter`）或 `SVDCompression`。
 
@@ -435,7 +435,7 @@ tensors2 = timeevompo(tensors, dt, WII())   # 时间演化（WI / WII / ComplexS
 
 ```
 src/
-├── TEMPO.jl / includes.jl      # 模块定义与导出符号
+├── TEMPO.jl                    # 模块定义与导出符号
 ├── auxiliary/                  # 截断、DMRG 乘法、张量操作、正交化等基础工具
 ├── defaults.jl                 # 默认超参数
 ├── mpohamiltonian/             # MPO 哈密顿量（SchurMPO、长程项、时间演化步进器）
@@ -470,7 +470,7 @@ test/                           # 测试套件（含与 Exact Diagonalization �
 | 虚时间轮廓 | `contour=:imag` |
 | L 形 Kadanoff–Baym 轮廓 | `contour=:mixed`（`MixedPTLattice`/`MixedADTLattice`） |
 | QuAPI 离散化（附录 C） | `correlationfunction(bath, lattice)` 中的 `Δt`/`Δτ`/`Δm` |
-| 混合化函数的指数展开（附录 D） | `PronyExpansion`/`DeterminedPronyExpansion`（`algexpan`） |
+| 混合化函数的指数展开（附录 D） | `OverDeterminedProny`/`DeterminedProny`（`algexpan`） |
 | XTRG 构造有效热态（文献 Fig. 3） | `TranslationInvariantIF(k=..., fast=...)` |
 | PT 中系统哈密顿量的吸收（文献 Fig. 2b） | `sysdynamics(lattice, model)` + `mult!` |
 | 观测量计算（文献 Fig. 1d, 1e） | `environments` + `expectationvalue` |

@@ -2,7 +2,7 @@
 
 julia_version = "1.10.11"
 manifest_format = "2.0"
-project_hash = "4cb3aac5bb2fdce192a98a8191ec061ad35659c5"
+project_hash = "98f16e6ee23ad340f11865f1d21c7e97fd9a46cc"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -79,7 +79,7 @@ deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[deps.ExpExp]]
-deps = ["LinearAlgebra", "Polynomials"]
+deps = ["LinearAlgebra", "Logging", "Polynomials"]
 path = "/home/guochu/Documents/Missile/ExpExp"
 uuid = "05571471-befe-4da2-8d73-f7916647c25f"
 version = "0.1.0"
@@ -240,6 +240,11 @@ deps = ["PrecompileTools"]
 git-tree-sha1 = "5c3d09cc4f31f5fc6af001c250bf1278733100ff"
 uuid = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 version = "1.3.4"
+
+[[deps.Reexport]]
+git-tree-sha1 = "45e428421666073eab6f2da5c9d310d99bb12f9b"
+uuid = "189a3867-3050-52da-a836-e630ba90ab69"
+version = "1.2.2"
 
 [[deps.Requires]]
 deps = ["UUIDs"]

@@ -11,7 +11,7 @@ println("------------------------------------")
 	spec = Leggett(d=1, ωc=1)
 	bath = bosonicbath(spec, β=β, μ=0)
 	trunc = truncdimcutoff(D=50, ϵ=1.0e-6, add_back=0)
-	algexpan = PronyExpansion(n=20, tol=1.0e-8)
+	algexpan = OverDeterminedProny(n=20, tol=1.0e-8)
 	d = 2
 
 	lattice = ADTLattice(N=N, δτ=δτ, d=d, contour=:imag)
@@ -98,7 +98,7 @@ end
 	# spec = DiracDelta(1)
 	bath = bosonicbath(spec, β=β, μ=0)
 	trunc = truncdimcutoff(D=100, ϵ=1.0e-8, add_back=0)
-	algexpan = PronyExpansion(n=20, tol=1.0e-8)
+	algexpan = OverDeterminedProny(n=20, tol=1.0e-8)
 	d = 2
 	tol = 1.0e-5
 

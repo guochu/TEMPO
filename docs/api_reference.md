@@ -100,34 +100,34 @@ renyi_entropy(v::AbstractVector{<:Real}; α::Real=1)
 
 用于将混合化函数等数据 $f(x)$（$1\le x\le N$）展开为指数和 $\sum_i \alpha_i \beta_i^{x}$。
 
-### PronyExpansion / DeterminedPronyExpansion
+### OverDeterminedProny / DeterminedProny
 
 ```julia
-struct PronyExpansion <: ExponentialExpansionAlgorithm
-    n::Int; stepsize::Int; tol::Float64; verbosity::Int
+struct OverDeterminedProny <: AbstractPronyExpansion
+    n::Int; tol::Float64; verbosity::Int; stepsize::Union{Int, Nothing}
 end
-PronyExpansion(; n::Int=10, stepsize::Int=1, tol::Real=1.0e-8, verbosity::Int=1)
+OverDeterminedProny(; n::Int=10, tol::Real=1.0e-8, verbosity::Int=1, stepsize::Union{Int,Nothing}=1)
 
-struct DeterminedPronyExpansion <: ExponentialExpansionAlgorithm
-    n::Int; stepsize::Int; tol::Float64; verbosity::Int
+struct DeterminedProny <: AbstractPronyExpansion
+    n::Int; tol::Float64; verbosity::Int; stepsize::Union{Int, Nothing}
 end
-DeterminedPronyExpansion(; n::Int=10, stepsize::Int=1, tol::Real=1.0e-8, verbosity::Int=1)
+DeterminedProny(; n::Int=10, tol::Real=1.0e-8, verbosity::Int=1, stepsize::Union{Int,Nothing}=1)
 ```
 
 - `n`：最大展开项数（迭代上限）；
-- `stepsize`：数据步长（不为 1 时自动做尺度变换）；
 - `tol`：相对误差阈值（`tol*norm(f)`），达到即提前收敛；
-- `verbosity`：输出级别（≥1 打印不收敛警告，≥2 打印收敛信息）。
+- `verbosity`：输出级别（≥1 打印不收敛警告，≥2 打印收敛信息）；
+- `stepsize`：均匀采样步长（默认 1，即在 `f[1:s:end]` 上拟合并换算回原采样）；`nothing` 时自动选步长。
 
-两者区别：`DeterminedPronyExpansion` 使用确定型 Prony 方法（无最小二乘），`PronyExpansion` 使用最小二乘 Prony 方法。
+两者区别：`DeterminedProny` 使用确定型 Prony 方法（无最小二乘），`OverDeterminedProny` 使用最小二乘 Prony 方法。
 
 ### exponential_expansion
 
 ```julia
-exponential_expansion(f::Vector{<:Number}, alg::AbstractPronyExpansion)
-exponential_expansion(f::Vector{<:Number}; alg::ExponentialExpansionAlgorithm=PronyExpansion())
+exponential_expansion(f::Vector{<:Number}, alg::ExponentialExpansionAlgorithm)
+exponential_expansion(f::Vector{<:Number}; alg::ExponentialExpansionAlgorithm=OverDeterminedProny())
 exponential_expansion(f, L::Int, alg::ExponentialExpansionAlgorithm)
-exponential_expansion(f, L::Int; alg::ExponentialExpansionAlgorithm=PronyExpansion())
+exponential_expansion(f, L::Int; alg::ExponentialExpansionAlgorithm=OverDeterminedProny())
 ```
 
 返回展开系数与底数 `(αs::Vector, βs::Vector)`，满足 `f(x) ≈ Σᵢ αᵢ * βᵢˣ`（`x = 1,2,…,N`）。后两种形式接受函数 `f(k)` 并自动采样 `k=1:L`。
@@ -722,7 +722,7 @@ struct TranslationInvariantIF <: InfluenceFunctionalAlgorithm
     verbosity::Int
 end
 TranslationInvariantIF(;
-    algexpan::ExponentialExpansionAlgorithm=PronyExpansion(n=15, tol=1.0e-4, verbosity=0),
+    algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny(n=15, tol=1.0e-4, verbosity=0),
     algevo::TimeEvoMPOAlgorithm=WII(),
     algmult::DMRGAlgorithm=DefaultMultAlg,      # DMRGMult1(DefaultITruncation)
     k::Int=5,
@@ -766,9 +766,9 @@ partialif_naive(lattice::AbstractADTLattice, rowind::ContourIndex, corr, hyb::Ad
 ### 影响算符（底层工具）
 
 ```julia
-influenceoperator(lattice, corr, hyb::GeneralHybStyle; algexpan=PronyExpansion())
-influenceoperatorexponential(lattice, corr, dt::Real, hyb::GeneralHybStyle, alg; algexpan=PronyExpansion())
-differentialinfluencefunctional(lattice, corr, dt::Real, hyb::GeneralHybStyle, alg, algmult::DMRGAlgorithm; algexpan=PronyExpansion())
+influenceoperator(lattice, corr, hyb::GeneralHybStyle; algexpan=OverDeterminedProny())
+influenceoperatorexponential(lattice, corr, dt::Real, hyb::GeneralHybStyle, alg; algexpan=OverDeterminedProny())
+differentialinfluencefunctional(lattice, corr, dt::Real, hyb::GeneralHybStyle, alg, algmult::DMRGAlgorithm; algexpan=OverDeterminedProny())
 ```
 
 - `influenceoperator`：返回有效哈密顿量 $H_{\text{eff}}$ 的分支 MPO（`mpo₁,mpo₂,mpo₃,mpo₄`）；

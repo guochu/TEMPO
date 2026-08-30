@@ -35,7 +35,7 @@ Output:
 Run:   include("rabitype.jl");  main(1.0)
 =#
 
-push!(LOAD_PATH, "../../src")
+# push!(LOAD_PATH, "../../src")
 
 using TEMPO, ImpurityModelBase, LinearAlgebra
 using JSON, Serialization

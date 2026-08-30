@@ -1,10 +1,10 @@
 # real-time
 """
-	influenceoperator(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::GeneralHybStyle; algexpan=PronyExpansion())
+	influenceoperator(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::GeneralHybStyle; algexpan=OverDeterminedProny())
 
 `influenceoperator` method on real-time PT lattices, returning a tuple of 4 branch MPOs ((+,+), (+,−), (−,+), (−,−)).
 """
-function influenceoperator(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::GeneralHybStyle; algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+function influenceoperator(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::GeneralHybStyle; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr)
 	op1, op2 = pairop(hyb)
 	mpoj1 = pt_ti_mpotensor(η⁺⁺, op1, op2, :+, :+, algexpan)
@@ -20,12 +20,12 @@ function influenceoperator(lattice::RealPTLattice1Order, corr::RealCorrelationFu
 end
 
 """
-	influenceoperatorexponential(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm; algexpan=PronyExpansion())
+	influenceoperatorexponential(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm; algexpan=OverDeterminedProny())
 
 `influenceoperatorexponential` method on real-time PT lattices. `FirstOrderStepper` returns 4 MPOs and `ComplexStepper` returns 8 (one before and one after evolution for each branch).
 """
 function influenceoperatorexponential(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper; 
-										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+										algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr)
 	op1, op2 = pairop(hyb)
 	mpoj1 = pt_ti_mpotensor(η⁺⁺, op1, op2, :+, :+, algexpan)
@@ -42,7 +42,7 @@ function influenceoperatorexponential(lattice::RealPTLattice1Order, corr::RealCo
 end
 
 function influenceoperatorexponential(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper; 
-										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+										algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr)
 	op1, op2 = pairop(hyb)
 	mpoj1 = pt_ti_mpotensor(η⁺⁺, op1, op2, :+, :+, algexpan)
@@ -66,12 +66,12 @@ end
 
 
 """
-	differentialinfluencefunctional(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm; algexpan=PronyExpansion())
+	differentialinfluencefunctional(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm; algexpan=OverDeterminedProny())
 
 `differentialinfluencefunctional` method on real-time PT lattices: multiply the branch differential IFs in successively to construct the full differential influence functional.
 """
 function differentialinfluencefunctional(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper, 
-											algmult::DMRGAlgorithm; algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+											algmult::DMRGAlgorithm; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	h1, h2, h3, h4 = influenceoperatorexponential(lattice, corr, dt, hyb, alg, algexpan=algexpan)
 	# trunc = algmult.trunc
 	# canonicalize!(h1, alg=Orthogonalize(trunc=trunc, normalize=false))
@@ -84,7 +84,7 @@ function differentialinfluencefunctional(lattice::RealPTLattice1Order, corr::Rea
 	return mps
 end
 function differentialinfluencefunctional(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper, 
-											algmult::DMRGAlgorithm; algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+											algmult::DMRGAlgorithm; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	h1a, h1b, h2a, h2b, h3a, h3b, h4a, h4b = influenceoperatorexponential(lattice, corr, dt, hyb, alg, algexpan=algexpan)
 	# trunc = algmult.trunc
 	# canonicalize!(h1a, alg=Orthogonalize(trunc=trunc, normalize=false))

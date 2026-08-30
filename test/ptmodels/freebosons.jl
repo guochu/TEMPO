@@ -60,7 +60,7 @@ end
 	adag = bosonadagoperator(d=d)
 	hyb = NonDiagonalHyb(adag)
 	algmult = DMRGMult1(trunc)
-	algexpan = PronyExpansion(n=20, tol=1.0e-8)
+	algexpan = OverDeterminedProny(n=20, tol=1.0e-8)
 	alg = TranslationInvariantIF(k=5, fast=true, algmult=algmult, algexpan=algexpan)
 
 	mpsI = hybriddynamics(lattice, corr, hyb, alg)
@@ -132,7 +132,7 @@ end
 	adag = bosonadagoperator(d=d)
 	hyb = NonDiagonalHyb(adag)
 	algmult = DMRGMult1(trunc)
-	algexpan = PronyExpansion(n=20, tol=1.0e-8)
+	algexpan = OverDeterminedProny(n=20, tol=1.0e-8)
 	alg = TranslationInvariantIF(k=5, fast=true, algmult=algmult, algexpan=algexpan)
 
 	mpsI = hybriddynamics(lattice, corr, hyb, alg)

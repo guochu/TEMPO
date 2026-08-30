@@ -6,7 +6,7 @@
 
 ## 1. 总览与模块结构
 
-工具包在 `ImpurityModelBase`（系统模型定义）与 `QuAPI`（基础张量网络类型 `Dense1DTN`、`DenseMPSTensor`、`ContourIndex`、`branch`/`index` 等）之上实现 TEMPO 算法。加载顺序见 [src/includes.jl](../src/includes.jl)：
+工具包在 `ImpurityModelBase`（系统模型定义）与 `QuAPI`（基础张量网络类型 `Dense1DTN`、`DenseMPSTensor`、`ContourIndex`、`branch`/`index` 等）之上实现 TEMPO 算法。加载顺序见 [src/TEMPO.jl](../src/TEMPO.jl)：
 
 ```
 auxiliary ──→ defaults ──→ mpohamiltonian ──→ contourindices
@@ -77,7 +77,7 @@ end
 - 实时间（Keldysh）：分支 `:+` 与 `:-`，区间 `[0, t]`，标量类型 `ComplexF64`；
 - 混合（Kadanoff-Baym）：虚时间分支 + 实时间上下两支。
 
-`branch`/`index` 由 `QuAPI` 提供并导入（`src/includes.jl`）。每个格点还关联 `TimeOrderingStyle`（`TimeAscending`/`TimeDscending`）与 `LayoutStyle`（当前只有 `TimeLocalLayout`，即每个时间步的状态局部排列，便于施加时间局域算符）。
+`branch`/`index` 由 `QuAPI` 提供并导入（`src/TEMPO.jl`）。每个格点还关联 `TimeOrderingStyle`（`TimeAscending`/`TimeDscending`）与 `LayoutStyle`（当前只有 `TimeLocalLayout`，即每个时间步的状态局部排列，便于施加时间局域算符）。
 
 ### 3.2 Fock 排序（FockOrdering）
 
@@ -124,9 +124,9 @@ PT 格点（[src/ptlattices/](../src/ptlattices/)）：
 `correlationfunction.jl` 把关联函数包装为 `IndexCorrelationFunction`（内含 `CorrelationMatrix` 的 ηᵢⱼ 矩阵，由 `exponential_expansion` 生成），实时间用 `branch(corr, :+, :-)` 等取四个符号化分量 η⁺⁺、η⁺⁻、η⁻⁺、η⁻⁻。
 
 指数展开（`auxiliary/exponentialexpansion/`）：
-- `PronyExpansion`：将关联函数展开为有限项指数和（Prony 方法）；
-- `DeterminedPronyExpansion`：预先给定展开项数/精度的变体；
-- `exponential_expansion(decayterm, alg=...)` 返回 `(η₁, η₂, …)` 系数列；
+- `OverDeterminedProny`：将关联函数展开为有限项指数和（Prony 方法）；
+- `DeterminedProny`：预先给定展开项数/精度的变体；
+- `expand_decayterm(decayterm, alg=...)` 返回 `(η₁, η₂, …)` 系数列；
 - `expansion_error` 估计展开误差。
 
 ---
@@ -176,8 +176,8 @@ end
 ```julia
 m1 = GenericDecayTerm(op1, op2, corr.ηⱼₖ[2:end])   # 长程（跨步）耦合
 m2 = GenericDecayTerm(op2, op1, corr.ηₖⱼ[2:end])
-m1s = exponential_expansion(m1, alg)                # Prony 展开
-m2s = exponential_expansion(m2, alg)
+m1s = expand_decayterm(m1, alg)                     # Prony 展开
+m2s = expand_decayterm(m2, alg)
 h1  = (corr.ηₖⱼ[1] + corr.ηⱼₖ[1]) .* (op1 * op2)    # 同时间（对角块）项
 return SchurMPOTensor(h1, vcat(m1s, m2s))
 ```
@@ -346,11 +346,11 @@ QR 路径中 truncation 无效（`@warn`）。截断误差按相对误差 `sqrt(
 |---|---|---|
 | 时间离散 | `δt`（`δτ`） | 一阶 Trotter/影响泛函离散误差 |
 | SVD 截断 | `truncdim` / `trunccutoff` / `truncdimcutoff` | bond 维数 `χ` |
-| 指数展开 | `algexpan` | Prony 展开项数与容差（默认 `PronyExpansion(n=15, tol=1e-4)`） |
+| 指数展开 | `algexpan` | Prony 展开项数与容差（默认 `OverDeterminedProny(n=15, tol=1e-4)`） |
 | 平移不变细化 | `k`（默认 5）、`fast` | `fast=true`：先构造宽度 `dt/2^k` 的微分 IF，再树二分平方 k 次得到全长影响泛函（SciPost Phys. Core 7, 063 (2024)） |
 | 系统传播子 | `algevo`（`WII()`）、`algmult`（`DefaultMultAlg`） | MPO 时间演化与乘法压缩精度 |
 
-默认值（`src/defaults.jl`）：`DefaultTruncation = truncdimcutoff(D=100, ϵ=1e-14)`、`DefaultITruncation = truncdimcutoff(D=200, ϵ=1e-10)`、`DefaultKTruncation = truncdimcutoff(D=1000, ϵ=1e-10)`、`DefaultIntegrationTruncation = DefaultMPOTruncation = truncdimcutoff(D=10000, ϵ=1e-12)`；`TranslationInvariantIF(; algexpan=PronyExpansion(n=15, tol=1e-4), algevo=WII(), algmult=DefaultMultAlg, k=5, fast=true)`。
+默认值（`src/defaults.jl`）：`DefaultTruncation = truncdimcutoff(D=100, ϵ=1e-14)`、`DefaultITruncation = truncdimcutoff(D=200, ϵ=1e-10)`、`DefaultKTruncation = truncdimcutoff(D=1000, ϵ=1e-10)`、`DefaultIntegrationTruncation = DefaultMPOTruncation = truncdimcutoff(D=10000, ϵ=1e-12)`；`TranslationInvariantIF(; algexpan=OverDeterminedProny(n=15, tol=1e-4), algevo=WII(), algmult=DefaultMultAlg, k=5, fast=true)`。
 
 ---
 

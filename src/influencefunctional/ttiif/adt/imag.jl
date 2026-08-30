@@ -1,7 +1,7 @@
 
 
 """
-	influenceoperator(lattice, corr, hyb; algexpan=PronyExpansion())
+	influenceoperator(lattice, corr, hyb; algexpan=OverDeterminedProny())
 
 Construct the (translation-invariant) influence functional as an MPO. The ADT version supports `ImagADTLattice1Order`/`RealADTLattice1Order` lattices with `AdditiveHyb` coupling; the PT version supports `ImagPTLattice1Order`/`RealPTLattice1Order` lattices with `GeneralHybStyle` (e.g. `NonAdditiveHyb`, `NonDiagonalHyb`) coupling.
 
@@ -9,12 +9,12 @@ Construct the (translation-invariant) influence functional as an MPO. The ADT ve
 - `lattice`: contour lattice (ADT or PT).
 - `corr`: bath correlation function.
 - `hyb`: system-bath coupling.
-- `algexpan::ExponentialExpansionAlgorithm=PronyExpansion()`: exponential (Prony) expansion algorithm for the bath correlation function.
+- `algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny()`: exponential (Prony) expansion algorithm for the bath correlation function.
 
 # Returns
 The influence functional MPO: a single `ADT`/`ProcessTensor` in imaginary time; a tuple of 4 branch MPOs ((+,+), (+,−), (−,+), (−,−)) in real time.
 """
-function influenceoperator(lattice::ImagADTLattice1Order, corr2::ImagCorrelationFunction, hyb::AdditiveHyb; algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+function influenceoperator(lattice::ImagADTLattice1Order, corr2::ImagCorrelationFunction, hyb::AdditiveHyb; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = adt_ti_mpotensor(corr, op1, op2, algexpan)
@@ -23,7 +23,7 @@ function influenceoperator(lattice::ImagADTLattice1Order, corr2::ImagCorrelation
 end
 
 """
-	influenceoperatorexponential(lattice, corr, dt, hyb, alg; algexpan=PronyExpansion())
+	influenceoperatorexponential(lattice, corr, dt, hyb, alg; algexpan=OverDeterminedProny())
 
 Construct the influence-functional exponential-operator MPO of a single time step (width `dt`) and time-evolve it with `alg` (`FirstOrderStepper` or `ComplexStepper`). `ComplexStepper` additionally returns the MPOs before and after evolution, so the returned tuple is twice as long as for `FirstOrderStepper` (1/2 in imaginary time and 4/8 in real time).
 
@@ -33,13 +33,13 @@ Construct the influence-functional exponential-operator MPO of a single time ste
 - `dt::Real`: width of a single time step.
 - `hyb`: system-bath coupling.
 - `alg`: time-evolution algorithm (`FirstOrderStepper` or `ComplexStepper`).
-- `algexpan::ExponentialExpansionAlgorithm=PronyExpansion()`: exponential expansion algorithm.
+- `algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny()`: exponential expansion algorithm.
 
 # Returns
 Tuple of time-evolved influence functional MPOs.
 """
 function influenceoperatorexponential(lattice::ImagADTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper; 
-										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+										algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = adt_ti_mpotensor(corr, op1, op2, algexpan)
@@ -48,7 +48,7 @@ function influenceoperatorexponential(lattice::ImagADTLattice1Order, corr2::Imag
 	return (_fit_to_lattice(lattice, mpstensors), )
 end
 function influenceoperatorexponential(lattice::ImagADTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper; 
-										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+										algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = adt_ti_mpotensor(corr, op1, op2, algexpan)
@@ -59,7 +59,7 @@ end
 
 
 """
-	differentialinfluencefunctional(lattice, corr, dt, hyb, alg, algmult; algexpan=PronyExpansion())
+	differentialinfluencefunctional(lattice, corr, dt, hyb, alg, algmult; algexpan=OverDeterminedProny())
 
 Construct the differential influence functional, i.e. the full influence functional of a single time step, returned as an MPO/MPS. In real time, the branch MPOs obtained from `influenceoperatorexponential` are multiplied in order (with `algmult` controlling multiplication and compression); in imaginary time, the evolved operator is returned directly.
 
@@ -70,20 +70,20 @@ Construct the differential influence functional, i.e. the full influence functio
 - `hyb`: system-bath coupling.
 - `alg`: time-evolution algorithm (`FirstOrderStepper` or `ComplexStepper`).
 - `algmult::DMRGAlgorithm`: MPO multiplication (compression) algorithm.
-- `algexpan::ExponentialExpansionAlgorithm=PronyExpansion()`: exponential expansion algorithm.
+- `algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny()`: exponential expansion algorithm.
 
 # Returns
 The differential influence functional (`ADT` or `ProcessTensor`).
 """
 function differentialinfluencefunctional(lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper, 
 											algmult::DMRGAlgorithm; 
-											algexpan::ExponentialExpansionAlgorithm=PronyExpansion()) 
+											algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny()) 
 	mpo1, = influenceoperatorexponential(lattice, corr, dt, hyb, alg; algexpan=algexpan)
 	return mpo1
 end
 function differentialinfluencefunctional(lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper, 
 											algmult::DMRGAlgorithm; 
-											algexpan::ExponentialExpansionAlgorithm=PronyExpansion()) 
+											algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny()) 
 	mpo1, mpo2 = influenceoperatorexponential(lattice, corr, dt, hyb, alg, algexpan=algexpan)
 	return mult(mpo1, mpo2, algmult)
 end
@@ -124,8 +124,8 @@ function adt_ti_mpotensor(corr::CorrelationMatrix, op1::AbstractMatrix, op2::Abs
 	m2 = GenericDecayTerm(op2, op1, corr.ηₖⱼ[2:end])
 
 
-	m1s = exponential_expansion(m1, alg=alg)
-	m2s = exponential_expansion(m2, alg=alg)
+	m1s = expand_decayterm(m1, alg=alg)
+	m2s = expand_decayterm(m2, alg=alg)
 
 	# println("here---", corr.ηₖⱼ[1], " ", corr.ηⱼₖ[1])
 	eta = corr.ηₖⱼ[1] + corr.ηⱼₖ[1]

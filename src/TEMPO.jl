@@ -10,6 +10,7 @@ export ContourIndex, branch, scalartype
 # MPOHamiltonian
 export MPOHamiltonian, tompotensors, timeevompo, WI, WII, ComplexStepper, FirstOrderStepper, complex_stepper
 export SchurMPOTensor, SparseMPOTensor, ExponentialDecayTerm, GenericDecayTerm, PowerlawDecayTerm
+export expand_decayterm
 
 # ADT
 export space_l, space_r, bond_dimension, bond_dimensions, scaling, phydim, phydims
@@ -50,13 +51,8 @@ export l_LL, r_RR
 
 
 
-using ExpExp
-
-# re-export the exponential expansion API
-import ExpExp: ExponentialExpansionAlgorithm, PronyExpansion, DeterminedPronyExpansion,
-	exponential_expansion, expansion_error
-export ExponentialExpansionAlgorithm, PronyExpansion, DeterminedPronyExpansion,
-	exponential_expansion, expansion_error
+using Reexport
+@reexport using ExpExp
 
 using ImpurityModelBase, QuAPI
 import QuAPI: branch, index

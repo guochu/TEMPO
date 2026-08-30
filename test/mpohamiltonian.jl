@@ -20,11 +20,11 @@ println()
 	fv = exp.(-(0:10))
 	g4 = GenericDecayTerm(a, b, fv)
 	@test g4 isa GenericDecayTerm
-	terms = exponential_expansion(g4)
+	terms = expand_decayterm(g4)
 	@test !isempty(terms)
 	@test all(t -> t isa ExponentialDecayTerm, terms)
 	# function-valued decay requires a sampling length
-	terms2 = exponential_expansion(g, len=10)
+	terms2 = expand_decayterm(g, len=10)
 	@test !isempty(terms2)
 	# power-law convenience wrapper
 	g5 = PowerlawDecayTerm(a, b; α=-2.0)

@@ -51,12 +51,12 @@ PowerlawDecayTerm(a::AbstractMatrix, b::AbstractMatrix; α::Number=1., kwargs...
 # L is the number of sites
 
 """
-    exponential_expansion(x::GenericDecayTerm; len, alg=PronyExpansion())
+    expand_decayterm(x::GenericDecayTerm; len, alg=OverDeterminedProny())
 
 Convert a `GenericDecayTerm` into a list of `ExponentialDecayTerm`s.
 When `x.f` is a vector, `len` is ignored; when `x.f` is a function, `len` is the sampling length.
 """
-function exponential_expansion(x::GenericDecayTerm{M1, M, M2, F, T}; len::Union{Int, Nothing}=nothing, alg::ExponentialExpansionAlgorithm=PronyExpansion()) where {M1, M, M2, F, T}
+function expand_decayterm(x::GenericDecayTerm{M1, M, M2, F, T}; len::Union{Int, Nothing}=nothing, alg::ExponentialExpansionAlgorithm=OverDeterminedProny()) where {M1, M, M2, F, T}
     if F <: AbstractVector
         xs, lambdas = exponential_expansion(x.f, alg=alg)
         isa(len, Int) && println("key len ignored")

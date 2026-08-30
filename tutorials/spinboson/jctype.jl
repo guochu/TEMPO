@@ -19,7 +19,7 @@ Pipeline:
   2. Bath: `bath = bosonicbath(spectrum, β)`, `corr = correlationfunction(bath, lattice)`.
   3. Non-diagonal coupling: `hyb = NonDiagonalHyb(sp)` with sp = σ₊/2.
   4. Influence functional (translation-invariant, XTRG-style):
-     `alg = TranslationInvariantIF(k=k, fast=true, algmult=DMRGMult1(...), algexpan=PronyExpansion(...))`,
+     `alg = TranslationInvariantIF(k=k, fast=true, algmult=DMRGMult1(...), algexpan=OverDeterminedProny(...))`,
      `mpsI = hybriddynamics(lattice, corr, hyb, alg)` (cached to `data/jc_... .mps`).
   5. System propagator: `mpsK = sysdynamics(lattice, model, trunc=trunc)` with
      `model = ImpurityHamiltonian(Δ .* z)`.
@@ -86,7 +86,7 @@ squared `k` times by the fast tree-bipartition scheme.  The observable
 - `α::Real=0.1`: dimensionless coupling strength (prefactor of the spectral density).
 - `s::Real=0.5`: spectral density exponent (sub-Ohmic for `0 < s < 1`).
 - `wc::Real=5.0`: spectral cutoff frequency.
-- `n::Int=20`: number of Prony expansion terms (`PronyExpansion(n=n, tol=1e-8)`).
+- `n::Int=20`: number of Prony expansion terms (`OverDeterminedProny(n=n, tol=1e-8)`).
 - `k::Int=7`: number of squaring steps of the fast tree-bipartition scheme
   (differential influence functional width `dt/2^k`).
 - `chi::Int=100`: bond dimension cutoff `D` of the SVD truncation
@@ -128,7 +128,7 @@ function main(t; δt = 0.05, Δ = 1., β = 2.5, α=0.1, s=0.5, wc = 5., n=20, k=
 		bath = bosonicbath(spec, β=β)
 		corr = correlationfunction(bath, lattice)
 		algmult = DMRGMult1(trunc, maxiter=10)
-		algexpan = PronyExpansion(n=n, tol=1.0e-8, verbosity=2)
+		algexpan = OverDeterminedProny(n=n, tol=1.0e-8, verbosity=2)
 		alg = TranslationInvariantIF(k=k, fast=true, algmult=algmult, algexpan=algexpan, verbosity=2)
 		@time mpsI = hybriddynamics(lattice, corr, hyb, alg)
 		println("save MPS-IF to path ", mpspath)

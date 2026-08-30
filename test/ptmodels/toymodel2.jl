@@ -37,7 +37,7 @@ println("------------------------------------")
 	corr = correlationfunction(bath, lattice)
 
 	algmult = DMRGMult1(trunc)
-	algexpan = PronyExpansion(n=20, tol=1.0e-8)
+	algexpan = OverDeterminedProny(n=20, tol=1.0e-8)
 	alg = TranslationInvariantIF(k=5, fast=true, algmult=algmult, algexpan=algexpan)
 	mpsI = hybriddynamics(lattice, corr, hyb, alg)
 	mps = mult(mpsK, mpsI, trunc=trunc)
@@ -163,7 +163,7 @@ end
 	corr = correlationfunction(bath, lattice)
 
 	algmult = DMRGMult1(trunc)
-	algexpan = PronyExpansion(n=20, tol=1.0e-8)
+	algexpan = OverDeterminedProny(n=20, tol=1.0e-8)
 	alg = TranslationInvariantIF(k=5, fast=true, algmult=algmult, algexpan=algexpan, verbosity=2)
 	mpsI = hybriddynamics(lattice, corr, bs, alg)
 	# @test distance(mpsI, mpsI′) / norm(mpsI′) < tol

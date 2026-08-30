@@ -1,11 +1,11 @@
 # imaginary-time
 
 """
-	influenceoperator(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle; algexpan=PronyExpansion())
+	influenceoperator(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle; algexpan=OverDeterminedProny())
 
 `influenceoperator` method on imaginary-time PT lattices: construct ΣᵢⱼΔᵢⱼ āᵢaⱼ as an MPO (`ProcessTensor`), whose bond dimension is 2n, with n the number of Prony expansion terms.
 """
-function influenceoperator(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle; algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+function influenceoperator(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = pt_ti_mpotensor(corr, op1, op2, :τ, :τ, algexpan)
@@ -15,12 +15,12 @@ function influenceoperator(lattice::ImagPTLattice1Order, corr2::ImagCorrelationF
 end
 
 """
-	influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm; algexpan=PronyExpansion())
+	influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm; algexpan=OverDeterminedProny())
 
 `influenceoperatorexponential` method on imaginary-time PT lattices. `FirstOrderStepper` returns 1 MPO and `ComplexStepper` returns 2 (one before and one after evolution).
 """
 function influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper; 
-										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+										algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = pt_ti_mpotensor(corr, op1, op2, :τ, :τ, algexpan)
@@ -29,7 +29,7 @@ function influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagC
 	return (_fit_to_lattice(lattice, mpotensors),)
 end
 function influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper; 
-										algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+										algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = pt_ti_mpotensor(corr, op1, op2, :τ, :τ, algexpan)
@@ -40,19 +40,19 @@ end
 
 
 """
-	differentialinfluencefunctional(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm; algexpan=PronyExpansion())
+	differentialinfluencefunctional(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm; algexpan=OverDeterminedProny())
 
 `differentialinfluencefunctional` method on imaginary-time PT lattices.
 """
 function differentialinfluencefunctional(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper, 
 											algmult::DMRGAlgorithm; 
-											algexpan::ExponentialExpansionAlgorithm=PronyExpansion()) 
+											algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny()) 
 	mpo1, = influenceoperatorexponential(lattice, corr, dt, hyb, alg; algexpan=algexpan)
 	return mpo1
 end
 function differentialinfluencefunctional(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper, 
 											algmult::DMRGAlgorithm; 
-											algexpan::ExponentialExpansionAlgorithm=PronyExpansion()) 
+											algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny()) 
 	mpo1, mpo2 = influenceoperatorexponential(lattice, corr, dt, hyb, alg, algexpan=algexpan)
 	return mult(mpo1, mpo2, algmult)
 end
@@ -105,8 +105,8 @@ function pt_ti_mpotensor(corr::CorrelationMatrix, op1::AbstractMatrix, op2::Abst
 	m2 = GenericDecayTerm(op2, op1, corr.ηₖⱼ[2:end])
 
 
-	m1s = exponential_expansion(m1, alg=alg)
-	m2s = exponential_expansion(m2, alg=alg)
+	m1s = expand_decayterm(m1, alg=alg)
+	m2s = expand_decayterm(m2, alg=alg)
 
 	h1 = ti_localop(corr, op1, op2, b1, b2)
 	return SchurMPOTensor(h1, vcat(m1s, m2s))
