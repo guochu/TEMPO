@@ -122,7 +122,7 @@ J(\omega) = \sum_k |V_k|^2 \delta(\omega - \omega_k).
 
 ### 3.1 标准自旋玻色子模型（对角耦合，Rabi 型，ADT）
 
-对应 `tutorials/spinboson/rabitype.jl` 与 `benchmark/sb.jl`。系统是二能级自旋，$\hat{A}=\hat{\sigma}_x/2$（对角耦合），浴谱取 sub-Ohmic 谱。
+对应 `docs/tutorials/spinboson/rabitype.jl` 与 `benchmark/sb.jl`。系统是二能级自旋，$\hat{A}=\hat{\sigma}_x/2$（对角耦合），浴谱取 sub-Ohmic 谱。
 
 ```julia
 using TEMPO, ImpurityModelBase, LinearAlgebra
@@ -168,7 +168,7 @@ end
 
 ### 3.2 JC 型非对角耦合（PT 框架）
 
-对应 `tutorials/spinboson/jctype.jl`。系统通过 $\hat{A}=\hat{\sigma}_-/2$（共轭对 $\hat{A}^\dagger,\hat{A}$）耦合到浴，这是文献中的**非对角耦合**情形，必须使用 PT 框架与平移不变影响泛函算法。
+对应 `docs/tutorials/spinboson/jctype.jl`。系统通过 $\hat{A}=\hat{\sigma}_-/2$（共轭对 $\hat{A}^\dagger,\hat{A}$）耦合到浴，这是文献中的**非对角耦合**情形，必须使用 PT 框架与平移不变影响泛函算法。
 
 ```julia
 lattice = PTLattice(N=Nt, δt=δt, contour=:real)   # 注意是 PTLattice
@@ -452,7 +452,7 @@ src/
 ├── models/                     # 幺正（ImpurityHamiltonian）与耗散（ImpurityLindbladian）动力学
 └── observables/                # 环境缓存、期望值、转移矩阵、关联函数、热流
 
-tutorials/spinboson/            # 教程脚本：rabitype（标准 TEMPO）与 jctype（非对角耦合）
+docs/tutorials/spinboson/        # 教程脚本：rabitype（标准 TEMPO）与 jctype（非对角耦合）
 benchmark/                      # 基准算例：自旋玻色子、独立玻色模、实时间等
 test/                           # 测试套件（含与 Exact Diagonalization 的对照）
 ```
@@ -474,8 +474,8 @@ test/                           # 测试套件（含与 Exact Diagonalization �
 | XTRG 构造有效热态（文献 Fig. 3） | `TranslationInvariantIF(k=..., fast=...)` |
 | PT 中系统哈密顿量的吸收（文献 Fig. 2b） | `sysdynamics(lattice, model)` + `mult!` |
 | 观测量计算（文献 Fig. 1d, 1e） | `environments` + `expectationvalue` |
-| JC 自旋玻色子模型 | `tutorials/spinboson/jctype.jl` |
-| 标准自旋玻色子模型 | `tutorials/spinboson/rabitype.jl`、`benchmark/sb.jl` |
+| JC 自旋玻色子模型 | `docs/tutorials/spinboson/jctype.jl` |
+| 标准自旋玻色子模型 | `docs/tutorials/spinboson/rabitype.jl`、`benchmark/sb.jl` |
 | 非相互作用/相互作用玻色杂质 | `benchmark/independentbosons.jl`、`bosonicimpurity.jl` |
 
 ---
