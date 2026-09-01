@@ -23,6 +23,7 @@ include("adtpartialif.jl")
 
 include("ttiif/ttiif.jl")
 include("ptttiif/ptttiif.jl")
+include("tdvpif.jl")
 
 
 include("models/models.jl")

@@ -36,7 +36,7 @@ export MixedPTLattice, MixedPTLattice1Order
 export rdm, quantummap, meanforcestate, mfs
 # influence functional
 export HybridizationStyle, AdditiveHyb, NonAdditiveHyb, NonDiagonalHyb, pairop
-export PartialIF, TranslationInvariantIF
+export PartialIF, TranslationInvariantIF, TDVPIF
 export influenceoperator, influenceoperatorexponential, differentialinfluencefunctional
 export hybriddynamics, hybriddynamics!, hybriddynamics_naive, hybriddynamics_naive!
 export partialif_naive, partialif
@@ -55,6 +55,7 @@ using Reexport
 @reexport using ExpExp
 
 using ImpurityModelBase, QuAPI
+import KrylovKit
 import QuAPI: branch, index
 using LinearAlgebra
 using Base: @boundscheck

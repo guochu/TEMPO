@@ -108,7 +108,8 @@ Pages = ["influencefunctional/influencefunctional.jl",
          "influencefunctional/ttiif/adt/adt.jl", "influencefunctional/ttiif/adt/imag.jl",
          "influencefunctional/ttiif/adt/real.jl",
          "influencefunctional/ttiif/pt/pt.jl", "influencefunctional/ttiif/pt/imag.jl",
-         "influencefunctional/ttiif/pt/real.jl"]
+         "influencefunctional/ttiif/pt/real.jl",
+         "influencefunctional/tdvpif/tdvpif.jl"]
 ```
 
 ## 含时影响泛函与 BEC 影响泛函

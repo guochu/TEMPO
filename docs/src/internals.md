@@ -26,7 +26,7 @@ auxiliary ──→ defaults ──→ mpohamiltonian ──→ contourindices
 | `adtlattices/` | 实/虚/混合时间 ADT 格点与索引映射、Fock 排序 |
 | `ptlattices/` | 实/虚/混合时间 PT 格点、`integrate`（PT 求值） |
 | `correlationfunction.jl` | 浴关联函数包装（`IndexCorrelationFunction`、分支关联） |
-| `influencefunctional/` | 影响泛函构造：`PartialIF`（bond-dim-2）、`TranslationInvariantIF`（XTRG 风格）、`PTPartialIF`、PT 的 TTI-IF |
+| `influencefunctional/` | 影响泛函构造：`PartialIF`（bond-dim-2）、`TranslationInvariantIF`（XTRG 风格）、`TDVPIF`（二阶单格点 TDVP 虚时间流）、`PTPartialIF`、PT 的 TTI-IF |
 | `tdinfluencefunctional/` | 含时耦合（`*TdHyb`）影响泛函 |
 | `boundarycondition.jl` | 初态/边界条件 `boundarycondition!`、`initialstate!` |
 | `models/` | 系统哈密顿量/Lindblad 算符、`sysdynamics` |
