@@ -55,7 +55,7 @@ using Reexport
 @reexport using ExpExp
 
 using ImpurityModelBase, QuAPI
-import KrylovKit
+using KrylovKit: exponentiate, Arnoldi
 import QuAPI: branch, index
 using LinearAlgebra
 using Base: @boundscheck

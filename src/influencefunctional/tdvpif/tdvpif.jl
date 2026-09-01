@@ -69,11 +69,11 @@ end
 
 function _tdvpif_leftsweep_adt!(z::ADT, H::ADT, hstorage, δτ::Float64, alg::TDVPIF)
 	L = length(z)
-	krylov = KrylovKit.Arnoldi()
+	krylov = Arnoldi()
 	for site in 1:L-1
 		(alg.verbosity > 3) && println("TDVPIF: left sweep at site $site")
 		# forward half-step of the center tensor
-		AC, info = KrylovKit.exponentiate(x -> _tdvpif_ac_prime_adt(x, H[site], hstorage[site], hstorage[site+1]), δτ/2, z[site], krylov)
+		AC, info = exponentiate(x -> _tdvpif_ac_prime_adt(x, H[site], hstorage[site], hstorage[site+1]), δτ/2, z[site], krylov)
 		(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at site $site"
 		AL, C = tqr!(AC, (1, 2), (3,))
 		z[site] = AL
@@ -82,7 +82,7 @@ function _tdvpif_leftsweep_adt!(z::ADT, H::ADT, hstorage, δτ::Float64, alg::TD
 		# left environment with the new AL on both the bra and ket sides
 		hnew = updatemultleft(hstorage[site], AL, H[site], AL)
 		# backward half-step of the bond matrix
-		C, info = KrylovKit.exponentiate(x -> _tdvpif_c_prime_adt(x, hnew, hstorage[site+1]), -δτ/2, C, krylov)
+		C, info = exponentiate(x -> _tdvpif_c_prime_adt(x, hnew, hstorage[site+1]), -δτ/2, C, krylov)
 		(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at bond $(site+1)"
 		_renormalize!(z, C, false)
 		hstorage[site+1] = hnew
@@ -90,7 +90,7 @@ function _tdvpif_leftsweep_adt!(z::ADT, H::ADT, hstorage, δτ::Float64, alg::TD
 		z[site+1] = @tensor tmp[-1, -2, -3] := C[-1, 1] * z[site+1][1, -2, -3]
 	end
 	# full step at the last site
-	AC, info = KrylovKit.exponentiate(x -> _tdvpif_ac_prime_adt(x, H[L], hstorage[L], hstorage[L+1]), δτ, z[L], krylov)
+	AC, info = exponentiate(x -> _tdvpif_ac_prime_adt(x, H[L], hstorage[L], hstorage[L+1]), δτ, z[L], krylov)
 	(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at site $L"
 	z[L] = AC
 	_renormalize!(z, z[L], false)
@@ -98,7 +98,7 @@ function _tdvpif_leftsweep_adt!(z::ADT, H::ADT, hstorage, δτ::Float64, alg::TD
 end
 
 function _tdvpif_rightsweep_adt!(z::ADT, H::ADT, hstorage, δτ::Float64, alg::TDVPIF)
-	krylov = KrylovKit.Arnoldi()
+	krylov = Arnoldi()
 	for site in length(z)-1:-1:1
 		(alg.verbosity > 3) && println("TDVPIF: right sweep at site $site")
 		C, AR = tlq!(z[site+1], (1,), (2, 3))
@@ -107,14 +107,14 @@ function _tdvpif_rightsweep_adt!(z::ADT, H::ADT, hstorage, δτ::Float64, alg::T
 		# right environment with the new AR on both the bra and ket sides
 		hnew = updatemultright(hstorage[site+2], AR, H[site+1], AR)
 		# backward half-step of the bond matrix
-		C, info = KrylovKit.exponentiate(x -> _tdvpif_c_prime_adt(x, hstorage[site+1], hnew), -δτ/2, C, krylov)
+		C, info = exponentiate(x -> _tdvpif_c_prime_adt(x, hstorage[site+1], hnew), -δτ/2, C, krylov)
 		(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at bond $(site+1)"
 		_renormalize!(z, C, false)
 		hstorage[site+1] = hnew
 		# absorb the bond matrix into the site on the left
 		z[site] = @tensor tmp[-1, -2, -3] := z[site][-1, -2, 1] * C[1, -3]
 		# forward half-step of the center tensor
-		AC, info = KrylovKit.exponentiate(x -> _tdvpif_ac_prime_adt(x, H[site], hstorage[site], hstorage[site+1]), δτ/2, z[site], krylov)
+		AC, info = exponentiate(x -> _tdvpif_ac_prime_adt(x, H[site], hstorage[site], hstorage[site+1]), δτ/2, z[site], krylov)
 		(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at site $site"
 		z[site] = AC
 		_renormalize!(z, z[site], false)
@@ -236,12 +236,12 @@ end
 
 function _tdvpif_leftsweep_pt!(z::ProcessTensor, H::ProcessTensor, hstorage, δτ::Float64, alg::TDVPIF)
 	L = length(z)
-	krylov = KrylovKit.Arnoldi()
+	krylov = Arnoldi()
 	workspace = scalartype(z)[]
 	for site in 1:L-1
 		(alg.verbosity > 3) && println("TDVPIF: left sweep at site $site")
 		# forward half-step of the center tensor
-		AC, info = KrylovKit.exponentiate(x -> _tdvpif_ac_prime_pt(x, H[site], hstorage[site], hstorage[site+1]), δτ/2, z[site], krylov)
+		AC, info = exponentiate(x -> _tdvpif_ac_prime_pt(x, H[site], hstorage[site], hstorage[site+1]), δτ/2, z[site], krylov)
 		(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at site $site"
 		AL, C = tqr!(AC, (1, 2, 4), (3,), workspace)
 		AL = permute(AL, (1, 2, 4, 3))
@@ -251,7 +251,7 @@ function _tdvpif_leftsweep_pt!(z::ProcessTensor, H::ProcessTensor, hstorage, δ�
 		# left environment with the new AL on both the bra and ket sides
 		hnew = updateleft(hstorage[site], AL, H[site], AL)
 		# backward half-step of the bond matrix
-		C, info = KrylovKit.exponentiate(x -> _tdvpif_c_prime_pt(x, hnew, hstorage[site+1]), -δτ/2, C, krylov)
+		C, info = exponentiate(x -> _tdvpif_c_prime_pt(x, hnew, hstorage[site+1]), -δτ/2, C, krylov)
 		(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at bond $(site+1)"
 		_renormalize!(z, C, false)
 		hstorage[site+1] = hnew
@@ -259,7 +259,7 @@ function _tdvpif_leftsweep_pt!(z::ProcessTensor, H::ProcessTensor, hstorage, δ�
 		z[site+1] = @tensor tmp[-1, -2, -3, -4] := C[-1, 1] * z[site+1][1, -2, -3, -4]
 	end
 	# full step at the last site
-	AC, info = KrylovKit.exponentiate(x -> _tdvpif_ac_prime_pt(x, H[L], hstorage[L], hstorage[L+1]), δτ, z[L], krylov)
+	AC, info = exponentiate(x -> _tdvpif_ac_prime_pt(x, H[L], hstorage[L], hstorage[L+1]), δτ, z[L], krylov)
 	(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at site $L"
 	z[L] = AC
 	_renormalize!(z, z[L], false)
@@ -267,7 +267,7 @@ function _tdvpif_leftsweep_pt!(z::ProcessTensor, H::ProcessTensor, hstorage, δ�
 end
 
 function _tdvpif_rightsweep_pt!(z::ProcessTensor, H::ProcessTensor, hstorage, δτ::Float64, alg::TDVPIF)
-	krylov = KrylovKit.Arnoldi()
+	krylov = Arnoldi()
 	workspace = scalartype(z)[]
 	for site in length(z)-1:-1:1
 		(alg.verbosity > 3) && println("TDVPIF: right sweep at site $site")
@@ -277,14 +277,14 @@ function _tdvpif_rightsweep_pt!(z::ProcessTensor, H::ProcessTensor, hstorage, δ
 		# right environment with the new AR on both the bra and ket sides
 		hnew = updateright(hstorage[site+2], AR, H[site+1], AR)
 		# backward half-step of the bond matrix
-		C, info = KrylovKit.exponentiate(x -> _tdvpif_c_prime_pt(x, hstorage[site+1], hnew), -δτ/2, C, krylov)
+		C, info = exponentiate(x -> _tdvpif_c_prime_pt(x, hstorage[site+1], hnew), -δτ/2, C, krylov)
 		(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at bond $(site+1)"
 		_renormalize!(z, C, false)
 		hstorage[site+1] = hnew
 		# absorb the bond matrix into the site on the left
 		z[site] = @tensor tmp[-1, -2, -3, -4] := z[site][-1, -2, 1, -4] * C[1, -3]
 		# forward half-step of the center tensor
-		AC, info = KrylovKit.exponentiate(x -> _tdvpif_ac_prime_pt(x, H[site], hstorage[site], hstorage[site+1]), δτ/2, z[site], krylov)
+		AC, info = exponentiate(x -> _tdvpif_ac_prime_pt(x, H[site], hstorage[site], hstorage[site+1]), δτ/2, z[site], krylov)
 		(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at site $site"
 		z[site] = AC
 		_renormalize!(z, z[site], false)
