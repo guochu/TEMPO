@@ -1,12 +1,10 @@
-# TEMPO 工具包实现细节
+# 实现细节
 
-本文档深入介绍 `TEMPO` 工具包的内部实现：数据结构、算法流程、张量约定与数值细节，与文献 [GuoChen2026a.pdf](GuoChen2026a.pdf)（Phys. Rev. B 114, 125413 (2026)）中的公式一一对应。接口与用法见 [documentation.md](documentation.md) 与 [api_reference.md](api_reference.md)。
-
----
+本文档深入介绍 `TEMPO` 工具包的内部实现：数据结构、算法流程、张量约定与数值细节，与文献（Phys. Rev. B 114, 125413 (2026)）中的公式一一对应。接口与用法见[快速上手](@ref)与[使用手册](@ref)。
 
 ## 1. 总览与模块结构
 
-工具包在 `ImpurityModelBase`（系统模型定义）与 `QuAPI`（基础张量网络类型 `Dense1DTN`、`DenseMPSTensor`、`ContourIndex`、`branch`/`index` 等）之上实现 TEMPO 算法。加载顺序见 [src/TEMPO.jl](../src/TEMPO.jl)：
+工具包在 `ImpurityModelBase`（系统模型定义）与 `QuAPI`（基础张量网络类型 `Dense1DTN`、`DenseMPSTensor`、`ContourIndex`、`branch`/`index` 等）之上实现 TEMPO 算法。加载顺序见 `src/TEMPO.jl`：
 
 ```
 auxiliary ──→ defaults ──→ mpohamiltonian ──→ contourindices
@@ -34,13 +32,11 @@ auxiliary ──→ defaults ──→ mpohamiltonian ──→ contourindices
 | `models/` | 系统哈密顿量/Lindblad 算符、`sysdynamics` |
 | `observables/` | 环境缓存、期望值、配分函数、转移矩阵 |
 
----
-
 ## 2. 核心数据结构
 
 ### 2.1 ADT（Augmented Density Tensor / MPS）
 
-定义在 [src/adt/def.jl](../src/adt/def.jl)：
+定义在 `src/adt/def.jl`：
 
 ```julia
 struct ADT{T<:Number, R<:Real} <: Dense1DTN{T}
@@ -50,7 +46,7 @@ struct ADT{T<:Number, R<:Real} <: Dense1DTN{T}
 end
 ```
 
-- 张量约定（三腿）：腿 1 = 左辅助（bond）指标，最左位点维数为 1；腿 2 = 物理指标（1 对应 |0⟩，2 对应 |1⟩）；腿 3 = 右辅助指标，最右位点维数为 1。
+- 张量约定（三腿）：腿 1 = 左辅助（bond）指标，最左位点维数为 1；腿 2 = 物理指标（1 对应 $|0\rangle$，2 对应 $|1\rangle$）；腿 3 = 右辅助指标，最右位点维数为 1。
 - `s` 为每个 bond 的奇异值向量（长度 = 位点数 + 1），用于 `iscanonical` 校验与 `easy_swap!` 交换门。
 - `scaling` 记录整体标度（见 §2.3）。
 
@@ -60,28 +56,26 @@ end
 
 ### 2.3 标度因子（scaling）机制
 
-为了数值稳定性，所有正交化/截断步骤都避免直接归一化张量，而是把范数累积到全局 `scaling` 中（[src/adt/orth.jl](../src/adt/orth.jl)）：
+为了数值稳定性，所有正交化/截断步骤都避免直接归一化张量，而是把范数累积到全局 `scaling` 中（`src/adt/orth.jl`）：
 
 - `_renormalize!(psi, r, normalize)`：计算 `r` 的范数 `nr`，若 `!normalize` 则调用 `_rescaling!` 把 `nr^(1/L)` 乘入 `scaling`，再 `lmul!(1/nr, r)`；
 - `_rescaling!(psi, n)`：`scaling *= n^(1/L)`。
 
 这样 bond 张量保持 O(1) 量级，避免指数增长/衰减导致的上溢/下溢。`mult!` 的结果标度为 `scaling(x) * scaling(y)`。
 
----
-
 ## 3. 轮廓与格点
 
 ### 3.1 时间轮廓与分支
 
-- 虚时间（Matsubara）：分支 `:τ`，区间 `[0, β]`，标量类型 `Float64`；
-- 实时间（Keldysh）：分支 `:+` 与 `:-`，区间 `[0, t]`，标量类型 `ComplexF64`；
+- 虚时间（Matsubara）：分支 `:τ`，区间 $[0, \beta]$，标量类型 `Float64`；
+- 实时间（Keldysh）：分支 `:+` 与 `:-`，区间 $[0, t]$，标量类型 `ComplexF64`；
 - 混合（Kadanoff-Baym）：虚时间分支 + 实时间上下两支。
 
 `branch`/`index` 由 `QuAPI` 提供并导入（`src/TEMPO.jl`）。每个格点还关联 `TimeOrderingStyle`（`TimeAscending`/`TimeDscending`）与 `LayoutStyle`（当前只有 `TimeLocalLayout`，即每个时间步的状态局部排列，便于施加时间局域算符）。
 
 ### 3.2 Fock 排序（FockOrdering）
 
-Fock 排序定义了格点上 Grassmann 算符的排列约定（[src/adtlattices/fockordering.jl](../src/adtlattices/fockordering.jl)）：
+Fock 排序定义了格点上 Grassmann 算符的排列约定（`src/adtlattices/fockordering.jl`）：
 
 | 类型 | 轮廓 | 含义 |
 |---|---|---|
@@ -91,7 +85,7 @@ Fock 排序定义了格点上 Grassmann 算符的排列约定（[src/adtlattices
 
 ### 3.3 格点类型与索引映射
 
-实时间 ADT（[src/adtlattices/realtime.jl](../src/adtlattices/realtime.jl)）：
+实时间 ADT（`src/adtlattices/realtime.jl`）：
 
 ```julia
 struct RealADTLattice1Order{O<:RealFockOrdering} <: RealADTLattice{O}
@@ -110,32 +104,28 @@ index(i, branch=:-) = TL - 2i + 2
 
 虚时间 ADT：`length = k = N+1`，`index(i) = k+1-i`（降序），最右端（i=1）为真空边界。
 
-PT 格点（[src/ptlattices/](../src/ptlattices/)）：
+PT 格点（`src/ptlattices/`）：
 - `ImagPTLattice1Order`：`length = N`，`index(i) = N-i+1`，仅 `:τ` 分支，标量类型 `Float64`；
 - `RealPTLattice1Order`：`length = 2N`，`index(i, :+) = 2(N-i)+1`、`index(i, :-) = 2(N-i)+2`（降序，`index(N, :+)=1`，`index(1, :-)=2N`）；
 - `MixedPTLattice1Order`：`Nt` 个实时间步 + `Nτ` 个虚时间步，`index` 在实/虚支之间交错。
 
-`indexmappings(lattice)` 返回 `Dict{(timestep, branch) => global_index}`，`vacuumstate(T, lattice)` 构造全 1 的真空 ADT。
-
----
+`indexmappings(lattice)` 返回 Dict{(timestep, branch) => global_index}，`vacuumstate(T, lattice)` 构造全 1 的真空 ADT。
 
 ## 4. 浴关联函数与指数展开
 
 `correlationfunction.jl` 把关联函数包装为 `IndexCorrelationFunction`（内含 `CorrelationMatrix` 的 ηᵢⱼ 矩阵，由 `exponential_expansion` 生成），实时间用 `branch(corr, :+, :-)` 等取四个符号化分量 η⁺⁺、η⁺⁻、η⁻⁺、η⁻⁻。
 
-指数展开（`auxiliary/exponentialexpansion/`）：
-- `OverDeterminedProny`：将关联函数展开为有限项指数和（Prony 方法）；
-- `DeterminedProny`：预先给定展开项数/精度的变体；
+指数展开（`ExpExp` 包，经 TEMPO 重导出）：
+- `OverDeterminedProny`：将关联函数展开为有限项指数和（最小二乘 Prony 方法）；
+- `DeterminedProny`：确定型 Prony 方法变体；
 - `expand_decayterm(decayterm, alg=...)` 返回 `(η₁, η₂, …)` 系数列；
 - `expansion_error` 估计展开误差。
-
----
 
 ## 5. 对角耦合影响泛函（PartialIF / ADT 路径）
 
 ### 5.1 `partialif_densemps`：bond 维数 2 的部分影响泛函
 
-算法来自 Strathearn et al. (2018)，实现在 [src/influencefunctional/partialif/util.jl](../src/influencefunctional/partialif/util.jl)：
+算法来自 Strathearn et al. (2018)，实现在 `src/influencefunctional/partialif/util.jl`：
 
 - 输入：行位置 `row`、列位置 `cols`、对角算符 `op`（`z`）、系数 `coefs`（η 值）；
 - 构造单行 MPS（bond 维数 = `d`，对角耦合 d=2 时为 2）：
@@ -146,11 +136,11 @@ PT 格点（[src/ptlattices/](../src/ptlattices/)）：
 
 ### 5.2 `partialif_naive`
 
-朴素版本：对每个列索引依次 `apply!` 指数门 `exp(coef * op⊗op)` 后 `canonicalize!` 截断，最终得到部分 IF（[src/influencefunctional/partialif/util.jl](../src/influencefunctional/partialif/util.jl)）。`coef` 取实时间用 ηᵢⱼ（含符号），虚时间用 ηᵢⱼ/2 对半分配。
+朴素版本：对每个列索引依次 `apply!` 指数门 `exp(coef * op⊗op)` 后 `canonicalize!` 截断，最终得到部分 IF（同文件）。`coef` 取实时间用 ηᵢⱼ（含符号），虚时间用 ηᵢⱼ/2 对半分配。
 
 ### 5.3 `hybriddynamics!`
 
-（[src/influencefunctional/partialif/realtime.jl](../src/influencefunctional/partialif/realtime.jl) 及虚/混合时间对应实现）逐行构造部分 IF 并依次乘入：
+（`src/influencefunctional/partialif/realtime.jl` 及虚/混合时间对应实现）逐行构造部分 IF 并依次乘入：
 
 ```julia
 for i in 1:Nt, b1 in branches(lattice)
@@ -163,15 +153,13 @@ end
 
 每个 `(i, b1)` 行的部分 IF 与全局 `gmps` 相乘并 SVD 压缩（`DefaultITruncation`）。这是文献 Eq. (2)-(8) 的 ADT 实现。
 
----
-
 ## 6. 平移不变影响泛函（TTI-IF，XTRG 风格）
 
-对应文献附录中"平移不变 + 指数展开 + MPO 时间演化"方案，入口为 `influenceoperator`/`influenceoperatorexponential`/`differentialinfluencefunctional`（[src/influencefunctional/ttiif/](../src/influencefunctional/ttiif/)）。
+对应文献附录中"平移不变 + 指数展开 + MPO 时间演化"方案，入口为 `influenceoperator`/`influenceoperatorexponential`/`differentialinfluencefunctional`（`src/influencefunctional/ttiif/`）。
 
 ### 6.1 指数展开与 `SchurMPOTensor`
 
-`adt_ti_mpotensor`（[src/influencefunctional/ttiif/adt/imag.jl](../src/influencefunctional/ttiif/adt/imag.jl)）：
+`adt_ti_mpotensor`（`src/influencefunctional/ttiif/adt/imag.jl`）：
 
 ```julia
 m1 = GenericDecayTerm(op1, op2, corr.ηⱼₖ[2:end])   # 长程（跨步）耦合
@@ -182,11 +170,11 @@ h1  = (corr.ηₖⱼ[1] + corr.ηⱼₖ[1]) .* (op1 * op2)    # 同时间（对�
 return SchurMPOTensor(h1, vcat(m1s, m2s))
 ```
 
-`SchurMPOTensor` 为块三角算符结构（[src/mpohamiltonian/schurmpo/](../src/mpohamiltonian/schurmpo/)）：`D = h1`（对角块，同时间耦合），`A = {decay terms}`（对角块，长程耦合），`B`、`C` 为上下三角连接块。
+`SchurMPOTensor` 为块三角算符结构（`src/mpohamiltonian/schurmpo/`）：`D = h1`（对角块，同时间耦合），`A = {decay terms}`（对角块，长程耦合），`B`、`C` 为上下三角连接块。
 
 ### 6.2 时间演化：WI / WII / ComplexStepper
 
-`timeevompo(m, dt, alg)`（[src/mpohamiltonian/schurmpo/w1w2.jl](../src/mpohamiltonian/schurmpo/w1w2.jl)），方案来自 Zaletel et al.，arXiv:1407.1832：
+`timeevompo(m, dt, alg)`（`src/mpohamiltonian/schurmpo/w1w2.jl`），方案来自 Zaletel et al., arXiv:1407.1832：
 
 - **WI**（一阶）：`WD = I + dt·D`，`WB = B·√δt`，`WC = C·√δt`（`_sqrt2` 对负 dt 给出 `(√|dt|, −√|dt|)`），再组装为稀疏 MPO 张量；
 - **WII**（一阶，精度更高）：构造 `4d×4d` 块矩阵
@@ -203,7 +191,7 @@ return SchurMPOTensor(h1, vcat(m1s, m2s))
 
 ### 6.3 映射到格点：`_fit_to_lattice`
 
-虚时间 ADT 中，`_fit_to_lattice`（[src/influencefunctional/ttiif/adt/imag.jl](../src/influencefunctional/ttiif/adt/imag.jl)）把 3 个 MPO 张量按平移不变模式铺到 `L = N+1` 个位点：
+虚时间 ADT 中，`_fit_to_lattice`（`src/influencefunctional/ttiif/adt/imag.jl`）把 3 个 MPO 张量按平移不变模式铺到 `L = N+1` 个位点：
 
 - 位置 1（j=N+1）← `mpstensors[1]`（左边界张量）；
 - 位置 2…N−1（j=N−1…3）← `mpstensors[2]`（体张量，重复）；
@@ -214,9 +202,7 @@ return SchurMPOTensor(h1, vcat(m1s, m2s))
 
 ### 6.4 实时间分支 MPO 与微分影响泛函
 
-PT 实时间 `influenceoperator`（[src/influencefunctional/ttiif/pt/real.jl](../src/influencefunctional/ttiif/pt/real.jl)）返回 4 个分支 MPO `(η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻)`；`influenceoperatorexponential` 对每个分支先 `timeevompo` 再拟合，`FirstOrderStepper` 返回 4 个、`ComplexStepper` 返回 8 个。`differentialinfluencefunctional` 依次相乘（PT 分支顺序 `h2*h1`、`h3*…`、`h4*…`）得到单个时间步的完整微分影响泛函。
-
----
+PT 实时间 `influenceoperator`（`src/influencefunctional/ttiif/pt/real.jl`）返回 4 个分支 MPO `(η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻)`；`influenceoperatorexponential` 对每个分支先 `timeevompo` 再拟合，`FirstOrderStepper` 返回 4 个、`ComplexStepper` 返回 8 个。`differentialinfluencefunctional` 依次相乘（PT 分支顺序 `h2*h1`、`h3*…`、`h4*…`）得到单个时间步的完整微分影响泛函。
 
 ## 7. 非对角耦合 PT 框架
 
@@ -242,7 +228,7 @@ mpoj4 = pt_ti_mpotensor(η⁻⁻, transpose(op1), transpose(op2), :-, :-, algexp
 
 ### 7.3 `fused_op` 与 `split_mpotensor`
 
-- `fused_op(op, f)`（[src/influencefunctional/ttiif/pt/real.jl](../src/influencefunctional/ttiif/pt/real.jl)）：用恒等嵌入张量 `f = reshape(I_{d²}, d², d, d)` 把单腿算符提升为双腿 `(d²×d²)` 算符；
+- `fused_op(op, f)`（`src/influencefunctional/ttiif/pt/real.jl`）：用恒等嵌入张量 `f = reshape(I_{d²}, d², d, d)` 把单腿算符提升为双腿 `(d²×d²)` 算符；
 - `split_mpotensor(mpoj, trunc)`：把 4 腿 MPO 张量按物理维 `d²` 重构为 6 腿张量，SVD 拆成 `u`、`v` 两块（`u` 带 `√s`，`v` 带 `√s`），用于非对角分支在两条支路的不同位置放置耦合。
 
 ### 7.4 对角/非对角分支的格点拟合
@@ -256,33 +242,27 @@ mpoj4 = pt_ti_mpotensor(η⁻⁻, transpose(op1), transpose(op2), :-, :-, algexp
 
 `conversions.jl` 中的 `copytensor` 构造拷贝张量 `m[i,i,i]=1`；PT→ADT 的完整转换（`toadt`）在当前版本中处于注释/占位状态（文献方法已有实现线索，见文件头部注释）。
 
----
-
 ## 8. 系统动力学与边界条件
 
-- `boundarycondition!`（[src/boundarycondition.jl](../src/boundarycondition.jl)）：在格点边界上施加初态（`initialstate!`）。实时间轮廓在位置 1、2 放置初始密度矩阵的 Grassmann 表示；虚时间在两端放置真空/热态边界；
-- `sysdynamics`/`sysdynamics!`（[src/models/](../src/models/)）：把系统的时间演化算符（一阶指数门 `exp(-iH δt)`，或 Lindblad 传播子）乘入 ADT/PT，对应文献 Eq. (9)-(10) 的系统传播子；
+- `boundarycondition!`（`src/boundarycondition.jl`）：在格点边界上施加初态（`initialstate!`）。实时间轮廓在位置 1、2 放置初始密度矩阵的 Grassmann 表示；虚时间在两端放置真空/热态边界；
+- `sysdynamics`/`sysdynamics!`（`src/models/`）：把系统的时间演化算符（一阶指数门 `exp(-iH δt)`，或 Lindblad 传播子）乘入 ADT/PT，对应文献 Eq. (9)-(10) 的系统传播子；
 - `ImpurityHamiltonian`/`ImpurityLindbladian`：由 `ImpurityModelBase` 定义系统哈密顿量/耗散算符，`sysdynamics` 据其生成传播子并就地作用。
-
----
 
 ## 9. MPO 哈密顿量机制
 
-`MPOHamiltonian`（[src/mpohamiltonian/mpohamiltonian.jl](../src/mpohamiltonian/mpohamiltonian.jl)）为一列 `SchurMPOTensor`，用于：
+`MPOHamiltonian`（`src/mpohamiltonian/mpohamiltonian.jl`）为一列 `SchurMPOTensor`，用于：
 
 - 构造系统哈密顿量的 MPO 表示（`tompotensors`）；
 - 时间演化 `timeevompo(m, dt; alg=WII())`（逐位点演化）；
-- 长程耦合项：`GenericDecayTerm`（通用指数衰减）、`T1T2DecayTerm`（T1/T2 型）、`PowerLawDecayTerm`（幂律，如 XXZ 长程）。
+- 长程耦合项：`GenericDecayTerm`（通用指数衰减）、`PowerlawDecayTerm`（幂律，如 XXZ 长程）。
 
 `get_A/B/C/D` 提取 `SchurMPOTensor` 的块结构，`_SiteW_impl` 组装为 `SparseMPOTensor`。
-
----
 
 ## 10. 张量网络算法
 
 ### 10.1 正交化
 
-（[src/adt/orth.jl](../src/adt/orth.jl)）`Orthogonalize` 配置 `orth`（QR/SVD）、`trunc`、`normalize`、`verbosity`：
+（`src/adt/orth.jl`）`Orthogonalize` 配置 `orth`（QR/SVD）、`trunc`、`normalize`、`verbosity`：
 
 - `leftorth!`：从左到右 `tqr!`/`tsvd!`，R/S 归一化后吸收进下一位点；
 - `rightorth!`：从右到左 `tlq!`/`tsvd!`，L 归一化后吸收进前一位点；
@@ -292,7 +272,7 @@ QR 路径中 truncation 无效（`@warn`）。截断误差按相对误差 `sqrt(
 
 ### 10.2 MPS 乘法 `mult!` / `mult`
 
-（[src/adt/mult/svdmult.jl](../src/adt/mult/svdmult.jl)）`mult!(x, y)` 算法：
+（`src/adt/mult/svdmult.jl`）`mult!(x, y)` 算法：
 
 1. 左端 `tqr!`（`tie(n_fuse(...), ...)` 合并指标）；
 2. 从左到右迭代：`tmp = r ⊗ x[i] ⊗ y[i]` 收缩 → `n_fuse` → `tqr!` → `_renormalize!`；
@@ -309,19 +289,17 @@ QR 路径中 truncation 无效（`@warn`）。截断误差按相对误差 `sqrt(
 
 ### 10.4 转移矩阵
 
-`ADTTransferMatrix`（[src/observables/adt/transfer.jl](../src/observables/adt/transfer.jl)）把一组 ADT 组装为转移算符：
+`ADTTransferMatrix`（`src/observables/adt/transfer.jl`）把一组 ADT 组装为转移算符：
 
 - `left * m`：从左到右逐位点 `transfer_left` 收缩（`lmul!(scaling, …)` 计入标度）；
 - `m * right`：从右到左；
 - `TransferMatrix(states...)` / `TransferMatrix(j, states...)`：整体或单点版本（单点算符用）。
 
----
-
 ## 11. 观测量计算
 
 ### 11.1 环境缓存
 
-`environments(lattice, A, B...)`（[src/observables/](../src/observables/)）构造环境缓存：
+`environments(lattice, A, B...)`（`src/observables/`）构造环境缓存：
 
 - `ADTExpectationCache{A, Bs, lattice, hleft, hright}`：`hleft[i]` 为前 i 个位点的左环境（从左到右 `left * TransferMatrix(i, As...)` 累积），`hright[i]` 为右环境；`Zvalue = only(hleft[end])`；
 - `PTExpectationCache`：PT 版本，实时间轮廓接受关键字 `ρ₀`（初态密度矩阵）作为右边界条件。
@@ -329,14 +307,8 @@ QR 路径中 truncation 无效（`@warn`）。截断误差按相对误差 `sqrt(
 ### 11.2 期望值
 
 - `expectation(m, cache)`：对 `copy(cache.A)` 施加算符 `m`（`apply!`），在算符支撑区间上从右向左收缩转移矩阵，最后 `contract_center(left, right)` 缩并两端环境；
-- `expectationvalue(m, cache) = expectation(m, cache) / Zvalue(cache)`：归一化期望值 ⟨m⟩ = tr_bath[⟨ψ̄|m|ψ⟩]/Z；
+- `expectationvalue(m, cache) = expectation(m, cache) / Zvalue(cache)`：归一化期望值 $\langle m\rangle = \mathrm{tr}_{\text{bath}}[\bar\psi m \psi]/Z$；
 - `Zvalue(cache)`：配分函数 Z。
-
-### 11.3 时间关联函数
-
-`correlationfunction(bath, lattice)`（[src/correlationfunction.jl](../src/correlationfunction.jl)）计算浴关联函数（对混合轮廓返回实/虚时间分量）。系统可观测量动力学通过 `expectationvalue` 在每个时间步施加 `ADTTerm`/`ContourOperator` 得到。
-
----
 
 ## 12. 误差来源与超参数
 
@@ -347,12 +319,10 @@ QR 路径中 truncation 无效（`@warn`）。截断误差按相对误差 `sqrt(
 | 时间离散 | `δt`（`δτ`） | 一阶 Trotter/影响泛函离散误差 |
 | SVD 截断 | `truncdim` / `trunccutoff` / `truncdimcutoff` | bond 维数 `χ` |
 | 指数展开 | `algexpan` | Prony 展开项数与容差（默认 `OverDeterminedProny(n=15, tol=1e-4)`） |
-| 平移不变细化 | `k`（默认 5）、`fast` | `fast=true`：先构造宽度 `dt/2^k` 的微分 IF，再树二分平方 k 次得到全长影响泛函（SciPost Phys. Core 7, 063 (2024)） |
+| 平移不变细化 | `k`（默认 5）、`fast` | `fast=true`：先构造宽度 `dt/2^k` 的微分 IF，再树二分平方 k 次得到全长影响泛函 |
 | 系统传播子 | `algevo`（`WII()`）、`algmult`（`DefaultMultAlg`） | MPO 时间演化与乘法压缩精度 |
 
-默认值（`src/defaults.jl`）：`DefaultTruncation = truncdimcutoff(D=100, ϵ=1e-14)`、`DefaultITruncation = truncdimcutoff(D=200, ϵ=1e-10)`、`DefaultKTruncation = truncdimcutoff(D=1000, ϵ=1e-10)`、`DefaultIntegrationTruncation = DefaultMPOTruncation = truncdimcutoff(D=10000, ϵ=1e-12)`；`TranslationInvariantIF(; algexpan=OverDeterminedProny(n=15, tol=1e-4), algevo=WII(), algmult=DefaultMultAlg, k=5, fast=true)`。
-
----
+默认值见 `src/defaults.jl`：`DefaultTruncation = truncdimcutoff(D=100, ϵ=1e-14)`、`DefaultITruncation = truncdimcutoff(D=200, ϵ=1e-10)`、`DefaultKTruncation = truncdimcutoff(D=1000, ϵ=1e-10)`、`DefaultIntegrationTruncation = DefaultMPOTruncation = truncdimcutoff(D=10000, ϵ=1e-12)`；`TranslationInvariantIF(; algexpan=OverDeterminedProny(n=15, tol=1e-4), algevo=WII(), algmult=DefaultMultAlg, k=5, fast=true)`。
 
 ## 13. 数据流总览
 
