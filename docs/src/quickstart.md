@@ -67,8 +67,8 @@ for i in 1:Nt
 end
 ```
 
-!!! note "对角耦合也可以用 TTI-IF"
-    上面的 `hybriddynamics(lattice, corr, hyb, trunc=trunc)` 走 `PartialIF` 路径。对更大的局域维数（如 spin-1，d=3）或需要更精确的压缩时，用 `TranslationInvariantIF` 算法（见[使用手册](@ref)）通常更快、内存更省，见[实践指南](@ref)的讨论。
+!!! note "对角耦合也可以用 XTRG-IF"
+    上面的 `hybriddynamics(lattice, corr, hyb, trunc=trunc)` 走 `PartialIF` 路径。对更大的局域维数（如 spin-1，d=3）或需要更精确的压缩时，用 `XTRGIF` 算法（见[使用手册](@ref)）通常更快、内存更省，见[实践指南](@ref)的讨论。
 
 !!! tip "ADT 路径也能测非对角算符：算符插入"
     除了 `ADTTerm`，ADT 格点上还可以通过**向系统动力学中插入算符**来测非对角算符与两点关联函数（虚时间测试见 `test/models/rabimodel.jl`）：
@@ -105,7 +105,7 @@ corr = correlationfunction(bath, lattice)
 # 使用 DMRG 型 MPO-MPO 乘法 + Prony 指数展开
 algmult  = DMRGMult1(trunc, maxiter=10)
 algexpan = OverDeterminedProny(n=n, tol=1.0e-8, verbosity=2)
-alg = TranslationInvariantIF(k=k, fast=true, algmult=algmult, algexpan=algexpan, verbosity=2)
+alg = XTRGIF(k=k, fast=true, algmult=algmult, algexpan=algexpan, verbosity=2)
 
 mpsI = hybriddynamics(lattice, corr, hyb, alg)   # 得到 ProcessTensor (MPO)
 
@@ -163,7 +163,7 @@ v        = integrate(mpsK2, mpsI) / Zval
 ```julia
 lattice = PTLattice(N=N, δt=δt, d=d, contour=:real)
 hyb  = NonDiagonalHyb(a')
-alg  = TranslationInvariantIF(k=5, fast=true,
+alg  = XTRGIF(k=5, fast=true,
                              algmult=DMRGMult1(trunc, initguess=:rand),
                              algexpan=OverDeterminedProny(n=20, tol=1.0e-8))
 mpsI = hybriddynamics(lattice, corr, hyb, alg)

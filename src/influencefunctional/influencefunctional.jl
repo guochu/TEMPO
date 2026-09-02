@@ -20,7 +20,7 @@ Keyword constructor for `PartialIF`; the truncation scheme is specified by `trun
 PartialIF(; trunc::TruncationDimCutoff=DefaultITruncation) = PartialIF(trunc)
 
 """
-	TranslationInvariantIF(; algexpan, algevo, algmult, k, fast, verbosity)
+	XTRGIF(; algexpan, algevo, algmult, k, fast, verbosity)
 
 Construct the influence functional as a translationally invariant MPO: first build the differential influence functional of width dt/2^k, then repeatedly square it k times (`fast=true`) via the tree bipartition scheme to obtain the full-length influence functional.
 
@@ -34,7 +34,7 @@ See [SciPost Phys. Core 7, 063 (2024)].
 - `fast::Bool`: if `true`, use the fast tree bipartition scheme (k multiplications); otherwise use the sequential scheme (2^k-1 multiplications).
 - `verbosity::Int`: verbosity level of the output.
 """
-struct TranslationInvariantIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm, M<:DMRGAlgorithm} <: InfluenceFunctionalAlgorithm 
+struct XTRGIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm, M<:DMRGAlgorithm} <: InfluenceFunctionalAlgorithm 
 	algexpan::T
 	algevo::E
 	algmult::M
@@ -44,18 +44,18 @@ struct TranslationInvariantIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlg
 	verbosity::Int
 end
 """
-	TranslationInvariantIF(; algexpan, algevo, algmult, k, fast, verbosity)
+	XTRGIF(; algexpan, algevo, algmult, k, fast, verbosity)
 
-Keyword constructor for `TranslationInvariantIF`; all parameters have default values and usually need not be passed explicitly.
+Keyword constructor for `XTRGIF`; all parameters have default values and usually need not be passed explicitly.
 """
-TranslationInvariantIF(; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny(n=15, tol=1.0e-4, verbosity=0), 
+XTRGIF(; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny(n=15, tol=1.0e-4, verbosity=0), 
 						 algevo::TimeEvoMPOAlgorithm=WII(), 
 						 algmult::DMRGAlgorithm=DefaultMultAlg,
 						 k::Int=5, 
 						 fast::Bool=true,
-						 verbosity::Int=0) = TranslationInvariantIF(algexpan, algevo, algmult, k, fast, verbosity)
+						 verbosity::Int=0) = XTRGIF(algexpan, algevo, algmult, k, fast, verbosity)
 
-function Base.getproperty(x::TranslationInvariantIF, s::Symbol)
+function Base.getproperty(x::XTRGIF, s::Symbol)
 	if s == :trunc
 		return x.algmult.trunc
 	else

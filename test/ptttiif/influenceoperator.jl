@@ -1,5 +1,5 @@
 println("------------------------------------")
-println("|    TTI-IF InfluenceOperator      |")
+println("|    XTRG-IF InfluenceOperator      |")
 println("------------------------------------")
 
 function __ti_localop(corr::CorrelationMatrix, op1::AbstractMatrix, op2::AbstractMatrix)
@@ -7,7 +7,7 @@ function __ti_localop(corr::CorrelationMatrix, op1::AbstractMatrix, op2::Abstrac
 	return h1
 end
 
-@testset "TTI-IF-InfluenceOperator: imaginary-time" begin
+@testset "XTRG-IF-InfluenceOperator: imaginary-time" begin
 	β = 1
 	δτ = 0.2
 	tol = 1.0e-6
@@ -87,7 +87,7 @@ end
 	end
 end
 
-@testset "TTI-IF-InfluenceOperator: real-time" begin
+@testset "XTRG-IF-InfluenceOperator: real-time" begin
 
 	function __get_contour_op(lattice, ind1::ContourIndex, ind2::ContourIndex, z1::AbstractMatrix, z2::AbstractMatrix, corr)
 		d = lattice.d

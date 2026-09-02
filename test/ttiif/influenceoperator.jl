@@ -1,9 +1,9 @@
 println("------------------------------------")
-println("|    TTI-IF InfluenceOperator      |")
+println("|    XTRG-IF InfluenceOperator      |")
 println("------------------------------------")
 
 
-@testset "TTI-IF-InfluenceOperator: imaginary-time" begin
+@testset "XTRG-IF-InfluenceOperator: imaginary-time" begin
 	β = 1
 	δτ = 0.2
 	tol = 1.0e-6
@@ -74,7 +74,7 @@ println("------------------------------------")
 
 end
 
-@testset "TTI-IF-InfluenceOperator: real-time" begin
+@testset "XTRG-IF-InfluenceOperator: real-time" begin
 
 	# function __get_contour_op(lattice, ind1::ContourIndex, ind2::ContourIndex, z::Vector, coef)
 	# 	d = lattice.d

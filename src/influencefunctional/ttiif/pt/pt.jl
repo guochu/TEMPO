@@ -1,16 +1,16 @@
 include("imag.jl")
 include("real.jl")
-# TTI-IF support for L-shaped is possible for finite MPS, but TTI is destroyed and the algorithm is not elegant, so it is not implemented for now
+# XTRG-IF support for L-shaped is possible for finite MPS, but TTI is destroyed and the algorithm is not elegant, so it is not implemented for now
 
 """
-	hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::TranslationInvariantIF)
+	hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::XTRGIF)
 
-In-place version of the `TranslationInvariantIF` algorithm on PT lattices: supports `GeneralHybStyle` (e.g. `NonAdditiveHyb`, `NonDiagonalHyb`) coupling, with the same behavior as the ADT version.
+In-place version of the `XTRGIF` algorithm on PT lattices: supports `GeneralHybStyle` (e.g. `NonAdditiveHyb`, `NonDiagonalHyb`) coupling, with the same behavior as the ADT version.
 
 # Returns
 The modified `gmps`.
 """
-function hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::TranslationInvariantIF)
+function hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::XTRGIF)
 	if alg.fast
 		mps = hybriddynamics(lattice, corr, hyb, alg)
 		return mult!(gmps, mps, alg.algmult)
@@ -21,14 +21,14 @@ function hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::
 end
 
 """
-	hybriddynamics(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::TranslationInvariantIF)
+	hybriddynamics(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::XTRGIF)
 
-`TranslationInvariantIF` algorithm version on PT lattices: supports `GeneralHybStyle` coupling.
+`XTRGIF` algorithm version on PT lattices: supports `GeneralHybStyle` coupling.
 
 # Returns
 The influence functional, represented as a `ProcessTensor`.
 """
-function hybriddynamics(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::TranslationInvariantIF)
+function hybriddynamics(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::XTRGIF)
 	if alg.fast
 		(alg.verbosity > 1) && println("Tree bipartition scheme using $(alg.k) multiplications")
 		return _hybriddynamics_fast(lattice, corr, hyb, alg)
@@ -38,7 +38,7 @@ function hybriddynamics(lattice::AbstractPTLattice, corr::AbstractCorrelationFun
 	end
 end
 
-function _hybriddynamics_fast(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::TranslationInvariantIF)
+function _hybriddynamics_fast(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::XTRGIF)
 	algmult = alg.algmult
 	if alg.verbosity > 1
 		t = @elapsed mps = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algmult, algexpan=alg.algexpan)
@@ -58,7 +58,7 @@ function _hybriddynamics_fast(lattice::AbstractPTLattice, corr::AbstractCorrelat
 	return mps
 end
 
-function _hybriddynamics_slow(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::TranslationInvariantIF)
+function _hybriddynamics_slow(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::XTRGIF)
 	algmult = alg.algmult
 	if alg.verbosity > 1
 		t = @elapsed mps0 = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algmult, algexpan=alg.algexpan)
@@ -79,7 +79,7 @@ function _hybriddynamics_slow(lattice::AbstractPTLattice, corr::AbstractCorrelat
 	return mps
 end
 
-function _hybriddynamics_slow!(gmps, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::TranslationInvariantIF)
+function _hybriddynamics_slow!(gmps, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::XTRGIF)
 	algmult = alg.algmult
 	if alg.verbosity > 1
 		t = @elapsed mps_all = influenceoperatorexponential(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algexpan=alg.algexpan)

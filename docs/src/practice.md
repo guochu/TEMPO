@@ -12,9 +12,9 @@
 | 情形 | 推荐路径 | 理由 |
 |---|---|---|
 | 对角耦合 + 对角观测量 + d=2 | `ADTLattice` + `AdditiveHyb` + `PartialIF`（默认） | 最快，每因子键维 2 |
-| 对角耦合 + 对角观测量 + d≥3（如 spin-1） | `ADTLattice` + `AdditiveHyb` + `TranslationInvariantIF` | PartialIF 因子数随 d 增长，TTI-IF 明显更快 |
-| 需要非对角观测量 | `PTLattice` + `NonDiagonalHyb` + `TranslationInvariantIF`；或 ADT 路径 + 算符插入（见 §3） | PT 路径批量测更高效；ADT 算符插入适合少量算符/两点关联 |
-| 非对角/非厄米耦合 | `PTLattice` + `NonDiagonalHyb` + `TranslationInvariantIF` | 唯一支持 |
+| 对角耦合 + 对角观测量 + d≥3（如 spin-1） | `ADTLattice` + `AdditiveHyb` + `XTRGIF` | PartialIF 因子数随 d 增长，XTRG-IF 明显更快 |
+| 需要非对角观测量 | `PTLattice` + `NonDiagonalHyb` + `XTRGIF`；或 ADT 路径 + 算符插入（见 §3） | PT 路径批量测更高效；ADT 算符插入适合少量算符/两点关联 |
+| 非对角/非厄米耦合 | `PTLattice` + `NonDiagonalHyb` + `XTRGIF` | 唯一支持 |
 
 !!! tip "对角耦合也能测非对角观测量"
     两条路线：① 对**实**对角算符 `op`，`NonDiagonalHyb(op)` 与 `AdditiveHyb(op)` 物理等价，但走 PT 路径、可用 `ContourOperator` 批量测非对角观测量（如 otterpohl2025 教程中 `NonDiagonalHyb(Matrix(Diagonal(0.5 .* [1.0, -1.0])))` 即 $\sigma_z/2$ 耦合，同时测 $P=\langle\sigma_z\rangle$ 与 $C=\langle\sigma_x\rangle$）；② 保持在 ADT 路径，用**算符插入**（`sysdynamics(lattice, model, ct)`，见 §3），适合少量算符或两点关联函数。
@@ -25,7 +25,7 @@
 
 1. 固定较大 `χ`、`n=20`、`k=7`，扫描 `δt`（如 0.2 → 0.1 → 0.05），取结果不再变化的 `δt`；
 2. 固定该 `δt`，扫描 `χ`（如 25 → 50 → 100），直到观测量（尤其是峰值、极小值位置）不再变化；
-3. 若用 TTI-IF，检查 `exponential_expansion` 的展开误差（见 §5）。
+3. 若用 XTRG-IF，检查 `exponential_expansion` 的展开误差（见 §5）。
 
 实测经验值（可作起点，仍需按自己的参数验证）：
 
@@ -35,7 +35,7 @@
 | Ohmic SBM 低温 | — | $\beta=20$ 已等效零温（与 $\beta=100$ 差别 <0.001） |
 | $1/f^\eta$ 噪声（$s<0$，Otterpohl 型） | 时间幂律记忆使 IF 键维随时间持续增长 | 短时间（$t\le5$）$\chi=40$ 够用；较强耦合 $\alpha=0.04$ 需 $\chi=100$ |
 | JC 型（粒子数守恒）非对角耦合 | 纠缠远少于 Rabi 型 | $\chi=30$ 通常即可 |
-| spin-1（d=3）+ TTI-IF | 局域维数大 | $\chi=50$、$\delta t=0.1$、$n=20$、$k=7$ |
+| spin-1（d=3）+ XTRG-IF | 局域维数大 | $\chi=50$、$\delta t=0.1$、$n=20$、$k=7$ |
 
 ## 3. 观测量构造：最容易踩的坑
 
@@ -108,7 +108,7 @@ mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp)  # ADT 路径
 
 ## 6. 性能：缓存与算法选择
 
-- **缓存影响泛函 MPS/MPO**：TTI-IF 的 XTRG 构造可能耗时小时级（如 $\chi=100$、$N=103$ 约 3.7 小时）。建议用 `Serialization` 把 `mpsI` 存盘，重跑观测量时直接反序列化：
+- **缓存影响泛函 MPS/MPO**：XTRG-IF 的 XTRG 构造可能耗时小时级（如 $\chi=100$、$N=103$ 约 3.7 小时）。建议用 `Serialization` 把 `mpsI` 存盘，重跑观测量时直接反序列化：
 
   ```julia
   using Serialization
@@ -116,8 +116,8 @@ mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp)  # ADT 路径
   mpsI = ispath(mpspath) ? Serialization.deserialize(mpspath) :
          (I = hybriddynamics(lattice, corr, hyb, alg); Serialization.serialize(mpspath, I); I)
   ```
-- **TTI-IF 开两个开关**：`fast=true`（树形二分，约 `k` 次乘法而非 $2^k-1$ 次）、`k` 适当（`k=7` 即最小步 $1/128$，更大 `k` 收益递减）；
-- **PartialIF 对 d=2 是最快的**，不要为了"新算法"盲目换 TTI-IF；d≥3 时 TTI-IF 优势明显；
+- **XTRG-IF 开两个开关**：`fast=true`（树形二分，约 `k` 次乘法而非 $2^k-1$ 次）、`k` 适当（`k=7` 即最小步 $1/128$，更大 `k` 收益递减）；
+- **PartialIF 对 d=2 是最快的**，不要为了"新算法"盲目换 XTRG-IF；d≥3 时 XTRG-IF 优势明显；
 - 设置 `OMP_NUM_THREADS=1`（或按机器适当开线程）避免 BLAS 过订阅；DMRG 乘法本身是单线程的。
 
 ## 7. 与参考数据（论文/ED）对比

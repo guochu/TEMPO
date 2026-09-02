@@ -1,7 +1,7 @@
 """
 	hybriddynamics!(gmps, lattice, corr, hyb[, alg])
 
-Multiply the partial influence functional of each contour lattice point in-place into `gmps` to construct the full influence functional (`ADT`). Supports `AdditiveHyb` coupling on imaginary-time (`ImagADTLattice1Order`), real-time (`RealADTLattice`) and mixed-time (`MixedADTLattice1Order`) lattices; methods for `NonAdditiveHyb`/`NonDiagonalHyb` coupling on PT lattices and for the `PartialIF`/`TranslationInvariantIF` algorithms can be found in the corresponding files.
+Multiply the partial influence functional of each contour lattice point in-place into `gmps` to construct the full influence functional (`ADT`). Supports `AdditiveHyb` coupling on imaginary-time (`ImagADTLattice1Order`), real-time (`RealADTLattice`) and mixed-time (`MixedADTLattice1Order`) lattices; methods for `NonAdditiveHyb`/`NonDiagonalHyb` coupling on PT lattices and for the `PartialIF`/`XTRGIF` algorithms can be found in the corresponding files.
 
 # Arguments
 - `gmps::ADT`: augmented density tensor, modified in-place.

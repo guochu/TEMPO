@@ -85,8 +85,8 @@ lattice = PTLattice(Nt=Nt, Nτ=Nτ, δt=δt, δτ=δτ, d=d, contour=:mixed)
 # 1) 部分影响泛函（Partial IF）：仅适用于对角耦合 AdditiveHyb
 alg = PartialIF(trunc=trunc)
 
-# 2) 平移不变影响泛函（TTI-IF，XTRG 式），文献推荐
-alg = TranslationInvariantIF(;
+# 2) 平移不变影响泛函（XTRG-IF，XTRG 式），文献推荐
+alg = XTRGIF(;
     algexpan = OverDeterminedProny(n=20, tol=1.0e-8, verbosity=2),  # 混合化函数指数展开
     algevo   = WII(),        # 或 WI()、ComplexStepper()、FirstOrderStepper()
     algmult  = DMRGMult1(trunc, initguess=:rand, maxiter=10),   # 或 SVDCompression(trunc)
@@ -110,7 +110,7 @@ mpsI = hybriddynamics!(gmps, lattice, corr, hyb, alg)     # 就地版本
 mpsI = hybriddynamics_naive(lattice, corr, hyb, trunc=trunc)  # N² 门操作的朴素参考实现（对角）
 ```
 
-> 对角耦合，`hybriddynamics` 既可用 `PartialIF`（逐位点乘，每因子键维为 2），也可用 `TranslationInvariantIF`。对非对角耦合只能使用 `TranslationInvariantIF`。
+> 对角耦合，`hybriddynamics` 既可用 `PartialIF`（逐位点乘，每因子键维为 2），也可用 `XTRGIF`。对非对角耦合只能使用 `XTRGIF`。
 
 ## 浴与关联函数（`ImpurityModelBase`）
 
@@ -240,15 +240,15 @@ test/                            # 测试套件（含与 Exact Diagonalization �
 
 | 文献内容 | 工具包实现 |
 |---|---|
-| 对角 + 对易耦合（标准 TEMPO） | `ADTLattice` + `AdditiveHyb` + `PartialIF`/`TranslationInvariantIF` |
+| 对角 + 对易耦合（标准 TEMPO） | `ADTLattice` + `AdditiveHyb` + `PartialIF`/`XTRGIF` |
 | 对角 + 非对易耦合（多浴） | 多个 `AdditiveHyb` 的 IF 相乘（`mult!`） |
-| 非对角耦合（共轭对，核心推广） | `PTLattice` + `NonDiagonalHyb` + `TranslationInvariantIF` |
+| 非对角耦合（共轭对，核心推广） | `PTLattice` + `NonDiagonalHyb` + `XTRGIF` |
 | 实时间 Keldysh 轮廓 | `contour=:real` |
 | 虚时间轮廓 | `contour=:imag` |
 | L 形 Kadanoff–Baym 轮廓 | `contour=:mixed`（`MixedPTLattice`/`MixedADTLattice`） |
 | QuAPI 离散化（附录 C） | `correlationfunction(bath, lattice)` 中的 `Δt`/`Δτ`/`Δm` |
 | 混合化函数的指数展开（附录 D） | `OverDeterminedProny`/`DeterminedProny`（`algexpan`） |
-| XTRG 构造有效热态（文献 Fig. 3） | `TranslationInvariantIF(k=..., fast=...)` |
+| XTRG 构造有效热态（文献 Fig. 3） | `XTRGIF(k=..., fast=...)` |
 | PT 中系统哈密顿量的吸收（文献 Fig. 2b） | `sysdynamics(lattice, model)` + `mult!` |
 | 观测量计算（文献 Fig. 1d, 1e） | `environments` + `expectationvalue` |
 | JC 自旋玻色子模型 | `docs/tutorials/spinboson/jctype.jl` |

@@ -36,7 +36,7 @@ export MixedPTLattice, MixedPTLattice1Order
 export rdm, quantummap, meanforcestate, mfs
 # influence functional
 export HybridizationStyle, AdditiveHyb, NonAdditiveHyb, NonDiagonalHyb, pairop
-export PartialIF, TranslationInvariantIF, TDVPIF
+export PartialIF, XTRGIF, TDVPIF
 export influenceoperator, influenceoperatorexponential, differentialinfluencefunctional
 export hybriddynamics, hybriddynamics!, hybriddynamics_naive, hybriddynamics_naive!
 export partialif_naive, partialif

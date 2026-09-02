@@ -61,7 +61,7 @@ end
 	hyb = NonDiagonalHyb(adag)
 	algmult = DMRGMult1(trunc)
 	algexpan = OverDeterminedProny(n=20, tol=1.0e-8)
-	alg = TranslationInvariantIF(k=5, fast=true, algmult=algmult, algexpan=algexpan)
+	alg = XTRGIF(k=5, fast=true, algmult=algmult, algexpan=algexpan)
 
 	mpsI = hybriddynamics(lattice, corr, hyb, alg)
 
@@ -133,7 +133,7 @@ end
 	hyb = NonDiagonalHyb(adag)
 	algmult = DMRGMult1(trunc)
 	algexpan = OverDeterminedProny(n=20, tol=1.0e-8)
-	alg = TranslationInvariantIF(k=5, fast=true, algmult=algmult, algexpan=algexpan)
+	alg = XTRGIF(k=5, fast=true, algmult=algmult, algexpan=algexpan)
 
 	mpsI = hybriddynamics(lattice, corr, hyb, alg)
 

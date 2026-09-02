@@ -137,8 +137,8 @@ $$S_z = \mathrm{diag}(1,0,-1), \qquad S_x = \frac{1}{\sqrt{2}}\begin{pmatrix}0&1
 **论文数据**: 同样从 arXiv PDF 矢量图数字化（`strathearn_fig3_data.json`），按 legend 颜色映射。
 
 **本复现**: $\delta t = 0.1$、键维 $\chi = 50$、$\beta = 20$、$t \le 20$（覆盖论文全部实线数据段），
-不截断记忆（完整历史）。影响泛函用包的 **TTIIF 路径**构造
-（`TranslationInvariantIF`：先构造宽度 $\delta t/2^k$ 的微分影响泛函，
+不截断记忆（完整历史）。影响泛函用包的 **XTRGIF 路径**构造
+（`XTRGIF`：先构造宽度 $\delta t/2^k$ 的微分影响泛函，
 再用树二分格式平方 $k$ 次，避免逐点连乘的部分影响泛函），观测量用单点对角
 `ADTTerm` + `expectationvalue`（与 spinboson 教程 rabitype.jl 的标准用法一致）。
 物理维度 $d=3$ 使计算量明显增大，但也检验了包对高物理维度的支持。
@@ -164,7 +164,7 @@ function tempo_sz1(; α, δt=0.1, tmax=20.0, β=20.0, ωc=5.0, chi=50, k=7, n=20
     else
         algmult = DMRGMult1(trunc, maxiter=10)
         algexpan = OverDeterminedProny(n=n, tol=1.0e-8)
-        alg = TranslationInvariantIF(k=k, fast=true, algmult=algmult, algexpan=algexpan)
+        alg = XTRGIF(k=k, fast=true, algmult=algmult, algexpan=algexpan)
         mpsI = hybriddynamics(lattice, corr, hyb, alg)
         Serialization.serialize(mpspath, mpsI)
     end

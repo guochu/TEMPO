@@ -54,7 +54,7 @@ $\beta=5$（红）与 $\beta=\infty$（青）曲线，ED 实线为半透明浅�
 
 **本复现**: $\delta t = 0.025$、键维 $\chi = 30$、$t \le 2.5$。
 采用包的 **PT（process tensor）路径**：`PTLattice` + `NonDiagonalHyb` +
-`TranslationInvariantIF` 构造影响泛函，观测量 $\langle\hat n(t)\rangle$ 用
+`XTRGIF` 构造影响泛函，观测量 $\langle\hat n(t)\rangle$ 用
 `ContourOperator` + `expectationvalue`（与 spinboson 教程 jctype.jl 的标准用法一致）。
 包的约定 `NonDiagonalHyb(op)` 表示 $\mathrm{op}\otimes \hat b + \mathrm{op}^\dagger \otimes \hat b^\dagger$
 （op 与浴湮灭算符配对），因此激发数守恒耦合对应 `op = a'`（杂质产生算符），
@@ -90,7 +90,7 @@ function tempo_nt(; α, β, δt=0.025, tmax=2.5, wc=5.0, s=0.5, chi=30, d=4, k=6
     else
         algmult = DMRGMult1(trunc, maxiter=10)
         algexpan = OverDeterminedProny(n=n, tol=1.0e-8)
-        alg = TranslationInvariantIF(k=k, fast=true, algmult=algmult, algexpan=algexpan)
+        alg = XTRGIF(k=k, fast=true, algmult=algmult, algexpan=algexpan)
         mpsI = hybriddynamics(lattice, corr, hyb, alg)
         Serialization.serialize(mpspath, mpsI)
     end

@@ -2,16 +2,16 @@ include("imag.jl")
 include("real.jl")
 
 """
-	hybriddynamics!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::TranslationInvariantIF)
+	hybriddynamics!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::XTRGIF)
 
-Construct the influence functional using the `TranslationInvariantIF` algorithm and multiply it in-place into `gmps`: if `alg.fast=true`, first build the full translationally invariant MPO and multiply it in a single step; otherwise multiply in successively (2^k multiplications).
+Construct the influence functional using the `XTRGIF` algorithm and multiply it in-place into `gmps`: if `alg.fast=true`, first build the full translationally invariant MPO and multiply it in a single step; otherwise multiply in successively (2^k multiplications).
 
 # Returns
 The modified `gmps`.
 
-See also [`TranslationInvariantIF`](@ref).
+See also [`XTRGIF`](@ref).
 """
-function hybriddynamics!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::TranslationInvariantIF)
+function hybriddynamics!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::XTRGIF)
 	if alg.fast
 		mps = hybriddynamics(lattice, corr, hyb, alg)
 		return mult!(gmps, mps, alg.algmult)
@@ -22,14 +22,14 @@ function hybriddynamics!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractC
 end
 
 """
-	hybriddynamics(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::TranslationInvariantIF)
+	hybriddynamics(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::XTRGIF)
 
-Construct the influence functional using the `TranslationInvariantIF` algorithm: if `alg.fast=true`, use the tree bipartition scheme (k multiplications); otherwise use the sequential scheme (2^k-1 multiplications).
+Construct the influence functional using the `XTRGIF` algorithm: if `alg.fast=true`, use the tree bipartition scheme (k multiplications); otherwise use the sequential scheme (2^k-1 multiplications).
 
 # Returns
 The influence functional, represented as an `ADT`.
 """
-function hybriddynamics(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::TranslationInvariantIF)
+function hybriddynamics(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::XTRGIF)
 	if alg.fast
 		(alg.verbosity > 1) && println("Tree bipartition scheme using $(alg.k) multiplications")
 		return _hybriddynamics_fast(lattice, corr, hyb, alg)
@@ -39,7 +39,7 @@ function hybriddynamics(lattice::AbstractADTLattice, corr::AbstractCorrelationFu
 	end
 end
 
-function _hybriddynamics_fast(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::TranslationInvariantIF)
+function _hybriddynamics_fast(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::XTRGIF)
 	algmult = alg.algmult
 	if alg.verbosity > 1
 		t = @elapsed mps = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algmult, algexpan=alg.algexpan)
@@ -59,7 +59,7 @@ function _hybriddynamics_fast(lattice::AbstractADTLattice, corr::AbstractCorrela
 	return mps
 end
 
-function _hybriddynamics_slow(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::TranslationInvariantIF)
+function _hybriddynamics_slow(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::XTRGIF)
 	algmult = alg.algmult
 	if alg.verbosity > 1
 		t = @elapsed mps0 = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algmult, algexpan=alg.algexpan)
@@ -80,7 +80,7 @@ function _hybriddynamics_slow(lattice::AbstractADTLattice, corr::AbstractCorrela
 	return mps
 end
 
-function _hybriddynamics_slow!(gmps, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::TranslationInvariantIF)
+function _hybriddynamics_slow!(gmps, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::XTRGIF)
 	algmult = alg.algmult
 	if alg.verbosity > 1
 		t = @elapsed mps_all = influenceoperatorexponential(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algexpan=alg.algexpan)

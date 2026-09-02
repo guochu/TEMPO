@@ -19,7 +19,7 @@ Pipeline:
   2. Bath: `bath = bosonicbath(spectrum, β)`, `corr = correlationfunction(bath, lattice)`.
   3. Non-diagonal coupling: `hyb = NonDiagonalHyb(sp)` with sp = σ₊/2.
   4. Influence functional (translation-invariant, XTRG-style):
-     `alg = TranslationInvariantIF(k=k, fast=true, algmult=DMRGMult1(...), algexpan=OverDeterminedProny(...))`,
+     `alg = XTRGIF(k=k, fast=true, algmult=DMRGMult1(...), algexpan=OverDeterminedProny(...))`,
      `mpsI = hybriddynamics(lattice, corr, hyb, alg)` (cached to `data/jc_... .mps`).
   5. System propagator: `mpsK = sysdynamics(lattice, model, trunc=trunc)` with
      `model = ImpurityHamiltonian(Δ .* z)`.
@@ -73,7 +73,7 @@ Run the JC-type (RWA spin-boson, off-diagonal coupling) example on the real-time
 The system is a spin-1/2 with Hamiltonian `Δ σ_z/2`, coupled to a sub-Ohmic
 bosonic bath through the raising operator `σ₊` (`NonDiagonalHyb`). The
 influence functional is built with the translation-invariant (XTRG-style) path
-`TranslationInvariantIF`: the differential influence functional of width
+`XTRGIF`: the differential influence functional of width
 `dt/2^k` is constructed by exponential expansion and WII time evolution, then
 squared `k` times by the fast tree-bipartition scheme.  The observable
 `⟨σ_x(t)⟩` is measured at every time step.
@@ -129,7 +129,7 @@ function main(t; δt = 0.05, Δ = 1., β = 2.5, α=0.1, s=0.5, wc = 5., n=20, k=
 		corr = correlationfunction(bath, lattice)
 		algmult = DMRGMult1(trunc, maxiter=10)
 		algexpan = OverDeterminedProny(n=n, tol=1.0e-8, verbosity=2)
-		alg = TranslationInvariantIF(k=k, fast=true, algmult=algmult, algexpan=algexpan, verbosity=2)
+		alg = XTRGIF(k=k, fast=true, algmult=algmult, algexpan=algexpan, verbosity=2)
 		@time mpsI = hybriddynamics(lattice, corr, hyb, alg)
 		println("save MPS-IF to path ", mpspath)
 		Serialization.serialize(mpspath, mpsI)

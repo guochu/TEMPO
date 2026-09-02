@@ -1,1 +1,1 @@
-# time-dependent TTI IF algorithm for PT lattice
+# time-dependent XTRG IF algorithm for PT lattice

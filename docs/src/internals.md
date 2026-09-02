@@ -26,7 +26,7 @@ auxiliary ──→ defaults ──→ mpohamiltonian ──→ contourindices
 | `adtlattices/` | 实/虚/混合时间 ADT 格点与索引映射、Fock 排序 |
 | `ptlattices/` | 实/虚/混合时间 PT 格点、`integrate`（PT 求值） |
 | `correlationfunction.jl` | 浴关联函数包装（`IndexCorrelationFunction`、分支关联） |
-| `influencefunctional/` | 影响泛函构造：`PartialIF`（bond-dim-2）、`TranslationInvariantIF`（XTRG 风格）、`TDVPIF`（二阶单格点 TDVP 虚时间流）、`PTPartialIF`、PT 的 TTI-IF |
+| `influencefunctional/` | 影响泛函构造：`PartialIF`（bond-dim-2）、`XTRGIF`（XTRG 风格）、`TDVPIF`（二阶单格点 TDVP 虚时间流）、`PTPartialIF`、PT 的 XTRG-IF |
 | `tdinfluencefunctional/` | 含时耦合（`*TdHyb`）影响泛函 |
 | `boundarycondition.jl` | 初态/边界条件 `boundarycondition!`、`initialstate!` |
 | `models/` | 系统哈密顿量/Lindblad 算符、`sysdynamics` |
@@ -163,7 +163,7 @@ end
 
 每个 `(i, b1)` 行的部分 IF 与全局 `gmps` 相乘并 SVD 压缩（`DefaultITruncation`）。这是文献 Eq. (2)-(8) 的 ADT 实现。注意：上式为纯实时格点版本（直接映射）；虚时间格点对 `:τ` 分支、混合格点（`MixedADTLattice1Order`）对**所有**分支均需把关联索引 `i` 平移到格点索引 `i+1`（`pos1 = index(lattice, i+1, branch=b1)`），详见 §3.4。
 
-## 6. 平移不变影响泛函（TTI-IF，XTRG 风格）
+## 6. 平移不变影响泛函（XTRG-IF，XTRG 风格）
 
 对应文献附录中"平移不变 + 指数展开 + MPO 时间演化"方案，入口为 `influenceoperator`/`influenceoperatorexponential`/`differentialinfluencefunctional`（`src/influencefunctional/ttiif/`）。
 
@@ -332,7 +332,7 @@ QR 路径中 truncation 无效（`@warn`）。截断误差按相对误差 `sqrt(
 | 平移不变细化 | `k`（默认 5）、`fast` | `fast=true`：先构造宽度 `dt/2^k` 的微分 IF，再树二分平方 k 次得到全长影响泛函 |
 | 系统传播子 | `algevo`（`WII()`）、`algmult`（`DefaultMultAlg`） | MPO 时间演化与乘法压缩精度 |
 
-默认值见 `src/defaults.jl`：`DefaultTruncation = truncdimcutoff(D=100, ϵ=1e-14)`、`DefaultITruncation = truncdimcutoff(D=200, ϵ=1e-10)`、`DefaultKTruncation = truncdimcutoff(D=1000, ϵ=1e-10)`、`DefaultIntegrationTruncation = DefaultMPOTruncation = truncdimcutoff(D=10000, ϵ=1e-12)`；`TranslationInvariantIF(; algexpan=OverDeterminedProny(n=15, tol=1e-4), algevo=WII(), algmult=DefaultMultAlg, k=5, fast=true)`。
+默认值见 `src/defaults.jl`：`DefaultTruncation = truncdimcutoff(D=100, ϵ=1e-14)`、`DefaultITruncation = truncdimcutoff(D=200, ϵ=1e-10)`、`DefaultKTruncation = truncdimcutoff(D=1000, ϵ=1e-10)`、`DefaultIntegrationTruncation = DefaultMPOTruncation = truncdimcutoff(D=10000, ϵ=1e-12)`；`XTRGIF(; algexpan=OverDeterminedProny(n=15, tol=1e-4), algevo=WII(), algmult=DefaultMultAlg, k=5, fast=true)`。
 
 ## 13. 数据流总览
 
@@ -343,7 +343,7 @@ corr = bath 关联函数（ImpurityModelBase 谱函数/相关函数）
   └─ exponential_expansion → ηᵢⱼ 系数
 lattice = ADTLattice/PTLattice（轮廓 + Fock 排序 + 索引映射）
 hyb = AdditiveHyb（对角）或 NonDiagonalHyb/GeneralHybStyle（非对角）
-  ├─ 对角：PartialIF（bond dim 2）逐行乘法，或 TranslationInvariantIF（MPO 指数展开 + WI/WII 演化）
+  ├─ 对角：PartialIF（bond dim 2）逐行乘法，或 XTRGIF（MPO 指数展开 + WI/WII 演化）
   └─ 非对角：PT 路径，4 分支 MPO（η⁺⁺…η⁻⁻）+ fused_op/split_mpotensor + 分支相乘
 sysdynamics!：系统传播子（H 或 Lindblad）乘入
 boundarycondition!：初态

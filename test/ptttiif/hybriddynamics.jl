@@ -1,8 +1,8 @@
 println("------------------------------------")
-println("|      TTI-IF Hybriddynamics       |")
+println("|      XTRG-IF Hybriddynamics       |")
 println("------------------------------------")
 
-@testset "TTI-IF-Hybriddynamics: imaginary-time" begin
+@testset "XTRG-IF-Hybriddynamics: imaginary-time" begin
 
 	N = 6
 	δτ = 0.1
@@ -12,7 +12,7 @@ println("------------------------------------")
 	trunc = truncdimcutoff(D=50, ϵ=1.0e-6, add_back=0)
 
 	base_alg = PartialIF(trunc=trunc)
-	algs = [TranslationInvariantIF(k=5, fast=true), TranslationInvariantIF(k=5, fast=false)]
+	algs = [XTRGIF(k=5, fast=true), XTRGIF(k=5, fast=false)]
 
 	spec = Leggett(d=1, ωc=1)
 
@@ -39,7 +39,7 @@ println("------------------------------------")
 end
 
 
-@testset "TTI-IF-Hybriddynamics: real-time" begin
+@testset "XTRG-IF-Hybriddynamics: real-time" begin
 
 	N = 3
 	δt = 0.1
@@ -49,11 +49,11 @@ end
 	trunc = truncdimcutoff(D=100, ϵ=1.0e-6, add_back=0)
 
 	base_alg = PartialIF(trunc=trunc)
-	alg2 = TranslationInvariantIF(k=5, algevo=WII(), algmult=SVDCompression(trunc))
-	alg3 = TranslationInvariantIF(k=5, algmult=DMRGMult1(trunc=trunc, initguess=:svd))
-	alg4 = TranslationInvariantIF(k=5, algmult=DMRGMult1(trunc=trunc, initguess=:pre))
-	alg5 = TranslationInvariantIF(k=5, algmult=DMRGMult1(trunc=trunc, initguess=:rand, maxiter=10))
-	alg6 = TranslationInvariantIF(k=5, algmult=DMRGMult1(trunc=trunc), fast=false)
+	alg2 = XTRGIF(k=5, algevo=WII(), algmult=SVDCompression(trunc))
+	alg3 = XTRGIF(k=5, algmult=DMRGMult1(trunc=trunc, initguess=:svd))
+	alg4 = XTRGIF(k=5, algmult=DMRGMult1(trunc=trunc, initguess=:pre))
+	alg5 = XTRGIF(k=5, algmult=DMRGMult1(trunc=trunc, initguess=:rand, maxiter=10))
+	alg6 = XTRGIF(k=5, algmult=DMRGMult1(trunc=trunc), fast=false)
 
 	algs = [alg2, alg3, alg4, alg5, alg6]
 
