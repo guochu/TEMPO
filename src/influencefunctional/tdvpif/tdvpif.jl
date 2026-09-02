@@ -1,7 +1,7 @@
 # TDVP-based influence functional construction (finite version).
 #
 # TDVPIF is an influence functional construction algorithm on the same footing
-# as TranslationInvariantIF and PartialIF. It views the influence functional
+# as XTRGIF and PartialIF. It views the influence functional
 # as the "equilibrium state" IF = exp(H) of the influence operator H (the MPO
 # form returned by `influenceoperator`), and computes it with a second-order
 # single-site TDVP imaginary-time flow
@@ -27,15 +27,42 @@
 # differential IF built by `differentialinfluencefunctional` is the Hadamard
 # (site-wise) product e^{dt·h1}∘e^{dt·h2}∘e^{dt·h3}∘e^{dt·h4}, and in the
 # element-wise algebra of ADT/PT products e^a∘e^b = e^{a+b}, so the generator
-# of the full IF is h1+h2+h3+h4 (NOT the Hadamard product h1∘h2∘h3∘h4)
+# of the full IF is h1+h2+h3+h4 (NOT the Hadamard product h1∘h2∘h3∘h4).
+# NOTE: the direct-sum bond dimensions of the four branches add up, so the
+# branches are summed one by one, compressing with SVD canonicalization after
+# each addition to keep the bond dimension bounded. The compression uses the
+# tight `DefaultMPOTruncation` (not `alg.trunc`): the compression error of H
+# is exponentially amplified by the flow (IF = e^H), so a loose tolerance
+# would degrade the accuracy of the influence functional.
 function _tdvpif_hamiltonian(lattice, corr, hyb, alg::TDVPIF)
 	h1, h2, h3, h4 = influenceoperator(lattice, corr, hyb, algexpan=alg.algexpan)
-	return h1 + h2 + h3 + h4
+	orth = Orthogonalize(SVD(), DefaultMPOTruncation; normalize=false)
+	H = h1 + h2
+	canonicalize!(H, alg=orth)
+	H = H + h3
+	canonicalize!(H, alg=orth)
+	H = H + h4
+	canonicalize!(H, alg=orth)
+	return H
 end
 
 # ======================================================================
 # ADT engine
 # ======================================================================
+
+# absorb the global scaling factor of a tensor network into its site tensors
+# (value = scaling^L · ∏tensors  →  value = 1^L · ∏(scaling·tensors)) and reset
+# the scaling to 1, so that downstream code contracting the raw site tensors
+# represents the same operator regardless of the gauge
+function _absorb_scaling!(x::Dense1DTN)
+	sca = scaling(x)
+	(sca == 1) && return x
+	for i in 1:length(x)
+		x[i] = sca * x[i]
+	end
+	setscaling!(x, 1)
+	return x
+end
 
 # effective map on the center tensor at site j: the tangent-space projection
 # of the product H·z, built from the left environment hleft::(bra, H, ket),
@@ -123,6 +150,14 @@ function _tdvpif_rightsweep_adt!(z::ADT, H::ADT, hstorage, δτ::Float64, alg::T
 end
 
 function _tdvpif_flow_adt!(z::ADT, H::ADT, alg::TDVPIF)
+	# The flow contracts the raw site tensors of `H` and never applies its
+	# global scaling factor. The ADT convention is
+	#     value = scaling^L · ∏(site tensors),
+	# so any H with scaling ≠ 1 (e.g. after a canonicalization, which
+	# redistributes local weights into the scaling factor) would silently be
+	# evolved as H / scaling^L. Absorb the scaling into the site tensors first
+	# to make the flow independent of the gauge in which H is represented.
+	_absorb_scaling!(H)
 	hstorage = _tdvpif_init_hstorage_adt(z, H)
 	nsteps = round(Int, 1 / alg.δ)
 	δτ = 1 / nsteps
@@ -179,7 +214,7 @@ end
 """
 	hybriddynamics(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, hyb::AdditiveHyb, alg::TDVPIF)
 
-Construct the influence functional on a real-time ADT lattice with the `TDVPIF` algorithm: the 4 branch influence operators returned by `influenceoperator` ((+,+), (+,−), (−,+), (−,−)) are first multiplied into a single influence operator H (compressed with `SVDCompression`), which then drives the same TDVP imaginary-time flow as in the imaginary-time case.
+Construct the influence functional on a real-time ADT lattice with the `TDVPIF` algorithm: the 4 branch influence operators returned by `influenceoperator` ((+,+), (+,−), (−,+), (−,−)) are summed one by one into a single influence operator H (each partial sum compressed by SVD canonicalization with `DefaultMPOTruncation`), which then drives the same TDVP imaginary-time flow as in the imaginary-time case.
 
 # Returns
 The influence functional, represented as an `ADT`.
@@ -293,6 +328,8 @@ function _tdvpif_rightsweep_pt!(z::ProcessTensor, H::ProcessTensor, hstorage, δ
 end
 
 function _tdvpif_flow_pt!(z::ProcessTensor, H::ProcessTensor, alg::TDVPIF)
+	# same scaling absorption as in `_tdvpif_flow_adt!`
+	_absorb_scaling!(H)
 	hstorage = init_hstorage_right(z, H, z)
 	nsteps = round(Int, 1 / alg.δ)
 	δτ = 1 / nsteps
@@ -349,7 +386,7 @@ end
 """
 	hybriddynamics(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::GeneralHybStyle, alg::TDVPIF)
 
-Construct the influence functional on a real-time PT lattice with the `TDVPIF` algorithm: the 4 branch influence operators returned by `influenceoperator` ((+,+), (+,−), (−,+), (−,−)) are first multiplied into a single influence operator H (compressed with `SVDCompression`), which then drives the same TDVP imaginary-time flow as in the imaginary-time case.
+Construct the influence functional on a real-time PT lattice with the `TDVPIF` algorithm: the 4 branch influence operators returned by `influenceoperator` ((+,+), (+,−), (−,+), (−,−)) are summed one by one into a single influence operator H (each partial sum compressed by SVD canonicalization with `DefaultMPOTruncation`), which then drives the same TDVP imaginary-time flow as in the imaginary-time case.
 
 # Returns
 The influence functional, represented as a `ProcessTensor`.
