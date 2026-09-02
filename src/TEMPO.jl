@@ -26,11 +26,11 @@ export AbstractFockTerm, FockTermS, FockTerm, ProdFockTerm
 export FockOrdering, ImagFockOrdering, RealFockOrdering, MixedFockOrdering, TimeOrderingStyle
 export M2M1, M2m2M1m1, M2M1_m1M1m2M2, TimeLocalLayout
 export index, OrderingStyle, LayoutStyle, ImaginaryTimeOrderingStyle, RealTimeOrderingStyle
-export branches, ADTLattice, vacuumstate, indexmappings
+export AbstractADTLattice, branches, ADTLattice, vacuumstate, indexmappings
 export ImagADTLattice, ImagADTLattice1Order, RealADTLattice, RealADTLattice1Order
 export MixedADTLattice, MixedADTLattice1Order
 # PT Lattices
-export PTLattice, integrate, ContourOperator, correlationfunction
+export AbstractPTLattice, PTLattice, integrate, ContourOperator, correlationfunction
 export ImagPTLattice, ImagPTLattice1Order, RealPTLattice, RealPTLattice1Order
 export MixedPTLattice, MixedPTLattice1Order
 export rdm, quantummap, meanforcestate, mfs
