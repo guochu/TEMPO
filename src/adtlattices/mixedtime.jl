@@ -35,18 +35,16 @@ the imaginary-time interval `[0, β]` into `Nτ` steps (size `δτ`).
 # Indexing convention
 
 Although the imaginary-time evolution only has `Nτ` steps, the lattice stores `kτ = Nτ + 1` imaginary-time points
-(the extra one is the boundary point, which the boundary condition connects to the real-time ends).
-Consequently, every operation that maps a correlation-function index to a lattice position on the mixed contour
-shifts the indices by **one time step** whenever the operation involves the imaginary-time branch:
-
-- a correlation index `i` on the `:τ` branch maps to the lattice index `i+1`, i.e. to position `kτ - i` (the same
-  `index(lattice, i+1)` convention as the imaginary-time-only lattice);
-- when the partial-IF row lies on the `:τ` branch, **all** column indices `j` (including real-time-branch columns)
-  are likewise taken at `j+1`;
-- rows and columns on the real-time branches (`:+`, `:-`) use no offset (`index(lattice, i)`).
+(the extra one is the `τ=0` boundary point at lattice index 1, glued to the `:-` branch start by `boundarycondition!`;
+the `τ=β` point at lattice index `kτ` is glued to the `:+` branch start); likewise each real-time branch stores
+`kt = Nt + 1` points (the extra one is the `t=0` boundary point at lattice index 1, glued to the imaginary-time branch
+ends). On the mixed contour, the correlation-function index `i` on **every** branch (`:τ`, `:+`, `:-`) maps to the
+lattice index `i+1` — the same `index(lattice, i+1)` convention as the imaginary-time-only lattice: the lattice index 1
+of each branch is the boundary/junction point and receives no influence-functional gates, while the lattice indices
+`2..kτ` (`2..kt`) carry the correlation indices `1..Nτ` (`1..Nt`).
 
 This convention is applied uniformly in `partialif`/`partialif_naive`/`hybriddynamics!` on the mixed contour
-(see `src/influencefunctional/partialif/util.jl` and `src/influencefunctional/partialif/mixedtime.jl`).
+(see `src/influencefunctional/partialif/util.jl`, `partialif.jl` and `mixedtime.jl`).
 """
 struct MixedADTLattice1Order{O<:MixedFockOrdering} <: MixedADTLattice{O}
 	δt::Float64

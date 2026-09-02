@@ -18,7 +18,7 @@ function partialif_naive(lattice::AbstractADTLattice, rowind::ContourIndex, corr
 	ds = [lattice.d for i in 1:length(lattice)]
 	b1 = branch(rowind)
 	i = rowind.j
-	i′ = (b1 == :τ) ? i+1 : i
+	i′ = (b1 == :τ || lattice isa MixedADTLattice) ? i+1 : i
 	pos1 = index(lattice, i′, branch=b1)
 
 	z = hyb.op
@@ -31,7 +31,7 @@ function partialif_naive(lattice::AbstractADTLattice, rowind::ContourIndex, corr
 	for b2 in branches(lattice)
 		k2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt
 		for j in 1:k2
-			j′ = (b1==:τ) ? j+1 : j
+			j′ = (b2 == :τ || lattice isa MixedADTLattice) ? j+1 : j
 			pos2 = index(lattice, j′, branch=b2)
 			coef = index(corr, i, j, b1=b1, b2=b2)
 
@@ -61,14 +61,14 @@ function partialif(lattice::AbstractADTLattice, rowind::ContourIndex, corr::Abst
 	ds = [lattice.d for i in 1:length(lattice)]
 	b1 = branch(rowind)
 	i = rowind.j
-	i′ = (b1 == :τ) ? i+1 : i
+	i′ = (b1 == :τ || lattice isa MixedADTLattice) ? i+1 : i
 	pos1 = index(lattice, i′, branch=b1)
 	pos2s = Int[]
 	coefs = scalartype(lattice)[]
 	for b2 in branches(lattice)
 		k2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt
 		for j in 1:k2
-			j′ = (b1==:τ) ? j+1 : j
+			j′ = (b2 == :τ || lattice isa MixedADTLattice) ? j+1 : j
 			pos2 = index(lattice, j′, branch=b2)
 			coef = index(corr, i, j, b1=b1, b2=b2)
 			push!(pos2s, pos2)

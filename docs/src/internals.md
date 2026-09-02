@@ -111,6 +111,16 @@ PT 格点（`src/ptlattices/`）：
 
 `indexmappings(lattice)` 返回 Dict{(timestep, branch) => global_index}，`vacuumstate(T, lattice)` 构造全 1 的真空 ADT。
 
+### 3.4 混合轮廓的索引平移约定（重要）
+
+混合（Kadanoff-Baym）轮廓上"关联函数/算符插入索引 → 格点索引"的映射在 ADT 与 PT 两条路径上**不同**，这是实现中最容易出错的细节：
+
+**ADT 路径（`MixedADTLattice1Order`，`src/adtlattices/mixedtime.jl`）——所有分支平移一位。** 格点为每个分支存储 `kτ = Nτ + 1` 个虚时间点、`kt = Nt + 1` 个实时间点：每支的格点索引 1 是边界/接合点（`τ=0` 粘到 `:-` 支起点、`τ=β` 粘到 `:+` 支起点、`t=0` 粘到虚时间支末端），由 `boundarycondition!` 处理，**不接收任何影响泛函门**；关联函数索引 `i` 在**所有**分支（`:τ`、`:+`、`:-`）上一律映射到格点索引 `i+1`，即格点索引 `2..kτ`（`2..kt`）承载关联索引 `1..Nτ`（`1..Nt`）。该约定在 `partialif`、`partialif_naive`（`src/influencefunctional/partialif/util.jl`）与 `hybriddynamics!`（`src/influencefunctional/partialif/mixedtime.jl`）中统一实现（形如 `i′ = (b == :τ || lattice isa MixedADTLattice) ? i+1 : i`）。对比纯轮廓：虚时间 ADT 格点仅 `:τ` 分支平移一位；实时间 ADT 格点直接映射、不平移。
+
+**PT 路径（`MixedPTLattice1Order`，`src/ptlattices/mixedtime.jl`）——直接映射、不平移。** 与混合 ADT 格点不同，混合 PT 格点没有额外的边界点，恰好存储 `Nτ` 个虚时间点与每支 `Nt` 个实时间点（`length = 2Nt + Nτ`），因此 `ContourIndex(i, branch)` 直接寻址对应分支上轮廓时刻 `(i-1)δ` 的格点——与纯虚时/实时 PT 格点相同的直接映射，`partialif_naive`（`src/influencefunctional/ptpartialif/`）与 `ContourOperator` 的 `apply!` 均按此实现。
+
+**算符插入的时间对齐。** 无论哪条路径，插入算符的 `ContourIndex(i, branch)` 都对应轮廓时刻 `(i-1)δ`（`:τ` 支为 `(i-1)δτ`，实支为 `(i-1)δt`）：系统动力学逐行施加传播子时，`_get_U_prime` 在第 `i` 步传播子上检测 `ContourIndex(i, branch)` 并把算符乘入。因此与 ED 参考对比格林函数时，`ContourIndex(i)` 的结果必须和时刻 `(i-1)δ` 的参考值对齐。单模浴 + ED 的虚时/实时/混合格林函数验证见 `test/models/rabimodel.jl`（ADT）与 `test/ptmodels/toymodel.jl`（PT）的 mixed-time 测试集。
+
 ## 4. 浴关联函数与指数展开
 
 `correlationfunction.jl` 把关联函数包装为 `IndexCorrelationFunction`（内含 `CorrelationMatrix` 的 ηᵢⱼ 矩阵，由 `exponential_expansion` 生成），实时间用 `branch(corr, :+, :-)` 等取四个符号化分量 η⁺⁺、η⁺⁻、η⁻⁺、η⁻⁻。
@@ -151,7 +161,7 @@ for i in 1:Nt, b1 in branches(lattice)
 end
 ```
 
-每个 `(i, b1)` 行的部分 IF 与全局 `gmps` 相乘并 SVD 压缩（`DefaultITruncation`）。这是文献 Eq. (2)-(8) 的 ADT 实现。
+每个 `(i, b1)` 行的部分 IF 与全局 `gmps` 相乘并 SVD 压缩（`DefaultITruncation`）。这是文献 Eq. (2)-(8) 的 ADT 实现。注意：上式为纯实时格点版本（直接映射）；虚时间格点对 `:τ` 分支、混合格点（`MixedADTLattice1Order`）对**所有**分支均需把关联索引 `i` 平移到格点索引 `i+1`（`pos1 = index(lattice, i+1, branch=b1)`），详见 §3.4。
 
 ## 6. 平移不变影响泛函（TTI-IF，XTRG 风格）
 

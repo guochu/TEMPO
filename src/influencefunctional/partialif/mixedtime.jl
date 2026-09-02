@@ -3,9 +3,11 @@
 
 `hybriddynamics!` method for the mixed-time contour (`MixedADTLattice1Order`, containing both imaginary-time and real-time branches).
 
-The mixed contour stores `kτ = Nτ + 1` imaginary-time points; correlation indices on the `:τ` branch map to lattice
-index `j+1` (position `kτ - j`), and when a partial-IF row lies on the `:τ` branch all column indices (real-time
-branches included) are shifted by one time step as well. See the `MixedADTLattice1Order` docstring for details.
+On the mixed contour the correlation-function index `i` on every branch maps to the lattice index `i+1` (the same
+`index(lattice, i+1)` convention as the imaginary-time-only lattice): the branch lattice index 1 (`τ=0`, `t=0`) is the
+boundary/junction point glued by `boundarycondition!` and receives no influence-functional gates, while the lattice
+indices `2..kτ` (`2..kt`) carry the correlation indices `1..Nτ` (`1..Nt`). See the `MixedADTLattice1Order` docstring
+for details.
 """
 function hybriddynamics!(gmps::ADT, lattice::MixedADTLattice1Order, corr::AbstractMixedCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
 	op = hyb.op
@@ -15,15 +17,13 @@ function hybriddynamics!(gmps::ADT, lattice::MixedADTLattice1Order, corr::Abstra
 	for b1 in branches(lattice)
 		k1 = ifelse(b1==:τ, lattice.Nτ, lattice.Nt)
 		for i in 1:k1
-			i′ = (b1 == :τ) ? i+1 : i
-			pos1 = index(lattice, i′, branch=b1)
+			pos1 = index(lattice, i+1, branch=b1)
 			pos2s = Int[]
 			coefs = scalartype(lattice)[]
 			for b2 in branches(lattice)
 				k2 = ifelse(b2==:τ, lattice.Nτ, lattice.Nt)
 				for j in 1:k2
-					j′ = (b1==:τ) ? j+1 : j
-					pos2 = index(lattice, j′, branch=b2)
+					pos2 = index(lattice, j+1, branch=b2)
 					coef = index(corr, i, j, b1=b1, b2=b2)
 					push!(pos2s, pos2)
 					push!(coefs, coef)

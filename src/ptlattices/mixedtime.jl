@@ -30,6 +30,15 @@ the imaginary-time interval `[0, β]` into `Nτ` steps (size `δτ`).
 # Derived attributes
 - `t = Nt * δt`: total evolution time; `β = Nτ * δτ`: inverse temperature; `T = 1/β`.
 - `ts = 0:δt:t`: real-time grid; `τs = 0:δτ:β`: imaginary-time grid.
+
+# Indexing convention
+
+Unlike the mixed ADT lattice, the mixed PT lattice stores exactly `Nτ` imaginary-time and `Nt` real-time points per
+branch (no extra boundary points). Correlation-function and operator-insertion indices therefore map **directly** to
+the lattice indices (`index(lattice, i, branch=...)` with no shift): the `ContourIndex(i, branch)` of a gate or
+inserted operator addresses the lattice point at contour time `(i-1)δ` on the corresponding branch. This is the same
+direct mapping as the pure imaginary-time/real-time PT lattices and is used uniformly in `partialif_naive` and the
+`ContourOperator` `apply!` on PT lattices.
 """
 struct MixedPTLattice1Order{O<:MixedFockOrdering} <: MixedPTLattice{O}
 	δt::Float64

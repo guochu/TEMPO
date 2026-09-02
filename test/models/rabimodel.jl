@@ -364,4 +364,75 @@ end
 
 	@test norm(corrs - corrs2) / norm(corrs2) < tol
 
+
+	zval = integrate(mps)
+
+	## 虚时格林函数 G(τ) = <op1(τ) op2(0)>：两个算符均插入 τ 分支
+	c2 = ContourIndex(1, branch=:τ)
+	c1 = ContourIndex(1, branch=:τ)
+	ct = ContourOperator(c1, op1 * op2)
+	mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
+	mpsK = boundarycondition!(mpsK, lattice)
+	mps2 = mult!(mpsK, mpsI, trunc=trunc)
+	v = integrate(mps2) / zval
+
+	corrs = [v]
+	for i in 2:Nτ
+		c1 = ContourIndex(i, branch=:τ)
+		ct = ContourOperator([c1, c2], [op1, op2])
+
+		mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
+		mpsK = boundarycondition!(mpsK, lattice)
+		mps2 = mult!(mpsK, mpsI, trunc=trunc)
+		v = integrate(mps2) / zval
+
+		push!(corrs, v)
+	end
+
+	corrs2 = correlation_2op_1τ(H, A1, A2, 0:δτ:β, β=β)
+	corrs2 = corrs2[1:length(corrs)]
+
+	@test norm(corrs - corrs2) / norm(corrs2) < tol
+
+
+	## 虚实混合格林函数 G(τ, t) = <op1(τ) op2(t)>：op1 在 τ 分支，op2 在实时分支
+	# ED 参考
+	Fed = eigen(Hermitian(H))
+	evU, evλ = Fed.vectors, Fed.values
+	ρed = evU * Diagonal(exp.(-β .* evλ)) * evU'
+	zed = tr(ρed)
+	op2ts = [evU * Diagonal(exp.(im .* tj .* evλ)) * evU' * A2 * evU * Diagonal(exp.(-im .* tj .* evλ)) * evU' for tj in 0:δt:t]
+
+	for br in (:+, :-)
+		for i in 1:Nτ
+			τv = (i - 1) * δτ
+			op1τ = evU * Diagonal(exp.(τv .* evλ)) * evU' * A1 * evU * Diagonal(exp.(-τv .* evλ)) * evU'
+			corrs2 = [tr(op1τ * Bt * ρed) / zed for Bt in op2ts]
+			corrs2 = corrs2[1:Nt]
+
+			c1 = ContourIndex(i, branch=:τ)
+			c2 = ContourIndex(1, branch=br)
+			ct = ContourOperator([c1, c2], [op1, op2])
+			mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
+			mpsK = boundarycondition!(mpsK, lattice)
+			mps2 = mult!(mpsK, mpsI, trunc=trunc)
+			v = integrate(mps2) / zval
+
+			corrs = [v]
+			for j in 2:Nt
+				c2 = ContourIndex(j, branch=br)
+				ct = ContourOperator([c1, c2], [op1, op2])
+
+				mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
+				mpsK = boundarycondition!(mpsK, lattice)
+				mps2 = mult!(mpsK, mpsI, trunc=trunc)
+				v = integrate(mps2) / zval
+
+				push!(corrs, v)
+			end
+
+			@test norm(corrs - corrs2) / norm(corrs2) < tol
+		end
+	end
+
 end
