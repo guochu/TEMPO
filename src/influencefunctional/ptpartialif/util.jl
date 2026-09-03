@@ -72,186 +72,97 @@ function _get_contour_op(lattice, ind1::ContourIndex, ind2::ContourIndex, z::Abs
 	return t
 end
 
-# function partialif(lattice::AbstractPTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb)
-# 	k = lattice.N
-# 	(lattice.d == size(hyb.op, 1)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
+"""
+	partialif(lattice::AbstractPTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb)
 
-# 	b1 = branch(rowind)
-# 	i = rowind.j
-# 	pos1 = index(lattice, i, branch=b1)
+Construct the partial influence functional (partial IF) associated with the contour index `rowind` as a `ProcessTensor` with exact bond dimension `d` (the physical dimension), generalizing the algorithm of Strathearn et al. (2018) to non-additive couplings.
 
-# 	pos2s = Int[]
-# 	coefs = scalartype(lattice)[]
+For a Hermitian coupling operator z = V·Diagonal(λ)·V' (zᵀ = conj(V)·Diagonal(λ)·conj(V)'), the contour gates are exp(ηᵢⱼ·op(b₁)@row ⊗ op(b₂)@col) with op(:+) = op(:τ) = z and op(:-) = zᵀ. All row-site gates carry the same operator op(b₁), so the row operators collapse onto its spectral projectors, and the partial IF is
 
-# 	for b2 in branches(lattice)
-# 		k2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt
-# 		for j in 1:k2
-# 			pos2 = index(lattice, j, branch=b2)
-# 			coef = index(corr, i, j, b1=b1, b2=b2)
-# 			push!(pos2s, pos2)
-# 			push!(coefs, coef)			
-# 		end
-# 	end
-# 	pos2s, mpsdata = partialif_densempo(pos1, pos2s, hyb.op, coefs)
-# 	return _fit_to_full(length(lattice), lattice.d, pos2s, mpsdata)
-# end
+	P = Σₐ e^{ηᵢᵢλₐ²}P₍b₁₎⁽ᵃ⁾@row · ∏ⱼ exp(ηᵢⱼλₐ·op(b₂))@colⱼ,
+
+i.e. an MPO whose bond index is the eigenindex `a`.
+
+# Arguments
+- `lattice::AbstractPTLattice`: PT contour lattice.
+- `rowind::ContourIndex`: contour index (row) associated with the partial IF.
+- `corr::AbstractCorrelationFunction`: bath correlation function.
+- `hyb::NonAdditiveHyb`: non-additive Hermitian system-bath coupling.
+
+# Returns
+The partial IF, represented as a `ProcessTensor`.
+"""
+function partialif(lattice::AbstractPTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb)
+	z = hyb.op
+	(lattice.d == size(z, 1) == size(z, 2)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
+
+	b1 = branch(rowind)
+	i = rowind.j
+	pos1 = index(lattice, i, branch=b1)
+
+	T = promote_type(scalartype(lattice), scalartype(hyb), scalartype(corr))
+	colsites = Tuple{Int, Symbol}[]
+	coefs = T[]
+	for b2 in branches(lattice)
+		k2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt
+		for j in 1:k2
+			pos2 = index(lattice, j, branch=b2)
+			coef = index(corr, i, j, b1=b1, b2=b2)
+			push!(colsites, (pos2, b2))
+			push!(coefs, coef)
+		end
+	end
+	return partialif_densempo(length(lattice), lattice.d, pos1, colsites, coefs, z, b1)
+end
+
+# generalization of the StrathearnLovett2018 algorithm to matrix (non-additive) couplings
+function partialif_densempo(L::Int, d::Int, row::Int, colsites::Vector{Tuple{Int, Symbol}},
+							coefs::Vector{<:Number}, op::AbstractMatrix{<:Number}, rowbranch::Symbol)
+	@assert length(colsites) == length(coefs) == L > 1
+	p = sortperm(first.(colsites))
+	colsites = colsites[p]
+	coefs = coefs[p]
+	T = promote_type(scalartype(op), scalartype(coefs))
+
+	# op is Hermitian by construction of NonAdditiveHyb: op = V·Λ·V' and opᵀ = conj(V)·Λ·conj(V)'
+	F = (eltype(op) <: Real) ? eigen(Symmetric(op)) : eigen(Hermitian(op))
+	V = F.vectors
+	Vc = conj(V)
+	λ = Vector{T}(F.values)
+
+	# all row-site gates carry the same operator op(rowbranch), so the row operators
+	# collapse onto its spectral projectors and the bond index is the eigenindex
+	Wr = (rowbranch == :-) ? Vc : V
+	rowcontent(a) = exp(coefs[findfirst(x->x[1] == row, colsites)] * λ[a]^2) .*
+					(Wr[:, a:a] * adjoint(Wr)[a:a, :])
+	# column site j carries op(b₂): exp(ηᵢⱼλₐ·op(b₂))
+	function colcontent(s, a)
+		Wc = (colsites[s][2] == :-) ? Vc : V
+		return Wc * Diagonal(exp.(coefs[s] * λ[a] .* λ)) * adjoint(Wc)
+	end
+	content(s, a) = (s == findfirst(x->x[1] == row, colsites)) ? rowcontent(a) : colcontent(s, a)
+
+	mpsdata = Vector{Array{T, 4}}(undef, L)
+	for s in 1:L
+		if s == 1
+			tmp = zeros(T, 1, d, d, d)
+			for a in 1:d
+				tmp[1, :, a, :] .= content(s, a)
+			end
+		elseif s == L
+			tmp = zeros(T, d, d, 1, d)
+			for a in 1:d
+				tmp[a, :, 1, :] .= content(s, a)
+			end
+		else
+			tmp = zeros(T, d, d, d, d)
+			for a in 1:d
+				tmp[a, :, a, :] .= content(s, a)
+			end
+		end
+		mpsdata[s] = tmp
+	end
+	return ProcessTensor(mpsdata)
+end
 
 
-# function partialif_densempo(row::Int, cols::Vector{Int}, op::Matrix{<:Number}, coefs::Vector{<:Number})
-# 	# println("row=", row, " cols ", cols)
-# 	@assert length(cols) == length(coefs) > 1
-# 	# @assert (row in cols)
-# 	# @assert issorted(cols)
-# 	p = sortperm(cols)
-# 	cols = cols[p]
-# 	coefs = coefs[p]
-# 	T = promote_type(scalartype(op), scalartype(coefs)) 
-
-# 	d = size(op, 1)
-# 	d2 = d * d
-# 	op2 = op * op
-# 	dim2 = CartesianIndices((d, d))
-# 	opop = kron(op, op)
-# 	function onebody(m) 
-# 		return exp(m .* op2)
-# 	end
-# 	function twobody(m)
-# 		# return exp(m .* opop)
-# 		m2 = exp(m .* opop)
-# 		# return m2
-# 		return reshape(permute(reshape(m2, d, d, d, d), (1,3,2,4)), d2, d2)
-# 	end
-# 	L = length(cols)
-# 	mpsdata = Vector{Array{T, 4}}(undef, L)
-# 	pos = findfirst(x->row==x, cols)
-# 	isnothing(pos) && throw(ArgumentError("$(row) is not a member of $cols"))
-# 	# println("row = ", row, " pos = ", pos, " L = ", L)
-# 	# println("cols = ", cols, " coefs = ", coefs)
-# 	if pos == 1
-# 		println("1------------------------")
-# 		m = onebody(coefs[1])
-# 		tmp = zeros(T, 1, d, d2, d)
-# 		for i in 1:d2
-# 			ind = dim2[i]
-# 			tmp[1, ind[1], i, ind[2]] = 1
-# 		end
-# 		mpsdata[1] = _apply2(m, tmp)
-# 		for j in 2:L-1
-# 			m = twobody(coefs[j])
-# 			tmp = zeros(T, d2,d,d2,d)
-# 			for i in 1:d2, k in 1:d2
-# 				ind = dim2[k]
-# 				tmp[i,ind[1],i, ind[2]] = m[i,k]
-# 			end
-# 			mpsdata[j] = tmp
-# 		end
-# 		m = twobody(coefs[L])
-# 		tmp = zeros(T, d2,d,1,d)
-# 		for i in 1:d2, j in 1:d2
-# 			ind = dim2[j]
-# 			tmp[i, ind[1], 1, ind[2]] = m[i, j]
-# 		end
-# 		mpsdata[L] = tmp
-# 	elseif pos == L
-# 		println("2------------------------")
-# 		m = twobody(coefs[1])
-# 		tmp = zeros(T, 1, d, d2, d)
-# 		for i in 1:d2, j in 1:d2
-# 			ind = dim2[j]
-# 			tmp[1, ind[1], i, ind[2]] = m[i, j]
-# 		end
-# 		mpsdata[1] = tmp
-# 		for k in 2:L-1
-# 			m = twobody(coefs[k])
-# 			tmp = zeros(T, d2,d,d2,d)
-# 			for i in 1:d2, j in 1:d2
-# 				ind = dim2[j]
-# 				tmp[i,ind[1],i, ind[2]] = m[i, j]
-# 			end
-# 			mpsdata[k] = tmp
-# 		end
-# 		tmp = zeros(T, d2,d,1,d)
-# 		for i in 1:d2
-# 			ind = dim2[i]
-# 			tmp[i, ind[1], 1, ind[2]] = 1
-# 		end
-# 		m = onebody(coefs[L])
-# 		mpsdata[L] = _apply2(m, tmp)
-# 	else
-# 		println("3------------------------")
-# 		m = twobody(coefs[1])
-# 		tmp = zeros(T, 1, d, d2, d)
-# 		for i in 1:d2, j in 1:d2
-# 			ind = dim2[i]
-# 			tmp[1, ind[1], i, ind[2]] = m[i, j]
-# 		end
-# 		mpsdata[1] = tmp
-
-# 		for j in 2:pos-1
-# 			m = twobody(coefs[j])
-# 			tmp = zeros(T, d2,d,d2,d)
-# 			for i in 1:d2, k in 1:d2
-# 				ind = dim2[k]
-# 				tmp[i,ind[1],i, ind[2]] = m[i,k]
-# 			end
-# 			mpsdata[j] = tmp
-# 		end
-
-# 		m = onebody(coefs[pos])
-# 		tmp = zeros(T,d2,d,d2,2)
-# 		for i in 1:d
-# 			ind = dim2[i]
-# 			tmp[i,ind[1],i, ind[2]] = 1
-# 		end
-# 		mpsdata[pos] = _apply2(m, tmp)
-
-# 		for j in pos+1:L-1
-# 			m = twobody(coefs[j])
-# 			tmp = zeros(T, d2,d,d2,d)
-# 			for i in 1:d2, k in 1:d2
-# 				ind = dim2[k]
-# 				tmp[i,ind[1],i, ind[2]] = m[i,k]
-# 			end
-# 			mpsdata[j] = tmp
-# 		end
-
-# 		m = twobody(coefs[L])
-# 		tmp = zeros(T, d2,d,1,d)
-# 		for i in 1:d2, j in 1:d2
-# 			ind = dim2[j]
-# 			tmp[i, ind[1], 1, ind[2]] = m[i, j]
-# 		end
-# 		mpsdata[L] = tmp
-# 	end
-# 	# return mpsdata
-# 	return cols, mpsdata
-# end
-
-# function _fit_to_full(L::Int, d::Int, pos, mpsdata)
-# 	r = similar(mpsdata, L)
-# 	I2 = _eye(d)
-# 	for j in 1:pos[1]-1
-# 		r[j] = reshape(I2, 1, d, 1, d)
-# 	end
-# 	for j in pos[end]+1:L
-# 		r[j] = reshape(I2, 1, d, 1, d)
-# 	end
-# 	leftspace = space_r(mpsdata[1])
-# 	for j in pos[1]:pos[end]
-		
-# 		posj = findfirst(x->x==j, pos)
-# 		if isnothing(posj)
-# 			Ia = _eye(leftspace, leftspace)
-# 			@tensor mj[1,3,2,4] := Ia[1,2] * I2[3,4] 
-# 		else
-# 			mj = mpsdata[posj]
-# 			leftspace = space_r(mj)
-# 		end
-# 		r[j] = mj
-# 	end
-# 	return ProcessTensor(r)
-# end
-
-# function _apply2(m::AbstractMatrix, tmp::AbstractArray{<:Number, 4})
-# 	@tensor tmp2[3,1,4,5] := m[1,2] * tmp[3,2,4,5]
-# end

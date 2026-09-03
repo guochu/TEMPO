@@ -37,6 +37,27 @@ hybriddynamics(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCo
 hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb, alg::PartialIF) = hybriddynamics!(
 				gmps, lattice, corr, hyb, trunc=alg.trunc)
 
+"""
+	hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
+
+In-place `hybriddynamics` on PT lattices with the analytic `PartialIF` algorithm: for each contour lattice point, construct its partial IF as a bond-`d` MPO (`partialif`) and multiply it into `gmps` with the truncation scheme `trunc`.
+
+# Returns
+The modified `gmps`.
+"""
+function hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; 
+							trunc::TruncationScheme=DefaultITruncation)
+	for b1 in branches(lattice)
+		k1 = (b1 == :τ) ? lattice.Nτ : lattice.Nt
+		for i in 1:k1
+			ind1 = ContourIndex(i, branch=b1)
+			tmp = partialif(lattice, ind1, corr, hyb)
+			gmps = mult!(gmps, tmp, trunc=trunc)
+		end
+	end
+	return gmps
+end
+
 hybriddynamics(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, bs::NonAdditiveHyb; kwargs...) = hybriddynamics!(copy(gmps), lattice, corr, bs; kwargs...)
 """
 	hybriddynamics(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; kwargs...)

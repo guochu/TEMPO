@@ -20,6 +20,7 @@ include("pt.jl")
 include("ptzipup.jl")
 
 include("adtpartialif.jl")
+include("ptpartialif.jl")
 
 include("ttiif/ttiif.jl")
 include("ptttiif/ptttiif.jl")
