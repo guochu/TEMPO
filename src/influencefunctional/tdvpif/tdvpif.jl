@@ -50,6 +50,28 @@ end
 # ADT engine
 # ======================================================================
 
+# run the TDVP flow z(τ=1) = e^H·z(0) directly on the input state z, which may
+# be the identity influence functional (β = 0) or, more generally, any MPO on
+# the same lattice, e.g. the pure impurity dynamics (with Lindblad dissipation)
+# obtained from `sysdynamics`; the influence operator H is thereby merged into
+# the impurity dynamics in a single flow.
+#
+# preparation: lift z to the flow bond dimension (zero-padded) and canonicalize
+# without truncation, so that the zero-weight directions become orthonormal
+# directions of the environments and the sweeps can populate the full bond
+# profile min(d^j, d^{L-j}, D); finalization: canonicalize with the truncation
+# scheme. The global scaling factor of z is carried through the flow by the
+# `_renormalize!` bookkeeping, so the output value is e^H·z(0) regardless of
+# the gauge of the input.
+function _tdvpif_hybriddynamics_adt!(z::ADT, H::ADT, alg::TDVPIF)
+	increase_bond!(z, alg.trunc.D)
+	canonicalize!(z, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
+	_tdvpif_flow_adt!(z, H, alg)
+	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
+	alg.callback(Float64[])
+	return z
+end
+
 # absorb the global scaling factor of a tensor network into its site tensors
 # (value = scaling^L · ∏tensors  →  value = 1^L · ∏(scaling·tensors)) and reset
 # the scaling to 1, so that downstream code contracting the raw site tensors
@@ -181,34 +203,23 @@ The influence functional, represented as an `ADT`.
 See also [`TDVPIF`](@ref).
 """
 function hybriddynamics(lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, hyb::AdditiveHyb, alg::TDVPIF)
-	# influence operator H in MPO (fused-leg MPS) form
-	H = influenceoperator(lattice, corr, hyb, algexpan=alg.algexpan)
-	# identity influence functional (β = 0), lifted to the flow bond dimension
-	z = vacuumstate(promote_type(scalartype(H), scalartype(corr), scalartype(hyb)), lattice)
-	increase_bond!(z, alg.trunc.D)
-	# right-canonical gauge with the zero-padded (zero-weight) directions kept,
-	# so that the TDVP sweeps can grow the bond dimension up to D
-	canonicalize!(z, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
-
-	_tdvpif_flow_adt!(z, H, alg)
-
-	# final canonical form with the truncation scheme applied
-	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
-	alg.callback(Float64[])
-	return z
+	T = promote_type(scalartype(corr), scalartype(hyb), Float64)
+	z = vacuumstate(T, lattice)
+	return hybriddynamics!(z, lattice, corr, hyb, alg)
 end
 
 """
 	hybriddynamics!(gmps::ADT, lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, hyb::AdditiveHyb, alg::TDVPIF)
 
-In-place version of the `TDVPIF` algorithm on ADT lattices: the influence functional constructed by `hybriddynamics` is multiplied into `gmps` (compressed with `SVDCompression`).
+In-place version of the `TDVPIF` algorithm on ADT lattices: the influence operator H drives the TDVP flow directly on `gmps`, i.e. the flow evolves `z(τ=1) = e^H·gmps` from `z(0) = gmps` in place. This allows merging the influence functional into an arbitrary initial MPO — e.g. the pure impurity dynamics (with Lindblad dissipation) obtained from `sysdynamics` — in a single flow instead of constructing the IF separately and multiplying it in afterwards.
 
 # Returns
 The modified `gmps`.
 """
 function hybriddynamics!(gmps::ADT, lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, hyb::AdditiveHyb, alg::TDVPIF)
-	mps = hybriddynamics(lattice, corr, hyb, alg)
-	return mult!(gmps, mps, SVDCompression(alg.trunc))
+	# influence operator H in MPO (fused-leg MPS) form
+	H = influenceoperator(lattice, corr, hyb, algexpan=alg.algexpan)
+	return _tdvpif_hybriddynamics_adt!(gmps, H, alg)
 end
 
 """
@@ -222,39 +233,41 @@ The influence functional, represented as an `ADT`.
 See also [`TDVPIF`](@ref).
 """
 function hybriddynamics(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, hyb::AdditiveHyb, alg::TDVPIF)
-	H = _tdvpif_hamiltonian(lattice, corr, hyb, alg)
-	# identity influence functional (β = 0), lifted to the flow bond dimension
-	z = vacuumstate(promote_type(scalartype(H), scalartype(corr), scalartype(hyb)), lattice)
-	increase_bond!(z, alg.trunc.D)
-	# right-canonical gauge with the zero-padded (zero-weight) directions kept,
-	# so that the TDVP sweeps can grow the bond dimension up to D
-	canonicalize!(z, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
-
-	_tdvpif_flow_adt!(z, H, alg)
-
-	# final canonical form with the truncation scheme applied
-	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
-	alg.callback(Float64[])
-	return z
+	T = promote_type(scalartype(corr), scalartype(hyb), Float64)
+	z = vacuumstate(T, lattice)
+	return hybriddynamics!(z, lattice, corr, hyb, alg)
 end
 
 """
 	hybriddynamics!(gmps::ADT, lattice::RealADTLattice1Order, corr::RealCorrelationFunction, hyb::AdditiveHyb, alg::TDVPIF)
 
-In-place version of the `TDVPIF` algorithm on real-time ADT lattices: the influence functional constructed by `hybriddynamics` is multiplied into `gmps` (compressed with `SVDCompression`).
+In-place version of the `TDVPIF` algorithm on real-time ADT lattices: the influence operator H (the sum of the 4 branch operators, see [`hybriddynamics`](@ref)) drives the TDVP flow directly on `gmps`, i.e. the flow evolves `z(τ=1) = e^H·gmps` from `z(0) = gmps` in place, merging the influence functional into an arbitrary initial MPO in a single flow.
 
 # Returns
 The modified `gmps`.
 """
 function hybriddynamics!(gmps::ADT, lattice::RealADTLattice1Order, corr::RealCorrelationFunction, hyb::AdditiveHyb, alg::TDVPIF)
-	mps = hybriddynamics(lattice, corr, hyb, alg)
-	return mult!(gmps, mps, SVDCompression(alg.trunc))
+	H = _tdvpif_hamiltonian(lattice, corr, hyb, alg)
+	return _tdvpif_hybriddynamics_adt!(gmps, H, alg)
 end
 
 
 # ======================================================================
 # PT engine
 # ======================================================================
+
+# same as `_tdvpif_hybriddynamics_adt!`, for process tensors: run the TDVP
+# flow z(τ=1) = e^H·z(0) directly on the input process tensor z (the identity
+# influence functional or any impurity-dynamics MPO, e.g. the output of
+# `sysdynamics` with Lindblad dissipation).
+function _tdvpif_hybriddynamics_pt!(z::ProcessTensor, H::ProcessTensor, alg::TDVPIF)
+	increase_bond!(z, alg.trunc.D)
+	canonicalize!(z, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
+	_tdvpif_flow_pt!(z, H, alg)
+	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
+	alg.callback(Float64[])
+	return z
+end
 
 # effective map on the center tensor: the tangent-space projection of the
 # operator product H·z; cleft/cright::(bra, H, ket)
@@ -353,34 +366,23 @@ The influence functional, represented as a `ProcessTensor`.
 See also [`TDVPIF`](@ref).
 """
 function hybriddynamics(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, hyb::GeneralHybStyle, alg::TDVPIF)
-	# influence operator H in MPO form
-	H = influenceoperator(lattice, corr, hyb, algexpan=alg.algexpan)
-	# identity influence functional (β = 0), lifted to the flow bond dimension
-	z = vacuumstate(promote_type(scalartype(H), scalartype(corr), scalartype(hyb)), lattice)
-	increase_bond!(z, alg.trunc.D)
-	# right-canonical gauge with the zero-padded (zero-weight) directions kept,
-	# so that the TDVP sweeps can grow the bond dimension up to D
-	canonicalize!(z, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
-
-	_tdvpif_flow_pt!(z, H, alg)
-
-	# final canonical form with the truncation scheme applied
-	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
-	alg.callback(Float64[])
-	return z
+	T = promote_type(scalartype(corr), scalartype(hyb), Float64)
+	z = vacuumstate(T, lattice)
+	return hybriddynamics!(z, lattice, corr, hyb, alg)
 end
 
 """
 	hybriddynamics!(gmps::ProcessTensor, lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, hyb::GeneralHybStyle, alg::TDVPIF)
 
-In-place version of the `TDVPIF` algorithm on PT lattices: the influence functional constructed by `hybriddynamics` is multiplied into `gmps` (compressed with `SVDCompression`).
+In-place version of the `TDVPIF` algorithm on PT lattices: the influence operator H drives the TDVP flow directly on `gmps`, i.e. the flow evolves `z(τ=1) = e^H·gmps` from `z(0) = gmps` in place. This allows merging the influence functional into an arbitrary initial MPO — e.g. the pure impurity dynamics (with Lindblad dissipation) obtained from `sysdynamics` — in a single flow instead of constructing the IF separately and multiplying it in afterwards.
 
 # Returns
 The modified `gmps`.
 """
 function hybriddynamics!(gmps::ProcessTensor, lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, hyb::GeneralHybStyle, alg::TDVPIF)
-	mps = hybriddynamics(lattice, corr, hyb, alg)
-	return mult!(gmps, mps, SVDCompression(alg.trunc))
+	# influence operator H in MPO form
+	H = influenceoperator(lattice, corr, hyb, algexpan=alg.algexpan)
+	return _tdvpif_hybriddynamics_pt!(gmps, H, alg)
 end
 
 """
@@ -394,31 +396,20 @@ The influence functional, represented as a `ProcessTensor`.
 See also [`TDVPIF`](@ref).
 """
 function hybriddynamics(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::GeneralHybStyle, alg::TDVPIF)
-	H = _tdvpif_hamiltonian(lattice, corr, hyb, alg)
-	# identity influence functional (β = 0), lifted to the flow bond dimension
-	z = vacuumstate(promote_type(scalartype(H), scalartype(corr), scalartype(hyb)), lattice)
-	increase_bond!(z, alg.trunc.D)
-	# right-canonical gauge with the zero-padded (zero-weight) directions kept,
-	# so that the TDVP sweeps can grow the bond dimension up to D
-	canonicalize!(z, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
-
-	_tdvpif_flow_pt!(z, H, alg)
-
-	# final canonical form with the truncation scheme applied
-	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
-	alg.callback(Float64[])
-	return z
+	T = promote_type(scalartype(corr), scalartype(hyb), Float64)
+	z = vacuumstate(T, lattice)
+	return hybriddynamics!(z, lattice, corr, hyb, alg)
 end
 
 """
 	hybriddynamics!(gmps::ProcessTensor, lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::GeneralHybStyle, alg::TDVPIF)
 
-In-place version of the `TDVPIF` algorithm on real-time PT lattices: the influence functional constructed by `hybriddynamics` is multiplied into `gmps` (compressed with `SVDCompression`).
+In-place version of the `TDVPIF` algorithm on real-time PT lattices: the influence operator H (the sum of the 4 branch operators, see [`hybriddynamics`](@ref)) drives the TDVP flow directly on `gmps`, i.e. the flow evolves `z(τ=1) = e^H·gmps` from `z(0) = gmps` in place, merging the influence functional into an arbitrary initial MPO in a single flow.
 
 # Returns
 The modified `gmps`.
 """
 function hybriddynamics!(gmps::ProcessTensor, lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::GeneralHybStyle, alg::TDVPIF)
-	mps = hybriddynamics(lattice, corr, hyb, alg)
-	return mult!(gmps, mps, SVDCompression(alg.trunc))
+	H = _tdvpif_hamiltonian(lattice, corr, hyb, alg)
+	return _tdvpif_hybriddynamics_pt!(gmps, H, alg)
 end

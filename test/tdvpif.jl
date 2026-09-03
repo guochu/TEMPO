@@ -31,6 +31,15 @@ println("------------------------------------")
 
 	mps2 = hybriddynamics!(vacuumstate(Float64, lattice), lattice, corr, hyb, TDVPIF(trunc=trunc, δ=0.05))
 	@test distance(mps1, mps2) / norm(mps1) < rtol
+
+	# in-place flow on a non-trivial initial MPO: the influence operator is
+	# merged into the pure impurity dynamics (from sysdynamics) in one flow,
+	# equivalent to multiplying the independently built IF into it
+	model = ImpurityHamiltonian(_rand_ham(Float64, d))
+	mps4 = hybriddynamics!(sysdynamics(lattice, model, trunc=trunc), lattice, corr, hyb, TDVPIF(trunc=trunc, δ=0.05))
+	g0 = sysdynamics(lattice, model, trunc=trunc)
+	mult!(g0, hybriddynamics(lattice, corr, hyb, TDVPIF(trunc=trunc, δ=0.05)), SVDCompression(trunc))
+	@test distance(mps4, g0) / norm(g0) < rtol
 end
 
 
@@ -62,6 +71,13 @@ end
 
 		mps2 = hybriddynamics!(vacuumstate(promote_type(scalartype(lattice), scalartype(corr), T), lattice), lattice, corr, hyb, TDVPIF(trunc=trunc, δ=0.05))
 		@test distance(mps1, mps2) / norm(mps1) < rtol
+
+		# in-place flow on a non-trivial initial MPO (pure impurity dynamics)
+		model = ImpurityHamiltonian(_rand_ham(T, d))
+		mps4 = hybriddynamics!(sysdynamics(lattice, model, trunc=trunc), lattice, corr, hyb, TDVPIF(trunc=trunc, δ=0.05))
+		g0 = sysdynamics(lattice, model, trunc=trunc)
+		mult!(g0, hybriddynamics(lattice, corr, hyb, TDVPIF(trunc=trunc, δ=0.05)), SVDCompression(trunc))
+		@test distance(mps4, g0) / norm(g0) < rtol
 	end
 end
 
@@ -96,6 +112,13 @@ end
 
 	mps2 = hybriddynamics!(vacuumstate(ComplexF64, lattice), lattice, corr, hyb, TDVPIF(trunc=trunc, δ=0.05))
 	@test distance(mps1, mps2) / norm(mps1) < rtol
+
+	# in-place flow on a non-trivial initial MPO (pure impurity dynamics)
+	model = ImpurityHamiltonian(_rand_ham(Float64, d))
+	mps4 = hybriddynamics!(sysdynamics(lattice, model, trunc=trunc), lattice, corr, hyb, TDVPIF(trunc=trunc, δ=0.05))
+	g0 = sysdynamics(lattice, model, trunc=trunc)
+	mult!(g0, hybriddynamics(lattice, corr, hyb, TDVPIF(trunc=trunc, δ=0.05)), SVDCompression(trunc))
+	@test distance(mps4, g0) / norm(g0) < rtol
 end
 
 
@@ -127,4 +150,11 @@ end
 
 	mps2 = hybriddynamics!(vacuumstate(ComplexF64, lattice), lattice, corr, hyb, TDVPIF(trunc=trunc, δ=0.05))
 	@test distance(mps1, mps2) / norm(mps1) < rtol
+
+	# in-place flow on a non-trivial initial MPO (pure impurity dynamics)
+	model = ImpurityHamiltonian(_rand_ham(ComplexF64, d))
+	mps4 = hybriddynamics!(sysdynamics(lattice, model, trunc=trunc), lattice, corr, hyb, TDVPIF(trunc=trunc, δ=0.05))
+	g0 = sysdynamics(lattice, model, trunc=trunc)
+	mult!(g0, hybriddynamics(lattice, corr, hyb, TDVPIF(trunc=trunc, δ=0.05)), SVDCompression(trunc))
+	@test distance(mps4, g0) / norm(g0) < rtol
 end
