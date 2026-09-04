@@ -1,6 +1,6 @@
 # TEMPO.jl
 
-**TEMPO.jl** is a Julia implementation of the [time-evolving matrix product operator (TEMPO)](https://link.aps.org/doi/10.1103/PhysRevLett.118.077601) method for the accurate simulation of **open quantum impurity problems** (a quantum system linearly coupled to a continuous bosonic bath characterized by a spectral density). The algorithmic theory is based on:
+**TEMPO.jl** is a Julia implementation of the [time-evolving matrix product operator (TEMPO)](https://www.nature.com/articles/s41467-018-05617-3) method for the accurate simulation of **open quantum impurity problems** (a quantum system linearly coupled to a continuous bosonic bath characterized by a spectral density). The algorithmic theory is based on:
 
 > C. Guo, W. Wu, X. Xu, T. Jiang, P.-X. Chen, and R. Chen,
 > *Time-evolving matrix product operators for off-diagonal system-bath coupling*,
@@ -122,7 +122,7 @@ Covers all core paths (lattices, influence functional construction, time-depende
 
 `docs/tutorials/` contains reproduction notebooks for several papers (with model descriptions, parameter documentation, and MPS-IF caches):
 
-- `strathearn2018` — original TEMPO (PRL 120, 060601 (2018))
+- `strathearn2018` — original TEMPO (Nat. Commun. 9, 3322 (2018))
 - `otterpohl2025` — PT representation for off-diagonal coupling
 - `guo2026` — this paper (Phys. Rev. B 114, 125413 (2026))
 - `spinboson` — Rabi-type / JC-type spin-boson models
@@ -144,6 +144,7 @@ For **fermionic** impurity problems, check out our sister package [GTEMPO](https
 - [ ] Partial integration technique for large impurities (Phys. Rev. B 112, 155115 (2025))
 - [ ] Support for the continuous MPS technique (PRB 110, 045104 (2024))
 - [ ] Time-dependent system-reservoir coupling
+- [ ] Support for Bose–Einstein condensate (BEC) baths
 - [ ] Higher-order QuAPI
 
 ## Citation
