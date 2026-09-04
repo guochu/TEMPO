@@ -20,12 +20,11 @@ function mult!(x::ProcessTensor, y::ProcessTensor; trunc::TruncationScheme=Defau
     L = length(x)
     z = Vector{Array{T, 3}}(undef, L)
     tmp = tie(_mult_mpo_sitetensor(x[1], y[1]), (2,1,1,1,1))
-    workspace = scalartype(tmp)[]
-    q, r = tqr!(tmp, (1, 2, 5), (3,4), workspace)
+    q, r = leftorth!(tmp, (1, 2, 5), (3,4))
     x[1] = permute(q, (1,2,4,3))
     for i in 2:L-1
         @tensor tmp[1,4,5,7,8] := r[1,2,3] * x[i][2,4,5,6] * y[i][3,6,7,8]
-        q, r = tqr!(tmp, (1, 2, 5), (3,4), workspace)
+        q, r = leftorth!(tmp, (1, 2, 5), (3,4))
         x[i] = permute(q, (1,2,4,3))
         _renormalize!(x, r, false)
     end

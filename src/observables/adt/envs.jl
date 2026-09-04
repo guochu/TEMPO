@@ -44,13 +44,13 @@ end
 
 """
 	environments(lattice, A, B...)
-	environments(lattice::RealPTLattice, A::ProcessTensor, B::ProcessTensor...; ρ₀=_eye(phydim(lattice)))
+	environments(lattice::RealPTLattice, A::ProcessTensor, B::ProcessTensor...; ρ₀=isometry(phydim(lattice)))
 
 Compute the left and right (boundary) environments required for expectation values, returning an expectation value cache.
 
 ADT usage: `environments(lattice::AbstractADTLattice, A::ADT, B::ADT...)`, where `A` is the state being observed (if A and B coincide, this gives the partition function), returning an `ADTExpectationCache`.
 
-PT usage: `environments(lattice::ImagPTLattice/MixedPTLattice, A::ProcessTensor, B::ProcessTensor...)` or `environments(lattice::RealPTLattice, A, B...; ρ₀=...)`. For real-time PT lattices, the keyword argument `ρ₀::AbstractMatrix` specifies the initial density matrix (default `_eye(phydim(lattice))`), used as the right boundary condition.
+PT usage: `environments(lattice::ImagPTLattice/MixedPTLattice, A::ProcessTensor, B::ProcessTensor...)` or `environments(lattice::RealPTLattice, A, B...; ρ₀=...)`. For real-time PT lattices, the keyword argument `ρ₀::AbstractMatrix` specifies the initial density matrix (default `isometry(phydim(lattice))`), used as the right boundary condition.
 
 # Arguments
 - `lattice`: contour lattice.

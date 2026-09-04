@@ -120,8 +120,8 @@ function apply!(x::GenericFockTerm{T}, mps::ProcessTensor) where {T}
 		posj = findfirst(y->y==j, pos)
 		if isnothing(posj)
 			d = size(mps[j], 2) 
-			Ia = _eye(T, leftspace)
-			Id = _eye(T, d)
+			Ia = isometry(T, leftspace)
+			Id = isometry(T, d)
 			@tensor mj[1,3,2,4] := Ia[1,2] * Id[3,4] 
 		else
 			mj = data[posj]
@@ -200,14 +200,13 @@ function decompose_to_mpo(m::AbstractArray{T, N}) where {T<:Number, N}
 		data[1] = _to4(data[1])
 		return data
 	end
-	workspace = T[]
-	q, r = tqr!(copy(m), (1,2), ntuple(i->i+2, N-2), workspace)
+	q, r = leftorth!(copy(m), (1,2), ntuple(i->i+2, N-2))
 	m = r
 	d1, d2, d3 = size(q)
 	data[1] = permute(reshape(q, 1, d1, d2, d3), (1,2,4,3))
 	L = N
 	for i in 2:L2-1
-		q, r = tqr!(m, (1,2,3), ntuple(i->i+3, L-4), workspace)
+		q, r = leftorth!(m, (1,2,3), ntuple(i->i+3, L-4))
 		data[i] = permute(q, (1,2,4,3))
 		L -= 2
 		m = r

@@ -60,13 +60,12 @@ function leftsweep!(m::MPOMPOIterativeMultCache, alg::DMRGMult1)
     Cstorage = m.hstorage
     L = length(mpo)
     kvals = Float64[]
-    workspace = scalartype(mpoB)[]
     for site in 1:L-1
         (alg.verbosity > 3) && println("Sweeping from left to right at bond: $site")
         mpsj = reduceH_single_site(mpoA[site], mpo[site], Cstorage[site], Cstorage[site+1])
         push!(kvals, norm(mpsj))
         (alg.verbosity > 1) && println("residual is $(kvals[end])...")
-		q, r = tqr!(mpsj, (1,2,4), (3,), workspace)
+		q, r = leftorth!(mpsj, (1,2,4), (3,))
         mpoB[site] = permute(q, (1,2,4,3))
         Cstorage[site+1] = updateleft(Cstorage[site], mpoB[site], mpo[site], mpoA[site])
     end
@@ -81,14 +80,13 @@ function rightsweep!(m::MPOMPOIterativeMultCache, alg::DMRGMult1)
     L = length(mpo)
     kvals = Float64[]
     r = zeros(scalartype(mpoB), 0, 0)
-    workspace = scalartype(mpoB)[]
     for site in L:-1:2
         (alg.verbosity > 3) && println("Sweeping from right to left at bond: $site.")
         mpsj = reduceH_single_site(mpoA[site], mpo[site], Cstorage[site], Cstorage[site+1])
         push!(kvals, norm(mpsj))
         (alg.verbosity > 1) && println("residual is $(kvals[end])...")
 
-        r, mpoB[site] = tlq!(mpsj, (1,), (2,3,4), workspace)
+        r, mpoB[site] = rightorth!(mpsj, (1,), (2,3,4))
 
         Cstorage[site] = updateright(Cstorage[site+1], mpoB[site], mpo[site], mpoA[site])
     end
@@ -105,14 +103,13 @@ function rightsweep_final!(m::MPOMPOIterativeMultCache, alg::DMRGMult1)
     L = length(mpo)
     kvals = Float64[]
     r = zeros(scalartype(mpoB), 0, 0)
-    workspace = scalartype(mpoB)[]
     for site in L:-1:2
         (alg.verbosity > 3) && println("Sweeping from right to left at bond: $site.")
         mpsj = reduceH_single_site(mpoA[site], mpo[site], Cstorage[site], Cstorage[site+1])
         push!(kvals, norm(mpsj))
         (alg.verbosity > 1) && println("residual is $(kvals[end])...")
 
-        r, s, mpoB[site] = tsvd!(mpsj, (1,), (2,3,4), workspace)
+        r, s, mpoB[site] = tsvd!(mpsj, (1,), (2,3,4))
 
         if site == 2
             r = r * Diagonal(s)

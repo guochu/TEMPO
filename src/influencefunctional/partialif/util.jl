@@ -190,7 +190,7 @@ function _fit_to_full(ds::Vector{Int}, pos, mpsdata)
 			d = ds[j]
 			tmp = zeros(leftspace,d,leftspace)
 			for i in 1:d
-				tmp[:,i,:] = _eye(leftspace)
+				tmp[:,i,:] = isometry(leftspace)
 			end
 			r[j] = tmp
 		else

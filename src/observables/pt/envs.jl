@@ -81,11 +81,11 @@ end
 environments(lattice::ImagPTLattice, A::ProcessTensor, B::Vararg{ProcessTensor}) = PTExpectationCache(lattice, (A, B...))
 environments(lattice::MixedPTLattice, A::ProcessTensor, B::Vararg{ProcessTensor}) = PTExpectationCache(lattice, (A, B...))
 """
-	environments(lattice::RealPTLattice, A::ProcessTensor, B::ProcessTensor...; ρ₀::AbstractMatrix=_eye(phydim(lattice)))
+	environments(lattice::RealPTLattice, A::ProcessTensor, B::ProcessTensor...; ρ₀::AbstractMatrix=isometry(phydim(lattice)))
 
 `environments` method on real-time PT lattices: the keyword argument `ρ₀` (default identity matrix) specifies the initial density matrix used as the right boundary condition.
 """
-environments(lattice::RealPTLattice, A::ProcessTensor, B::Vararg{ProcessTensor}; ρ₀::AbstractMatrix=_eye(phydim(lattice))) = PTExpectationCache(lattice, (A, B...), ρ₀)
+environments(lattice::RealPTLattice, A::ProcessTensor, B::Vararg{ProcessTensor}; ρ₀::AbstractMatrix=isometry(phydim(lattice))) = PTExpectationCache(lattice, (A, B...), ρ₀)
 
 """
 	expectationvalue(m::ContourOperator, cache::PTExpectationCache)

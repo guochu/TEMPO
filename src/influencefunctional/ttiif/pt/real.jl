@@ -133,7 +133,7 @@ function fused_op(op1::AbstractMatrix, f1::Symbol)
 	I2 = one(op1)
 	d = size(I2, 1)
 	d2 = length(I2)
-	f = reshape(_eye(scalartype(I2), d2, d2), d2, d, d)
+	f = reshape(isometry(scalartype(I2), d2, d2), d2, d, d)
 	if f1 == :+
 		x = op1
 		y = I2
@@ -151,7 +151,7 @@ function _fit_to_lattice_diag(lattice::RealPTLattice1Order, mpotensors, f1::Symb
 	data2 = similar(mpotensors, L)
 	d = phydim(lattice)
 	T = scalartype(lattice)
-	I2 = _eye(T, d)
+	I2 = isometry(T, d)
 
 	leftspace = 1
 	j = lattice.N
@@ -160,10 +160,10 @@ function _fit_to_lattice_diag(lattice::RealPTLattice1Order, mpotensors, f1::Symb
 	if f1 == :+
 		data2[pos1] = mpotensors[1]
 		leftspace = space_r(data2[pos1])
-		vd2 = _eye(T, leftspace)
+		vd2 = isometry(T, leftspace)
 		data2[pos2] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
 	else
-		vd2 = _eye(T, leftspace)
+		vd2 = isometry(T, leftspace)
 		data2[pos1] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
 		data2[pos2] = mpotensors[1]
 	end
@@ -174,10 +174,10 @@ function _fit_to_lattice_diag(lattice::RealPTLattice1Order, mpotensors, f1::Symb
 		if f1 == :+
 			data2[pos1] = mpotensors[2]
 			leftspace = space_r(data2[pos1])
-			vd2 = _eye(T, leftspace)
+			vd2 = isometry(T, leftspace)
 			data2[pos2] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
 		else
-			vd2 = _eye(T, leftspace)
+			vd2 = isometry(T, leftspace)
 			data2[pos1] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
 			data2[pos2] = mpotensors[2]
 		end
@@ -189,10 +189,10 @@ function _fit_to_lattice_diag(lattice::RealPTLattice1Order, mpotensors, f1::Symb
 	if f1 == :+
 		data2[pos1] = mpotensors[3]
 		leftspace = space_r(data2[pos1])
-		vd2 = _eye(T, leftspace)
+		vd2 = isometry(T, leftspace)
 		data2[pos2] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
 	else
-		vd2 = _eye(T, leftspace)
+		vd2 = isometry(T, leftspace)
 		data2[pos1] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
 		data2[pos2] = mpotensors[3]
 	end
@@ -210,7 +210,7 @@ function _fit_to_lattice_offdiag(lattice::RealPTLattice1Order, mpotensors, f1::S
 	data2 = similar(mpotensors, L)
 	d = phydim(lattice)
 	T = scalartype(lattice)
-	I2 = _eye(T, d)
+	I2 = isometry(T, d)
 
 	u_left, v_left = split_mpotensor(mpotensors[1], trunc)
 	u_middle, v_middle = split_mpotensor(mpotensors[2], trunc)
@@ -230,17 +230,17 @@ function _fit_to_lattice_offdiag(lattice::RealPTLattice1Order, mpotensors, f1::S
 
 	for i in posa:posb
 		if i < pos1
-			vd2 = _eye(T, leftspace)
+			vd2 = isometry(T, leftspace)
 			data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
 		elseif i == pos1
 			data2[i] = u_left
 		elseif i < pos2
-			vd2 = _eye(T, leftspace)
+			vd2 = isometry(T, leftspace)
 			data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
 		elseif i == pos2
 			data2[i] = v_left
 		else
-			vd2 = _eye(T, leftspace)
+			vd2 = isometry(T, leftspace)
 			data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]			
 		end
 		leftspace = space_r(data2[i])
@@ -253,17 +253,17 @@ function _fit_to_lattice_offdiag(lattice::RealPTLattice1Order, mpotensors, f1::S
 		end
 		for i in posa:posb
 			if i < pos1
-				vd2 = _eye(T, leftspace)
+				vd2 = isometry(T, leftspace)
 				data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
 			elseif i == pos1
 				data2[i] = u_middle
 			elseif i < pos2
-				vd2 = _eye(T, leftspace)
+				vd2 = isometry(T, leftspace)
 				data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
 			elseif i == pos2
 				data2[i] = v_middle
 			else
-				vd2 = _eye(T, leftspace)
+				vd2 = isometry(T, leftspace)
 				data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]			
 			end
 			leftspace = space_r(data2[i])
@@ -277,17 +277,17 @@ function _fit_to_lattice_offdiag(lattice::RealPTLattice1Order, mpotensors, f1::S
 	end
 	for i in posa:posb
 		if i < pos1
-			vd2 = _eye(T, leftspace)
+			vd2 = isometry(T, leftspace)
 			data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
 		elseif i == pos1
 			data2[i] = u_right
 		elseif i < pos2
-			vd2 = _eye(T, leftspace)
+			vd2 = isometry(T, leftspace)
 			data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
 		elseif i == pos2
 			data2[i] = v_right
 		else
-			vd2 = _eye(T, leftspace)
+			vd2 = isometry(T, leftspace)
 			data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]			
 		end
 		leftspace = space_r(data2[i])
@@ -308,7 +308,7 @@ function split_mpotensor(mpoj::DenseMPOTensor, trunc)
 	# println("here---", size(mpoj))
 	d = round(Int, sqrt(d2))
 	@assert d*d == d2
-	f = reshape(_eye(scalartype(mpoj), d2, d2), d2, d, d)
+	f = reshape(isometry(scalartype(mpoj), d2, d2), d2, d, d)
 	@tensor mpoj6[1,5,7, 6,3,8] := mpoj[1,2,3,4] * f[2,5,6] * f[4,7,8]
 	u, s, v = tsvd!(mpoj6, (1,2,3), (4,5,6), trunc=trunc)
 	ss = Matrix(Diagonal(sqrt.(s)))

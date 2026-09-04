@@ -215,7 +215,7 @@ tensors2 = timeevompo(tensors, dt, WII())   # 时间演化（WI / WII / ComplexS
 ```
 src/
 ├── TEMPO.jl                    # 模块定义与导出符号
-├── auxiliary/                  # 截断、DMRG 乘法、张量操作、正交化等基础工具
+├── tensorops/                  # 截断、张量操作、正交化等基础工具（algorithms.jl 为 DMRG 乘法/MPS 算法）
 ├── defaults.jl                 # 默认超参数
 ├── mpohamiltonian/             # MPO 哈密顿量（SchurMPO、长程项、时间演化步进器）
 ├── contourindices.jl           # ContourIndex、branch

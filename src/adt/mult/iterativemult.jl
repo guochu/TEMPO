@@ -167,7 +167,7 @@ function leftsweep!(m::ADTIterativeMultCache, alg::DMRGMult1)
         
         push!(kvals, norm(mpsj))
         (alg.verbosity >= 3) && println("residual is $(kvals[end])...")
-        z[site], r = tqr!(mpsj, (1,2), (3,))
+        z[site], r = leftorth!(mpsj, (1,2), (3,))
         
         # hstorage[site+1] = updatemultleft(hstorage[site], z[site], x[site], y[site])
         @tensor tmp[5,3;4] := left_xy[1,2,3,4] * conj(z[site][1,2,5])
@@ -192,7 +192,7 @@ function rightsweep!(m::ADTIterativeMultCache, alg::DMRGMult1)
         push!(kvals, norm(mpsj))
         (alg.verbosity >= 3) && println("residual is $(kvals[end])...")
 
-        r, zj = tlq!(mpsj, (1,), (2,3))
+        r, zj = rightorth!(mpsj, (1,), (2,3))
         z[site] = permute(zj, (1,2), (3,))
         
         # hstorage[site] = updatemultright(hstorage[site+1], z[site], x[site], y[site])

@@ -7,7 +7,7 @@
 工具包在 `ImpurityModelBase`（系统模型定义）与 `QuAPI`（基础张量网络类型 `Dense1DTN`、`DenseMPSTensor`、`ContourIndex`、`branch`/`index` 等）之上实现 TEMPO 算法。加载顺序见 `src/TEMPO.jl`：
 
 ```
-auxiliary ──→ defaults ──→ mpohamiltonian ──→ contourindices
+tensorops ──→ defaults ──→ mpohamiltonian ──→ contourindices
       └─→ adt ──→ pt ──→ conversions ──→ adtterms / fockterms
       └─→ adtlattices ──→ ptlattices ──→ contouroperators
       └─→ correlationfunction ──→ influencefunctional ──→ tdinfluencefunctional
@@ -18,7 +18,7 @@ auxiliary ──→ defaults ──→ mpohamiltonian ──→ contourindices
 
 | 模块 | 职责 |
 |---|---|
-| `auxiliary/` | 截断方案、指数展开、MPS 算法（`DMRGMult1`、`SVDCompression`）、`transfermatrix`、张量工具 |
+| `tensorops/` + `algorithms.jl` | 截断方案、指数展开、MPS 算法（`DMRGMult1`、`SVDCompression`）、`transfermatrix`、张量工具 |
 | `defaults.jl` | 全部默认超参数（`Defaults`） |
 | `mpohamiltonian/` | `SchurMPOTensor`、`MPOHamiltonian`、长程衰减项、`timeevompo`（WI/WII/ComplexStepper） |
 | `adt/` | ADT（MPS）类型、正交化、SVD 压缩、`mult!`、积分/交换门 |

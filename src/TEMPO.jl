@@ -4,7 +4,7 @@ module TEMPO
 export TruncationScheme, NoTruncation, TruncationDimCutoff, truncdimcutoff, truncdim, trunccutoff, renyi_entropy
 export TruncateDim, TruncateCutoff
 export SVDCompression
-export OrthogonalFactorizationAlgorithm, leftorth!, rightorth!, permute, tsvd!
+export OrthogonalFactorizationAlgorithm, leftorth!, rightorth!, leftorth, rightorth, tsvd!, tsvd, permute, isometry
 # ContourIndex
 export ContourIndex, branch, scalartype
 # MPOHamiltonian
@@ -64,8 +64,11 @@ using TensorOperations,TupleTools
 const TO = TensorOperations
 
 
-# auxiliary
-include("auxiliary/auxiliary.jl")
+# tensorops
+include("tensorops/tensorops.jl")
+
+# mps algorithms
+include("algorithms.jl")
 
 # default constants
 include("defaults.jl")

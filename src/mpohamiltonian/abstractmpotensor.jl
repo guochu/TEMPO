@@ -17,7 +17,7 @@ function Base.getindex(m::AbstractSparseMPOTensor, j::Int, k::Int)
 		if r == zero(T)
 			return zeros(T, d, d)
 		else
-			return r * _eye(T, d)
+			return r * isometry(T, d)
 		end
 	else
 		return r
@@ -40,7 +40,7 @@ Check if given MPOTensor or MPSBondTensor is identity
 isid(x::Number; kwargs...) = true, x
 
 function isid(x::AbstractMatrix; kwargs...)
-	id = _eye(scalartype(x), size(x, 1))
+	id = isometry(scalartype(x), size(x, 1))
 	return _is_prop_util(x, id; kwargs...)
 end
 

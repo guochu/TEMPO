@@ -234,31 +234,31 @@ function iscanonical(psi::ADT; kwargs...)
 end
 
 
-function easy_swap!(x::ADT, bond::Int; trunc::TruncationScheme=DefaultTruncation)
-	x[bond], x.s[bond+1], x[bond+1] = _swap_gate(x.s[bond], x[bond], x.s[bond+1], x[bond+1], trunc=trunc)
-	# x[bond], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
-	return x
-end
+# function easy_swap!(x::ADT, bond::Int; trunc::TruncationScheme=DefaultTruncation)
+# 	x[bond], x.s[bond+1], x[bond+1] = _swap_gate(x.s[bond], x[bond], x.s[bond+1], x[bond+1], trunc=trunc)
+# 	# x[bond], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
+# 	return x
+# end
 
-function naive_swap!(x::ADT, bond::Int; trunc::TruncationScheme=DefaultTruncation)
-	x[bond], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
-	# x[bond], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
-	return x
-end
+# function naive_swap!(x::ADT, bond::Int; trunc::TruncationScheme=DefaultTruncation)
+# 	x[bond], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
+# 	# x[bond], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
+# 	return x
+# end
 
 
-function _swap_gate(m1, m2; trunc)
-	@tensor twositemps[1,4;2,5] := m1[1,2,3] * m2[3,4,5]
-	u, s, v, err = tsvd!(twositemps; trunc=trunc)
-	# return u, permute(s * v, (1,2), (3,))
-	return u * s, permute(v, (1,2), (3,))
-end
+# function _swap_gate(m1, m2; trunc)
+# 	@tensor twositemps[1,4;2,5] := m1[1,2,3] * m2[3,4,5]
+# 	u, s, v, err = tsvd!(twositemps; trunc=trunc)
+# 	# return u, permute(s * v, (1,2), (3,))
+# 	return u * s, permute(v, (1,2), (3,))
+# end
 
-function _swap_gate(svectorj1, m1, svectorj2, m2; trunc::TruncationScheme)
-	@tensor twositemps[1,4;2,5] := m1[1,2,3] * m2[3,4,5]
-	# println(space(svectorj1, 2), " ", space(m1, 1))
-	@tensor twositemps1[-1 -2; -3 -4] := svectorj1[-1, 1] * twositemps[1, -2, -3, -4]
-	u, s, v, err = tsvd!(twositemps1, trunc=trunc)
-	@tensor u[-1 -2; -3] = twositemps[-1,-2,1,2] * conj(v[-3,1,2])
-	return u, s, permute(v, (1,2), (3,))
-end
+# function _swap_gate(svectorj1, m1, svectorj2, m2; trunc::TruncationScheme)
+# 	@tensor twositemps[1,4;2,5] := m1[1,2,3] * m2[3,4,5]
+# 	# println(space(svectorj1, 2), " ", space(m1, 1))
+# 	@tensor twositemps1[-1 -2; -3 -4] := svectorj1[-1, 1] * twositemps[1, -2, -3, -4]
+# 	u, s, v, err = tsvd!(twositemps1, trunc=trunc)
+# 	@tensor u[-1 -2; -3] = twositemps[-1,-2,1,2] * conj(v[-3,1,2])
+# 	return u, s, permute(v, (1,2), (3,))
+# end

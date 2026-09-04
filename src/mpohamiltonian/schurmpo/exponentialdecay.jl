@@ -2,7 +2,7 @@
 
 # coeff * α^n, α must be in [0, 1]
 """
-    ExponentialDecayTerm(a, b; middle=_eye(size(a, 1)), α=1.0, coeff=1.0)
+    ExponentialDecayTerm(a, b; middle=isometry(size(a, 1)), α=1.0, coeff=1.0)
 
 An exponentially decaying long-range interaction term of the form `coeff * [â ⊗ (α m̂)^⊗n ⊗ b̂]`,
 where `a`, `m`, `b` are matrix operators, `α` is the decay factor (which must satisfy |α| ≤ 1), and `coeff` is the coefficient.
@@ -16,11 +16,11 @@ struct ExponentialDecayTerm{M1<:AbstractMatrix, M<:AbstractMatrix, M2, T <:Numbe
 end
 
 """
-    ExponentialDecayTerm(a, b; middle=_eye(size(a, 1)), α=1.0, coeff=1.0)
+    ExponentialDecayTerm(a, b; middle=isometry(size(a, 1)), α=1.0, coeff=1.0)
 
 Keyword constructor for `ExponentialDecayTerm`: `middle` defaults to the identity matrix.
 """
-function ExponentialDecayTerm(a::AbstractMatrix, b::AbstractMatrix; middle::AbstractMatrix=_eye(size(a, 1)), α::Number=1., coeff::Number=1.) 
+function ExponentialDecayTerm(a::AbstractMatrix, b::AbstractMatrix; middle::AbstractMatrix=isometry(size(a, 1)), α::Number=1., coeff::Number=1.) 
     T = promote_type(typeof(α), typeof(coeff))
     return ExponentialDecayTerm(a, middle, b, convert(T, α), convert(T, coeff))
 end

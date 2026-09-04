@@ -112,7 +112,7 @@ function timeevompo(m::SchurMPOTensor, dt::Number, alg::WI)
 	WB = get_B(m) .* δ₁
 	WC = get_C(m) .* δ₂
 	D = get_D(m)
-	WD = _eye(scalartype(D), size(D, 1)) + dt * D
+	WD = isometry(scalartype(D), size(D, 1)) + dt * D
 	return _SiteW_impl(WA, WB, WC, WD)
 end
 

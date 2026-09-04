@@ -34,12 +34,12 @@ r_RR(f, m::PTTransferMatrix{L, T, N}) where {L, T, N} = f(T, ntuple(i->space_r(m
 
 function l_LL(m::PTTransferMatrix{L, T, N}) where {L, T, N}
 	d = phydim(m.lattice)
-	a = _eye(T, d)
+	a = isometry(T, d)
 	return reshape(a, ntuple(x->1, N)..., d, d)
 end 
 function r_RR(m::PTTransferMatrix{L, T, N}) where {L, T, N}
 	d = phydim(m.lattice)
-	a = _eye(T, d)
+	a = isometry(T, d)
 	return reshape(a, ntuple(x->1, N)..., d, d)
 end
 # initial state

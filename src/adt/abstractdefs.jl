@@ -31,9 +31,9 @@ phydim(m::DenseMPOTensor) = size(m, 2)
 space_l(t::Dense1DTN) = size(t[1], 1)
 space_r(t::Dense1DTN) = size(t[end], 3)
 
-r_RR(psiA::Dense1DTN, psiB::Dense1DTN) = _eye(promote_type(scalartype(psiA), scalartype(psiB)), space_r(psiA), space_r(psiB))
+r_RR(psiA::Dense1DTN, psiB::Dense1DTN) = isometry(promote_type(scalartype(psiA), scalartype(psiB)), space_r(psiA), space_r(psiB))
 r_RR(psi::Dense1DTN) = ones(scalartype(psi), space_r(psi))
-l_LL(psiA::Dense1DTN, psiB::Dense1DTN) = _eye(promote_type(scalartype(psiA), scalartype(psiB)), space_l(psiA), space_l(psiB))
+l_LL(psiA::Dense1DTN, psiB::Dense1DTN) = isometry(promote_type(scalartype(psiA), scalartype(psiB)), space_l(psiA), space_l(psiB))
 l_LL(psi::Dense1DTN) = ones(scalartype(psi), space_l(psi))
 
 

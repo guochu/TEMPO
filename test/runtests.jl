@@ -4,7 +4,7 @@ using Test, LinearAlgebra, TensorOperations, ImpurityModelBase, QuAPI
 
 # push!(LOAD_PATH, "../src")
 using TEMPO
-using TEMPO: QR, SVD
+using TEMPO: QR, QRpos, LQ, LQpos, SVD, SDD, Polar
 
 
 include("util.jl")

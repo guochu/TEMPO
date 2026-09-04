@@ -14,7 +14,7 @@ Apply the boundary condition in place on an imaginary-time ADT lattice: connect 
 function boundarycondition!(x::ADT, lattice::ImagADTLattice1Order)
 	pos1, pos2 = index(lattice, 1), index(lattice, lattice.k)
 	d = lattice.d
-	return apply!(ADTTerm((pos1, pos2), _eye(d)), x)
+	return apply!(ADTTerm((pos1, pos2), isometry(d)), x)
 	# canonicalize!(x, alg=Orthogonalize(trunc=trunc))
 	# return x
 end
@@ -30,7 +30,7 @@ By default `ρ₀` is the maximally mixed state (a vector of ones).
 """
 function boundarycondition!(x::ADT, lattice::RealADTLattice1Order; ρ₀::VecOrMat=ones(lattice.d))
 	d = lattice.d
-	Is = _eye(d)
+	Is = isometry(d)
 	pos1, pos2 = index(lattice, lattice.k, branch=:+), index(lattice, lattice.k, branch=:-)
 	apply!(ADTTerm((pos1, pos2), Is), x)
 	# canonicalize!(x, alg=Orthogonalize(trunc=trunc))
@@ -96,7 +96,7 @@ Apply the boundary condition in place on a mixed ADT lattice: connect the `:-`/`
 """
 function boundarycondition!(x::ADT, lattice::MixedADTLattice1Order)
 	d = lattice.d
-	Is = _eye(d)
+	Is = isometry(d)
 
 	pos1, pos2 = index(lattice, lattice.kt, branch=:-), index(lattice, lattice.kt, branch=:+)
 	apply!(ADTTerm((pos1, pos2), Is), x)

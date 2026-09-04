@@ -124,7 +124,7 @@ function _tdvpif_leftsweep_adt!(z::ADT, H::ADT, hstorage, δτ::Float64, alg::TD
 		# forward half-step of the center tensor
 		AC, info = exponentiate(x -> _tdvpif_ac_prime_adt(x, H[site], hstorage[site], hstorage[site+1]), δτ/2, z[site], krylov)
 		(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at site $site"
-		AL, C = tqr!(AC, (1, 2), (3,))
+		AL, C = leftorth!(AC, (1, 2), (3,))
 		z[site] = AL
 		C = Matrix(C)
 		_renormalize!(z, C, false)
@@ -150,7 +150,7 @@ function _tdvpif_rightsweep_adt!(z::ADT, H::ADT, hstorage, δτ::Float64, alg::T
 	krylov = Arnoldi()
 	for site in length(z)-1:-1:1
 		(alg.verbosity > 3) && println("TDVPIF: right sweep at site $site")
-		C, AR = tlq!(z[site+1], (1,), (2, 3))
+		C, AR = rightorth!(z[site+1], (1,), (2, 3))
 		z[site+1] = AR
 		C = Matrix(C)
 		# right environment with the new AR on both the bra and ket sides
@@ -285,13 +285,12 @@ end
 function _tdvpif_leftsweep_pt!(z::ProcessTensor, H::ProcessTensor, hstorage, δτ::Float64, alg::TDVPIF)
 	L = length(z)
 	krylov = Arnoldi()
-	workspace = scalartype(z)[]
 	for site in 1:L-1
 		(alg.verbosity > 3) && println("TDVPIF: left sweep at site $site")
 		# forward half-step of the center tensor
 		AC, info = exponentiate(x -> _tdvpif_ac_prime_pt(x, H[site], hstorage[site], hstorage[site+1]), δτ/2, z[site], krylov)
 		(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at site $site"
-		AL, C = tqr!(AC, (1, 2, 4), (3,), workspace)
+		AL, C = leftorth!(AC, (1, 2, 4), (3,))
 		AL = permute(AL, (1, 2, 4, 3))
 		z[site] = AL
 		C = Matrix(C)
@@ -316,10 +315,9 @@ end
 
 function _tdvpif_rightsweep_pt!(z::ProcessTensor, H::ProcessTensor, hstorage, δτ::Float64, alg::TDVPIF)
 	krylov = Arnoldi()
-	workspace = scalartype(z)[]
 	for site in length(z)-1:-1:1
 		(alg.verbosity > 3) && println("TDVPIF: right sweep at site $site")
-		C, AR = tlq!(z[site+1], (1,), (2, 3, 4), workspace)
+		C, AR = rightorth!(z[site+1], (1,), (2, 3, 4))
 		z[site+1] = AR
 		C = Matrix(C)
 		# right environment with the new AR on both the bra and ket sides

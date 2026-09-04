@@ -64,7 +64,7 @@ end
 
 
 function ProcessTensor(::Type{T}, ds::AbstractVector{Int}) where {T <: Number}
-	data = [reshape(_eye(T, d), 1, d, 1, d) for d in ds]
+	data = [reshape(isometry(T, d), 1, d, 1, d) for d in ds]
 	return ProcessTensor(data, scaling=1)
 end
 ProcessTensor(ds::AbstractVector{Int}) = ProcessTensor(Float64, ds)

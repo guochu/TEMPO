@@ -15,7 +15,7 @@ using TEMPO, ImpurityModelBase, LinearAlgebra
 
 ```@autodocs; canonical = false
 Modules = [TEMPO]
-Pages = ["auxiliary/auxiliary.jl", "auxiliary/truncation.jl", "auxiliary/distance.jl",
+Pages = ["tensorops/tensorops.jl", "tensorops/truncation.jl", "tensorops/distance.jl",
          "conversions.jl", "defaults.jl"]
 ```
 
@@ -23,14 +23,14 @@ Pages = ["auxiliary/auxiliary.jl", "auxiliary/truncation.jl", "auxiliary/distanc
 
 ```@autodocs; canonical = false
 Modules = [TEMPO]
-Pages = ["auxiliary/matrixalgebra.jl", "auxiliary/tensorops.jl", "auxiliary/distance.jl"]
+Pages = ["tensorops/matrixalgebra.jl", "tensorops/tensorfactorizations.jl", "tensorops/distance.jl"]
 ```
 
 ## MPS/DMRG 乘法算法
 
 ```@autodocs; canonical = false
 Modules = [TEMPO]
-Pages = ["auxiliary/mpsalgs.jl"]
+Pages = ["algorithms.jl"]
 ```
 
 ## 轮廓索引

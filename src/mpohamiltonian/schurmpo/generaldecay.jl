@@ -1,8 +1,8 @@
 
 
 """
-    GenericDecayTerm(a, b, f; middle=_eye(size(a, 1)), coeff=1.0)
-    GenericDecayTerm(a, b; middle=_eye(size(a, 1)), f, coeff=1.0)
+    GenericDecayTerm(a, b, f; middle=isometry(size(a, 1)), coeff=1.0)
+    GenericDecayTerm(a, b; middle=isometry(size(a, 1)), f, coeff=1.0)
 
 A generic decaying long-range interaction term of the form `coeff * [â ⊗ f(n) * m̂^⊗n ⊗ b̂]`,
 where `f` is a function decaying with the distance `n` (or a pre-sampled vector).
@@ -16,19 +16,19 @@ struct GenericDecayTerm{M1<:AbstractMatrix, M<:AbstractMatrix, M2, F, T <: Numbe
 end
 
 """
-    GenericDecayTerm(a, b, f; middle=_eye(size(a, 1)), coeff=1.0)
+    GenericDecayTerm(a, b, f; middle=isometry(size(a, 1)), coeff=1.0)
 
 Convenience constructor for `GenericDecayTerm` in which `f` is passed as a positional argument.
 """
-GenericDecayTerm(a::AbstractMatrix, b::AbstractMatrix, f; middle::AbstractMatrix = _eye(size(a, 1)), coeff::Number=1.) = GenericDecayTerm(a, middle, b, f, coeff)
+GenericDecayTerm(a::AbstractMatrix, b::AbstractMatrix, f; middle::AbstractMatrix = isometry(size(a, 1)), coeff::Number=1.) = GenericDecayTerm(a, middle, b, f, coeff)
 
 """
-    GenericDecayTerm(a, b; middle=_eye(size(a, 1)), f, coeff=1.0)
+    GenericDecayTerm(a, b; middle=isometry(size(a, 1)), f, coeff=1.0)
 
 Keyword constructor for `GenericDecayTerm` in which `f` is passed as a keyword argument.
 """
 function GenericDecayTerm(a::AbstractMatrix, b::AbstractMatrix; 
-                            middle::AbstractMatrix = _eye(size(a, 1)), f, coeff::Number=1.) 
+                            middle::AbstractMatrix = isometry(size(a, 1)), f, coeff::Number=1.) 
     GenericDecayTerm(a, middle, b, f, coeff)
 end 
 TO.scalartype(::Type{GenericDecayTerm{M1, M, M2, F, T}}) where {M1, M, M2, F<:AbstractVector, T} = promote_type(scalartype(M1), scalartype(M), scalartype(M2), eltype(F), T)

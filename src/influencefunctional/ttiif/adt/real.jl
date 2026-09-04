@@ -115,10 +115,10 @@ function _fit_to_lattice_diag(lattice::RealADTLattice1Order, mpotensors, f1::Sym
 	if f1 == :+
 		data2[pos1] = mpotensors[1]
 		leftspace = space_r(data2[pos1])
-		vd2 = _eye(T, leftspace)
+		vd2 = isometry(T, leftspace)
 		data2[pos2] = @tensor tmp[1,3,2] := vd2[1,2] * I2[3]
 	else
-		vd2 = _eye(T, leftspace)
+		vd2 = isometry(T, leftspace)
 		data2[pos1] = @tensor tmp[1,3,2] := vd2[1,2] * I2[3]
 		data2[pos2] = mpotensors[1]
 	end
@@ -129,10 +129,10 @@ function _fit_to_lattice_diag(lattice::RealADTLattice1Order, mpotensors, f1::Sym
 		if f1 == :+
 			data2[pos1] = mpotensors[2]
 			leftspace = space_r(data2[pos1])
-			vd2 = _eye(T, leftspace)
+			vd2 = isometry(T, leftspace)
 			data2[pos2] = @tensor tmp[1,3,2] := vd2[1,2] * I2[3]
 		else
-			vd2 = _eye(T, leftspace)
+			vd2 = isometry(T, leftspace)
 			data2[pos1] = @tensor tmp[1,3,2] := vd2[1,2] * I2[3]
 			data2[pos2] = mpotensors[2]
 		end
@@ -144,10 +144,10 @@ function _fit_to_lattice_diag(lattice::RealADTLattice1Order, mpotensors, f1::Sym
 	if f1 == :+
 		data2[pos1] = mpotensors[3]
 		leftspace = space_r(data2[pos1])
-		vd2 = _eye(T, leftspace)
+		vd2 = isometry(T, leftspace)
 		data2[pos2] = @tensor tmp[1,3,2] := vd2[1,2] * I2[3]
 	else
-		vd2 = _eye(T, leftspace)
+		vd2 = isometry(T, leftspace)
 		data2[pos1] = @tensor tmp[1,3,2] := vd2[1,2] * I2[3]
 		data2[pos2] = mpotensors[3]
 	end
@@ -190,17 +190,17 @@ function _fit_to_lattice_offdiag(lattice::RealADTLattice1Order, mpotensors, f1::
 
 	for i in posa:posb
 		if i < pos1
-			vd2 = _eye(T, leftspace)
+			vd2 = isometry(T, leftspace)
 			data2[i] = @tensor tmp[1,3,2] := vd2[1,2] * I2[3]
 		elseif i == pos1
 			data2[i] = u_left
 		elseif i < pos2
-			vd2 = _eye(T, leftspace)
+			vd2 = isometry(T, leftspace)
 			data2[i] = @tensor tmp[1,3,2] := vd2[1,2] * I2[3]
 		elseif i == pos2
 			data2[i] = v_left
 		else
-			vd2 = _eye(T, leftspace)
+			vd2 = isometry(T, leftspace)
 			data2[i] = @tensor tmp[1,3,2] := vd2[1,2] * I2[3]			
 		end
 		leftspace = space_r(data2[i])
@@ -213,17 +213,17 @@ function _fit_to_lattice_offdiag(lattice::RealADTLattice1Order, mpotensors, f1::
 		end
 		for i in posa:posb
 			if i < pos1
-				vd2 = _eye(T, leftspace)
+				vd2 = isometry(T, leftspace)
 				data2[i] = @tensor tmp[1,3,2] := vd2[1,2] * I2[3]
 			elseif i == pos1
 				data2[i] = u_middle
 			elseif i < pos2
-				vd2 = _eye(T, leftspace)
+				vd2 = isometry(T, leftspace)
 				data2[i] = @tensor tmp[1,3,2] := vd2[1,2] * I2[3]
 			elseif i == pos2
 				data2[i] = v_middle
 			else
-				vd2 = _eye(T, leftspace)
+				vd2 = isometry(T, leftspace)
 				data2[i] = @tensor tmp[1,3,2] := vd2[1,2] * I2[3]			
 			end
 			leftspace = space_r(data2[i])
@@ -237,17 +237,17 @@ function _fit_to_lattice_offdiag(lattice::RealADTLattice1Order, mpotensors, f1::
 	end
 	for i in posa:posb
 		if i < pos1
-			vd2 = _eye(T, leftspace)
+			vd2 = isometry(T, leftspace)
 			data2[i] = @tensor tmp[1,3,2] := vd2[1,2] * I2[3]
 		elseif i == pos1
 			data2[i] = u_right
 		elseif i < pos2
-			vd2 = _eye(T, leftspace)
+			vd2 = isometry(T, leftspace)
 			data2[i] = @tensor tmp[1,3,2] := vd2[1,2] * I2[3]
 		elseif i == pos2
 			data2[i] = v_right
 		else
-			vd2 = _eye(T, leftspace)
+			vd2 = isometry(T, leftspace)
 			data2[i] = @tensor tmp[1,3,2] := vd2[1,2] * I2[3]			
 		end
 		leftspace = space_r(data2[i])
@@ -284,7 +284,7 @@ function split_mpstensor(mpoj::DenseMPSTensor, trunc)
 	# println("here---", size(mpoj))
 	d = round(Int, sqrt(d2))
 	@assert d*d == d2
-	f = reshape(_eye(scalartype(mpoj), d2, d2), d2, d, d)
+	f = reshape(isometry(scalartype(mpoj), d2, d2), d2, d, d)
 	@tensor mpoj6[1,5,6,3] := mpoj[1,2,3] * f[2,5,6] 
 	u, s, v = tsvd!(mpoj6, (1,2), (3,4), trunc=trunc)
 	ss = Matrix(Diagonal(sqrt.(s)))

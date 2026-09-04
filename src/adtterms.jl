@@ -108,7 +108,7 @@ function apply!(x::ADTTerm{N, T}, mps::ADT) where {N, T}
 		posj = findfirst(y->y==j, pos)
 		if isnothing(posj)
 			d = size(mps[j], 2) 
-			I2 = _eye(T, leftspace)
+			I2 = isometry(T, leftspace)
 			mj = zeros(T, leftspace, d, leftspace)
 			for i in 1:d
 				mj[:, i, :] = I2
@@ -135,13 +135,12 @@ function decompose_to_mps(m::AbstractArray{T, N}) where {T<:Number, N}
 		data[1] = reshape(m, 1, length(m), 1)
 		return data
 	end
-	workspace = T[]
-	q, r = tqr!(copy(m), (1,), ntuple(i->i+1, N-1), workspace)
+	q, r = leftorth!(copy(m), (1,), ntuple(i->i+1, N-1))
 	m = r
 	data[1] = reshape(q, 1, size(q)...)
 	L = N
 	for i in 2:N-1
-		q, r = tqr!(m, (1,2), ntuple(i->i+2, L-2), workspace)
+		q, r = leftorth!(m, (1,2), ntuple(i->i+2, L-2))
 		data[i] = q
 		L -= 1
 		m = r
