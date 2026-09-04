@@ -143,6 +143,7 @@ For **fermionic** impurity problems, check out our sister package [GTEMPO](https
 - [ ] Support for time-translational invariance (infinite MPS, see e.g. PRL 132, 200403 (2024))
 - [ ] Partial integration technique for large impurities (Phys. Rev. B 112, 155115 (2025))
 - [ ] Support for the continuous MPS technique (PRB 110, 045104 (2024))
+- [ ] Support for general system-bath coupling (multiple system operators coupled to the same bath)
 - [ ] Time-dependent system-reservoir coupling
 - [ ] Support for Bose–Einstein condensate (BEC) baths
 - [ ] Higher-order QuAPI
