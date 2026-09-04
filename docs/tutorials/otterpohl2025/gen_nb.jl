@@ -22,36 +22,36 @@ function make_nb(cells::Vector{Pair{String,String}}, path::String)
 end
 
 md1 = raw"""
-# 复现 Otterpohl *et al.* 2025：量子 $1/f^\eta$ 噪声驱动的自旋玻色弛豫
+# Reproducing Otterpohl *et al.* 2025: spin-boson relaxation driven by quantum $1/f^\eta$ noise
 
-**论文**: F. Otterpohl, P. Nalbach, E. Paladino, G. A. Falci, M. Thorwart,
+**Paper**: F. Otterpohl, P. Nalbach, E. Paladino, G. A. Falci, M. Thorwart,
 *Quantum 1/f$^\eta$ Noise Induced Relaxation in the Spin-Boson Model*,
-[arXiv:2507.14329 (2025)](https://arxiv.org/abs/2507.14329)。
+[arXiv:2507.14329 (2025)](https://arxiv.org/abs/2507.14329).
 
-**复现的图**: Fig. 1(c) —— 谱指数 $s = -0.5$（即 $1/f^{1.5}$ 噪声区间）的自旋玻色模型在
-$\alpha = 0.01,\,0.02,\,0.04$ 下的极化 $P(t) = \langle\sigma_z(t)\rangle$（实线）与
-相干 $C(t) = \langle\sigma_x(t)\rangle$（虚线）。物理上：$s = -0.5$ 时
-$\alpha = 0.01$ 仍处于相干区（衰减振荡），$\alpha = 0.02,\,0.04$ 进入**赝相干区**
-（$P(t)$ 只剩单个极小，其位置由浴紫外截断 $1/\omega_c$ 的响应时间控制）——
-与 Ohmic 情形（教程 strathearn2018）完全不同的弛豫机制。
+**Figure reproduced**: Fig. 1(c) — the polarization $P(t) = \langle\sigma_z(t)\rangle$ (solid) and
+coherence $C(t) = \langle\sigma_x(t)\rangle$ (dashed) of the spin-boson model with spectral exponent
+$s = -0.5$ (i.e., in the $1/f^{1.5}$ noise regime) at $\alpha = 0.01,\,0.02,\,0.04$.
+Physically: for $s = -0.5$, $\alpha = 0.01$ is still in the coherent regime (damped oscillations), while $\alpha = 0.02,\,0.04$ enter the **pseudocoherent regime**
+($P(t)$ retains only a single minimum, whose position is controlled by the response time of the bath UV cutoff $1/\omega_c$) —
+a relaxation mechanism entirely different from the Ohmic case (tutorial strathearn2018).
 
-**模型**（论文 Eq. (1)–(2)，$\hbar = k_B = 1$）:
+**Model** (paper Eqs. (1)–(2), $\hbar = k_B = 1$):
 $$H = \frac{\Omega}{2}\sigma_x + \frac{1}{2}\sigma_z \hat\xi, \qquad
 J(\omega) = 2\alpha\, \omega_c^{1-s}\, \omega^{s}\, e^{-\omega/\omega_c}\,\Theta(\omega - \omega_{ir})$$
-谱指数 $s=-1$ 对应 $1/f$ 噪声；本文取 $s = -0.5$（$1/f^{0.5}$），低频下 $J(\omega)\propto \omega^{-0.5}$
-发散（重整化能发散），但浴关联函数 $C(t) \propto (1/\omega_c + it)^{-(s+1)}$ 仍收敛，
-TEMPO 只需要关联函数，因此可以处理。
+The spectral exponent $s=-1$ corresponds to $1/f$ noise; this paper takes $s = -0.5$ ($1/f^{0.5}$), where $J(\omega)\propto \omega^{-0.5}$ at low frequency
+diverges (renormalizable), but the bath correlation function $C(t) \propto (1/\omega_c + it)^{-(s+1)}$ still converges,
+and TEMPO only needs the correlation function, so it can handle this.
 
-**论文参数**: $\Omega = 1$（能量单位）、$\omega_c = 10\Omega$、$\omega_{ir} = 0$、
-$T = 0$（$\beta = \infty$）、初态因子化（$\langle\sigma_z(0)\rangle = +1$，浴为真空）、
-时间范围 $\Omega t \le 5.14$。
+**Paper parameters**: $\Omega = 1$ (energy unit), $\omega_c = 10\Omega$, $\omega_{ir} = 0$,
+$T = 0$ ($\beta = \infty$), factorized initial state ($\langle\sigma_z(0)\rangle = +1$, bath in the vacuum),
+time range $\Omega t \le 5.14$.
 
-**论文数据**: 从 arXiv PDF 矢量图数字化（`tutorial2_fig_data.json`），按 legend 颜色映射
-（蓝 $\alpha=0.01$、橙 $0.02$、绿 $0.04$；实线 $P$、虚线 $C$）。
+**Paper data**: digitized from vector graphics in the arXiv PDF (`tutorial2_fig_data.json`), mapped by legend colors
+(blue $\alpha=0.01$, orange $0.02$, green $0.04$; solid $P$, dashed $C$).
 
-**本复现**: $\delta t = 0.05$、键维 $\chi = 40$、$\beta = \infty$、$t \le 5.15$。
-$s<0$ 的时间幂律记忆使影响泛函键维随时间持续增长，$t\le 5$ 内 $\chi=40$ 已足够
-（收敛性检验见结果讨论）。
+**This reproduction**: $\delta t = 0.05$, bond dimension $\chi = 40$, $\beta = \infty$, $t \le 5.15$.
+The power-law-in-time memory for $s<0$ makes the influence-functional bond dimension keep growing with time; within $t\le 5$, $\chi=40$ already suffices
+(see the discussion of results for convergence checks).
 """
 
 code2 = raw"""
@@ -132,26 +132,26 @@ pl
 """
 
 md5 = raw"""
-## 结果讨论
+## Discussion of results
 
-图中实线为**从论文 Fig. 1(c) 数字化提取的原始数据**，虚线为本包 TEMPO 计算
-（$\delta t = 0.05$、$\beta = \infty$、$t \le 5.15$；键维 $\chi = 40$
-（$\alpha = 0.01/0.02$）与 $\chi = 100$（$\alpha = 0.04$））：
+The solid curves in the figure are the **raw data digitized from Fig. 1(c) of the paper**, and the dashed curves are this package's TEMPO calculations
+($\delta t = 0.05$, $\beta = \infty$, $t \le 5.15$; bond dimension $\chi = 40$
+(for $\alpha = 0.01/0.02$) and $\chi = 100$ (for $\alpha = 0.04$)):
 
-- **$P(t)$**：三条曲线都从 1 出发单调弛豫（$s=-0.5$ 时无相干振荡）
-  - $\alpha = 0.01$：弛豫最快，$P$ 在 $t \approx 5$ 处仍在下降（相干区边界）；
-  - $\alpha = 0.02, 0.04$：出现单个极小后缓慢回升（赝相干区特征），回升尺度由
-    $1/\omega_c$ 浴响应时间控制，$\alpha$ 越大平台越高（浴重整化越强）。
-- **$C(t)$**：全部变负且无过零振荡，$|C_{min}|$ 随 $\alpha$ 单调减小。
-- 论文正文由此判定：$s=-0.5$ 时 $\alpha = 0.01$ 属相干区、$\alpha = 0.02/0.04$
-  属赝相干区，与 Fig. 2 的动力学相图一致——本复现的曲线形状支持同样结论。
+- **$P(t)$**: all three curves start from 1 and relax monotonically (no coherent oscillations for $s=-0.5$)
+  - $\alpha = 0.01$: fastest relaxation; $P$ is still decreasing at $t \approx 5$ (edge of the coherent regime);
+  - $\alpha = 0.02, 0.04$: a single minimum appears followed by a slow recovery (a hallmark of the pseudocoherent regime); the recovery timescale is
+    controlled by the $1/\omega_c$ bath response time, and larger $\alpha$ gives a higher plateau (stronger bath renormalization).
+- **$C(t)$**: all become negative with no zero-crossing oscillations; $|C_{min}|$ decreases monotonically with $\alpha$.
+- The paper's main text concludes from this: for $s=-0.5$, $\alpha = 0.01$ belongs to the coherent regime and $\alpha = 0.02/0.04$
+  to the pseudocoherent regime, consistent with the dynamical phase diagram of Fig. 2 — the curve shapes of this reproduction support the same conclusion.
 
-收敛性检验：$\alpha = 0.02$ 处将 $(\delta t, \chi) = (0.05, 40) \to (0.025, 80)$，
-$P(t)$、$C(t)$ 的最大变化在 $\sim 0.01$ 量级。$\alpha = 0.04$ 处收敛要求显著更高：
-$\chi = 40$ 的结果非物理（$P$ 超过 1、幅度漂移），$\chi = 60$ 仍未收敛（与
-$\chi = 100$ 差异可达 $\sim 0.5$），最终采用 $\chi = 100$。$s < 0$ 使浴关联函数呈
-幂律长尾（$C(t) \propto t^{-0.5}$），影响泛函键维随 $t$ 持续增长且耦合越强增长
-越快——这是本算例与 Ohmic 教程（指数衰减记忆）的本质区别。
+Convergence checks: at $\alpha = 0.02$, changing $(\delta t, \chi) = (0.05, 40) \to (0.025, 80)$,
+$P(t)$ and $C(t)$ change by at most $\sim 0.01$. At $\alpha = 0.04$ the convergence requirements are markedly higher:
+the $\chi = 40$ results are unphysical ($P$ exceeds 1 and the amplitude drifts), $\chi = 60$ is still unconverged (differences from
+$\chi = 100$ can reach $\sim 0.5$), so finally $\chi = 100$ is used. For $s < 0$ the bath correlation function has a
+power-law long tail ($C(t) \propto t^{-0.5}$); the influence-functional bond dimension keeps growing with $t$, and the stronger the coupling the faster it grows —
+this is the essential difference between this example and the Ohmic tutorial (exponentially decaying memory).
 """
 
 make_nb([

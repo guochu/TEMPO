@@ -22,45 +22,45 @@ function make_nb(cells::Vector{Pair{String,String}}, path::String)
 end
 
 md1 = raw"""
-# 复现 Guo *et al.* 2026：off-diagonal 系统-浴耦合的实时杂质动力学
+# Reproducing Guo *et al.* 2026: real-time impurity dynamics with off-diagonal system-bath coupling
 
-**论文**: C. Guo, W. Wu, X. Xu, T. Jiang, P.-X. Chen, R. Chen,
+**Paper**: C. Guo, W. Wu, X. Xu, T. Jiang, P.-X. Chen, R. Chen,
 *Time-evolving matrix product operators for off-diagonal system-bath coupling*,
-[Phys. Rev. B **114**, 125413 (2026)](https://doi.org/10.1103/PhysRevB.114.125413)（arXiv:2604.01556）。
+[Phys. Rev. B **114**, 125413 (2026)](https://doi.org/10.1103/PhysRevB.114.125413) (arXiv:2604.01556).
 
-**复现的图**: Fig. 7(a)(b) —— **无相互作用玻色杂质**（$H_S = \hat n$）通过湮灭算符
-$\hat A = \hat a$（共轭对、非厄米、off-diagonal 耦合）与 sub-Ohmic 浴耦合时的平均占据数
-$\langle \hat n(t)\rangle$，初态为单粒子 Fock 态 $|1\rangle$。
-参数：$\alpha = 0.04$（panel a）与 $\alpha = 0.08$（panel b），
-$\beta = 5$（有限温，红线）与 $\beta = \infty$（零温，青线）。
-论文用扩展 TEMPO 计算并与 ED（二次型高斯态精确解）对比；此处我们同时给出
-本包 TEMPO 结果与独立实现的 ED 结果。
+**Figure reproduced**: Fig. 7(a)(b) — the mean occupation number
+$\langle \hat n(t)\rangle$ of a **noninteracting bosonic impurity** ($H_S = \hat n$) coupled to a sub-Ohmic bath through the annihilation operator
+$\hat A = \hat a$ (conjugate pair, non-Hermitian, off-diagonal coupling), with the single-particle Fock state $|1\rangle$ as the initial state.
+Parameters: $\alpha = 0.04$ (panel a) and $\alpha = 0.08$ (panel b),
+$\beta = 5$ (finite temperature, red curves) and $\beta = \infty$ (zero temperature, cyan curves).
+The paper computes with extended TEMPO and compares against ED (exact solution for quadratic Gaussian states); here we give both
+this package's TEMPO results and independently implemented ED results.
 
-**模型**（论文 Eq. (6)(21)）:
+**Model** (paper Eqs. (6)(21)):
 $$H_S = \hat a^\dagger \hat a, \qquad H_{int} = \sum_k V_k (\hat A\, \hat b_k^\dagger + \hat A^\dagger \hat b_k),\ \hat A = \hat a, \qquad
 J(\omega) = 2\pi\alpha\, \omega_c^{1-s}\, \omega^s\, \Theta(\omega)\Theta(\omega_c - \omega)$$
-取 $\omega_c = 5$、$s = 0.5$。
+with $\omega_c = 5$ and $s = 0.5$.
 
-**耦合的物理**: $[\hat n, \hat A] = -\hat A$，耦合 $\hat A = \hat a$ 严格守恒总激发数
-（JC 型）。$\beta = \infty$（真空浴）时总激发数恒为 1，杂质最多占据 $n=1$，
-物理维度 $d=2$ 即精确；$\beta = 5$ 时浴激发可被杂质吸收，需要 $d = 4$
-（与论文一致）。这是一个检验包对**非对角（non-diagonal）耦合**——
-$\mathrm{Tr}_B[\hat A \rho_B \hat A^\dagger] \neq \mathrm{Tr}_B[\hat A^\dagger \hat A \rho_B]\hat A\hat A^\dagger$
-形式的广义影响泛函——的标准算例。
+**Physics of the coupling**: $[\hat n, \hat A] = -\hat A$, so the coupling $\hat A = \hat a$ exactly conserves the total excitation number
+(JC type). For $\beta = \infty$ (vacuum bath) the total excitation number stays at 1, so the impurity occupies at most $n=1$,
+and the physical dimension $d=2$ is exact; for $\beta = 5$ bath excitations can be absorbed by the impurity, requiring $d = 4$
+(as in the paper). This is a standard benchmark testing the package's handling of **non-diagonal coupling** — the generalized influence functional
+of the form $\mathrm{Tr}_B[\hat A \rho_B \hat A^\dagger] \neq \mathrm{Tr}_B[\hat A^\dagger \hat A \rho_B]\hat A\hat A^\dagger$,
+a canonical test case.
 
-**论文数据**: 从 arXiv PDF 矢量图数字化（`guo_fig7_data.json`）：每 panel 的
-$\beta=5$（红）与 $\beta=\infty$（青）曲线，ED 实线为半透明浅色、TEMPO 虚线为饱和色，
-按颜色深浅分离。
+**Paper data**: digitized from vector graphics in the arXiv PDF (`guo_fig7_data.json`): for each panel the
+$\beta=5$ (red) and $\beta=\infty$ (cyan) curves; ED solid curves in semi-transparent light colors and TEMPO dashed curves in saturated colors,
+separated by color shading.
 
-**本复现**: $\delta t = 0.025$、键维 $\chi = 30$、$t \le 2.5$。
-采用包的 **PT（process tensor）路径**：`PTLattice` + `NonDiagonalHyb` +
-`XTRGIF` 构造影响泛函，观测量 $\langle\hat n(t)\rangle$ 用
-`ContourOperator` + `expectationvalue`（与 spinboson 教程 jctype.jl 的标准用法一致）。
-包的约定 `NonDiagonalHyb(op)` 表示 $\mathrm{op}\otimes \hat b + \mathrm{op}^\dagger \otimes \hat b^\dagger$
-（op 与浴湮灭算符配对），因此激发数守恒耦合对应 `op = a'`（杂质产生算符），
-与论文的 $\hat A = \hat a$ 共轭对形式逐项相同。
-ED 用 $M = 500$ 个等距浴模式（$\delta\omega = 0.01$，与论文相同），
-总哈密顿量为二次型，单粒子图象下 $501\times 501$ 矩阵对角化即精确求解。
+**This reproduction**: $\delta t = 0.025$, bond dimension $\chi = 30$, $t \le 2.5$.
+We use the package's **PT (process tensor) path**: `PTLattice` + `NonDiagonalHyb` +
+`XTRGIF` to construct the influence functional; the observable $\langle\hat n(t)\rangle$ is computed with
+`ContourOperator` + `expectationvalue` (the same standard usage as in the spinboson tutorial jctype.jl).
+The package convention `NonDiagonalHyb(op)` means $\mathrm{op}\otimes \hat b + \mathrm{op}^\dagger \otimes \hat b^\dagger$
+(op pairs with the bath annihilation operator), so the excitation-number-conserving coupling corresponds to `op = a'` (the impurity creation operator),
+term-by-term identical to the paper's conjugate-pair form $\hat A = \hat a$.
+The ED uses $M = 500$ equidistant bath modes ($\delta\omega = 0.01$, as in the paper);
+the total Hamiltonian is quadratic, and in the single-particle picture diagonalizing a $501\times 501$ matrix is an exact solution.
 """
 
 code2 = raw"""
@@ -180,22 +180,22 @@ pl
 """
 
 md5 = raw"""
-## 结果讨论
+## Discussion of results
 
-- **TEMPO vs ED（内部自洽）**：本包的 TEMPO 结果与独立实现的 ED（二次型高斯精确解）
-  在全部四个 $(\alpha, \beta)$ 组合下最大偏差 $\sim 10^{-3}$–$10^{-2}$ 量级，
-  验证了包对非对角（共轭对）耦合的处理。
-- **与论文对比**：本包 TEMPO 曲线（虚线）与论文数字化的 TEMPO 曲线（实线）重合；
-  论文自己的 ED 结果（浅色实线）与我们的 ED（点线）同样一致。
-- **物理**：
-  - $\beta = \infty$（青色）：真空浴中初态单粒子衰减，$\langle n\rangle$ 快速下降后
-    阻尼振荡回复——衰减速率由低频谱重 $J(\omega\to 0)$ 控制（sub-Ohmic 下更快）；
-  - $\beta = 5$（红色）：热浴激发使稳态占据显著高于零温情形
-    （$t=2.5$ 处高 $\sim 0.1$–$0.15$）；
-  - $\alpha$ 从 $0.04$ 增至 $0.08$：耦合更强，振荡幅度与回复都更明显。
-- 收敛性检验：$\alpha = 0.08, \beta = 5$ 处将 $\delta t = 0.05 \to 0.025$，
-  $\langle n(t)\rangle$ 最大变化 $< 10^{-2}$；$d = 4$ 覆盖了 $\beta = 5$ 时
-  杂质可及的全部占据数（总激发数 $\le 3$ 的权重已指数小）。
+- **TEMPO vs ED (internal consistency)**: the package's TEMPO results and the independently implemented ED (exact solution for quadratic Gaussian states)
+  agree to at most the $\sim 10^{-3}$–$10^{-2}$ level for all four $(\alpha, \beta)$ combinations,
+  validating the package's treatment of non-diagonal (conjugate-pair) coupling.
+- **Comparison with the paper**: this package's TEMPO curves (dashed) coincide with the paper's digitized TEMPO curves (solid);
+  the paper's own ED results (light solid) likewise agree with our ED (dotted).
+- **Physics**:
+  - $\beta = \infty$ (cyan): decay of the single-particle initial state in a vacuum bath; $\langle n\rangle$ first drops rapidly and then
+    recovers through damped oscillations — the decay rate is controlled by the low-frequency spectral weight $J(\omega\to 0)$ (faster in the sub-Ohmic case);
+  - $\beta = 5$ (red): thermal bath excitations make the steady-state occupation notably higher than at zero temperature
+    (higher by $\sim 0.1$–$0.15$ at $t=2.5$);
+  - Increasing $\alpha$ from $0.04$ to $0.08$: stronger coupling, more pronounced oscillation amplitude and recovery.
+- Convergence checks: at $\alpha = 0.08, \beta = 5$, refining $\delta t = 0.05 \to 0.025$
+  changes $\langle n(t)\rangle$ by less than $10^{-2}$; $d = 4$ covers all impurity occupations accessible
+  at $\beta = 5$ (weights with total excitation number $\le 3$ are already exponentially small).
 """
 
 make_nb([
