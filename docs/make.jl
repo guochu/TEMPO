@@ -25,12 +25,12 @@ makedocs(;
         size_threshold = nothing,   # api.md 单页收录全部 docstring，体积较大
     ),
     pages = [
-        "首页" => "index.md",
-        "快速上手" => "quickstart.md",
-        "使用手册" => "manual.md",
-        "实践指南" => "practice.md",
-        "实现细节" => "internals.md",
-        "API 参考" => "api.md",
+        "Home" => "index.md",
+        "Quickstart" => "quickstart.md",
+        "Manual" => "manual.md",
+        "Practice guide" => "practice.md",
+        "Internals" => "internals.md",
+        "API reference" => "api.md",
     ],
     checkdocs = :nothing,
     linkcheck = false,

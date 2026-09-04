@@ -1,156 +1,156 @@
-# 快速上手
+# Quickstart
 
-本页给出四类典型问题的完整计算流程，代码可直接照抄运行。选择哪一段取决于**耦合形式**与**想要的观测量**：
+This page presents complete workflows for four classes of typical problems; the code can be copied and run as-is. Which section to use depends on the **coupling form** and the **observable you want**:
 
-| 问题 | 耦合 | 格点 | 示例 |
+| Problem | Coupling | Lattice | Example |
 |---|---|---|---|
-| [标准自旋玻色子模型（对角耦合，Rabi 型，ADT）](@ref) | 对角 | `ADTLattice` | `docs/tutorials/spinboson/rabitype.jl` |
-| [JC 型非对角耦合（PT 框架）](@ref) | 非对角（共轭对） | `PTLattice` | `docs/tutorials/spinboson/jctype.jl` |
-| [玻色杂质：虚时间演化与 Matsubara 关联函数](@ref) | 对角或非对角 | `ADTLattice`/`PTLattice`，`contour=:imag` | `benchmark/independentbosons.jl` |
-| [含时系统-浴耦合](@ref) | 任意 | 任意 | `src/tdinfluencefunctional/` |
+| [Standard spin-boson model (diagonal coupling, Rabi type, ADT)](@ref) | Diagonal | `ADTLattice` | `docs/tutorials/spinboson/rabitype.jl` |
+| [JC-type off-diagonal coupling (PT framework)](@ref) | Off-diagonal (conjugate pair) | `PTLattice` | `docs/tutorials/spinboson/jctype.jl` |
+| [Bosonic impurity: imaginary-time evolution and Matsubara correlations](@ref) | Diagonal or off-diagonal | `ADTLattice`/`PTLattice`, `contour=:imag` | `benchmark/independentbosons.jl` |
+| [Time-dependent system-bath coupling](@ref) | Any | Any | `src/tdinfluencefunctional/` |
 
-所有计算都遵循同一模板：
+All computations follow the same template:
 
 ```text
-1. trunc  = 截断方案
-2. lattice = ADTLattice/PTLattice（轮廓 + 步数 + 步长）
-3. hyb    = AdditiveHyb / NonDiagonalHyb / ...（耦合算符）
-4. spec/bath = spectrum + bosonicbath（浴谱与温度）
+1. trunc  = truncation scheme
+2. lattice = ADTLattice/PTLattice (contour + number of steps + step size)
+3. hyb    = AdditiveHyb / NonDiagonalHyb / ... (coupling operators)
+4. spec/bath = spectrum + bosonicbath (bath spectrum and temperature)
 5. corr   = correlationfunction(bath, lattice)
-6. mpsI   = hybriddynamics(lattice, corr, hyb[, alg])    # 影响泛函
-7. mpsK   = sysdynamics(lattice, model) + boundarycondition!（系统动力学 + 初态）
-8. cache  = environments(...)；expectationvalue(...)      # 观测量
+6. mpsI   = hybriddynamics(lattice, corr, hyb[, alg])    # influence functional
+7. mpsK   = sysdynamics(lattice, model) + boundarycondition! (system dynamics + initial state)
+8. cache  = environments(...); expectationvalue(...)      # observables
 ```
 
-## 标准自旋玻色子模型（对角耦合，Rabi 型，ADT）
+## Standard spin-boson model (diagonal coupling, Rabi type, ADT)
 
-系统是二能级自旋，$\hat{A}=\hat{\sigma}_x/2$（对角耦合），浴谱取 sub-Ohmic 谱。
+The system is a two-level spin with $\hat{A}=\hat{\sigma}_x/2$ (diagonal coupling), and the bath spectrum is sub-Ohmic.
 
 ```julia
 using TEMPO, ImpurityModelBase, LinearAlgebra
 
-# 截断方案：最大键维 chi，奇异值阈值 ϵ
+# Truncation scheme: max bond dimension chi, singular value threshold ϵ
 trunc = truncdimcutoff(D=chi, ϵ=1.0e-12, add_back=0)
 
-# 1. 定义实时间轮廓格点
+# 1. Define the real-time contour lattice
 lattice = ADTLattice(N=Nt, δt=δt, contour=:real)
 
-# 2. 定义系统算符（σ_x 用于系统哈密顿量；σ_z 的对角元用于对角耦合算符 A）
+# 2. Define system operators (σ_x for the system Hamiltonian; the diagonal entries of σ_z for the diagonal coupling operator A)
 x = Matrix{ComplexF64}([0 1; 1 0])
 z = Matrix{ComplexF64}([-1 0; 0 1])
 zdiag = [z[i,i] for i in 1:size(z,1)]
 
-# 3. 定义浴与混合化样式
-hyb  = AdditiveHyb(zdiag)                       # 对角耦合（注意传对角元向量）
-spec = spectrum(w -> 2π*α * w^s * wc^(1-s), lb=0, ub=wc)   # sub-Ohmic 谱
+# 3. Define the bath and hybridization style
+hyb  = AdditiveHyb(zdiag)                       # diagonal coupling (note: pass the vector of diagonal entries)
+spec = spectrum(w -> 2π*α * w^s * wc^(1-s), lb=0, ub=wc)   # sub-Ohmic spectrum
 bath = bosonicbath(spec, β=β)
 corr = correlationfunction(bath, lattice)
 
-# 4. 构建影响泛函（IF），得到一个 ADT（MPS）
+# 4. Build the influence functional (IF); the result is an ADT (MPS)
 mpsI = hybriddynamics(lattice, corr, hyb, trunc=trunc)
 
-# 5. 构建裸系统动力学并施加边界条件（初态）
-model = ImpurityHamiltonian(Δ .* x)             # 系统哈密顿量 H_S
+# 5. Build the bare system dynamics and apply the boundary condition (initial state)
+model = ImpurityHamiltonian(Δ .* x)             # system Hamiltonian H_S
 mpsK  = sysdynamics(lattice, model, trunc=trunc)
 mpsK  = boundarycondition!(mpsK, lattice, ρ₀=ρimp)
 
-# 6. 预计算环境，用于观测量
+# 6. Precompute environments for observables
 cache = environments(lattice, mpsK, mpsI)
 
-# 7. 计算局部观测量（如 ⟨σ_z(t)⟩）
+# 7. Compute local observables (e.g., ⟨σ_z(t)⟩)
 obs = ComplexF64[]
 for i in 1:Nt
     pos = index(lattice, i, branch=:+)
     m   = ADTTerm(pos, zdiag)
-    v   = expectationvalue(m, cache)            # 已除以 Z，得到归一化期望值
+    v   = expectationvalue(m, cache)            # already divided by Z, giving the normalized expectation value
     push!(obs, v)
 end
 ```
 
-!!! note "对角耦合也可以用 XTRG-IF"
-    上面的 `hybriddynamics(lattice, corr, hyb, trunc=trunc)` 走 `PartialIF` 路径。对更大的局域维数（如 spin-1，d=3）或需要更精确的压缩时，用 `XTRGIF` 算法（见[使用手册](@ref)）通常更快、内存更省，见[实践指南](@ref)的讨论。
+!!! note "Diagonal coupling can also use XTRG-IF"
+    The `hybriddynamics(lattice, corr, hyb, trunc=trunc)` call above takes the `PartialIF` path. For larger local dimensions (e.g., spin-1, d=3) or when more accurate compression is needed, the `XTRGIF` algorithm (see [Manual](@ref)) is usually faster and more memory-efficient; see the discussion in [Practice guide](@ref).
 
-!!! tip "ADT 路径也能测非对角算符：算符插入"
-    除了 `ADTTerm`，ADT 格点上还可以通过**向系统动力学中插入算符**来测非对角算符与两点关联函数（虚时间测试见 `test/models/rabimodel.jl`）：
+!!! tip "Measuring off-diagonal operators on the ADT path: operator insertion"
+    Besides `ADTTerm`, on an ADT lattice off-diagonal operators and two-point correlation functions can also be measured by **inserting operators into the system dynamics** (see `test/models/rabimodel.jl` for an imaginary-time test):
 
     ```julia
-    # 单点算符（可以是任意矩阵，含非对角元）
-    ct = ContourOperator(ContourIndex(1), op)          # op 任意矩阵
+    # Single-point operator (can be any matrix, including off-diagonal entries)
+    ct = ContourOperator(ContourIndex(1), op)          # op is any matrix
     mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
 
-    # 两点关联 ⟨op2(t_i) op1(t_1)⟩：两个位置各插一个算符
+    # Two-point correlation ⟨op2(t_i) op1(t_1)⟩: insert one operator at each of the two positions
     ct = ContourOperator([ContourIndex(i), ContourIndex(1)], [op2, op1])
     mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
 
-    mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp)  # 实时间需要 ρ₀
+    mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp)  # real time requires ρ₀
     mps2 = mult!(mpsK, mpsI, trunc=trunc)
-    v = integrate(mps2) / integrate(mps)               # 已归一化
+    v = integrate(mps2) / integrate(mps)               # already normalized
     ```
 
-    这种方式每次插入都需重建 `mpsK` 并重新乘 IF，适合少量算符/关联函数；批量测单点对角量时 `ADTTerm` + `environments` 缓存更高效。ADT 上同样可以用 `ADTTerm((pos2, pos1), (v2, v1))` 的多点形式测对角两点关联（`apply!` + `integrate(mps2)/integrate(mps)`）。
+    This approach requires rebuilding `mpsK` and remultiplying the IF for each insertion, so it suits a small number of operators/correlation functions; for batch measurements of single-point diagonal quantities, `ADTTerm` + an `environments` cache is more efficient. On an ADT, diagonal two-point correlations can likewise be measured with the multi-point form `ADTTerm((pos2, pos1), (v2, v1))` (`apply!` + `integrate(mps2)/integrate(mps)`).
 
-## JC 型非对角耦合（PT 框架）
+## JC-type off-diagonal coupling (PT framework)
 
-系统通过 $\hat{A}=\hat{\sigma}_-/2$（共轭对 $\hat{A}^\dagger,\hat{A}$）耦合到浴，这是文献中的**非对角耦合**情形，必须使用 PT 框架与平移不变影响泛函算法。
+The system couples to the bath through $\hat{A}=\hat{\sigma}_-/2$ (the conjugate pair $\hat{A}^\dagger,\hat{A}$). This is the **off-diagonal coupling** case of the paper, and it requires the PT framework together with the translationally invariant influence functional algorithm.
 
 ```julia
-lattice = PTLattice(N=Nt, δt=δt, contour=:real)   # 注意是 PTLattice
+lattice = PTLattice(N=Nt, δt=δt, contour=:real)   # note: PTLattice
 
-hyb  = NonDiagonalHyb(sp)                        # 非对角耦合：op*a + op'*a'
+hyb  = NonDiagonalHyb(sp)                        # off-diagonal coupling: op*a + op'*a'
 spec = spectrum(w -> 2π*α * w^s * wc^(1-s), lb=0, ub=wc)
 bath = bosonicbath(spec, β=β)
 corr = correlationfunction(bath, lattice)
 
-# IF 构建算法：平移不变 IF（XTRG 式），
-# 使用 DMRG 型 MPO-MPO 乘法 + Prony 指数展开
+# IF construction algorithm: translationally invariant IF (XTRG-style),
+# using DMRG-type MPO-MPO multiplication + Prony exponential expansion
 algmult  = DMRGMult1(trunc, maxiter=10)
 algexpan = OverDeterminedProny(n=n, tol=1.0e-8, verbosity=2)
 alg = XTRGIF(k=k, fast=true, algmult=algmult, algexpan=algexpan, verbosity=2)
 
-mpsI = hybriddynamics(lattice, corr, hyb, alg)   # 得到 ProcessTensor (MPO)
+mpsI = hybriddynamics(lattice, corr, hyb, alg)   # yields a ProcessTensor (MPO)
 
-# 系统动力学 + 初态
+# System dynamics + initial state
 model = ImpurityHamiltonian(Δ .* z)
 mpsK  = sysdynamics(lattice, model, trunc=trunc)
 mps   = mult!(mpsK, mpsI, trunc=trunc)
 
-# 观测量：PT 实时间需要把初态密度矩阵传入环境
+# Observables: PT real time requires passing the initial density matrix to the environments
 cache = environments(lattice, mps, ρ₀=ρimp)
 
 obs = ComplexF64[]
 for i in 1:Nt
     ind = ContourIndex(i, :+)
-    m   = ContourOperator(ind, x)               # 任意系统算符 x
+    m   = ContourOperator(ind, x)               # any system operator x
     v   = expectationvalue(m, cache)
     push!(obs, v)
 end
 ```
 
-!!! warning "测非对角观量的两条路线"
-    ADT 路径的 `ADTTerm` 只支持对角元向量，要测 $\langle\sigma_x\rangle$ 等非对角量，可以：① 改用 `PTLattice` + `NonDiagonalHyb`（对实对角算符与 `AdditiveHyb` 物理等价），用 `ContourOperator` 批量测（推荐，见上一节示例）；② 保持在 ADT 路径用**算符插入**（见上文 tip）。详见[实践指南](@ref)。
+!!! warning "Two routes for measuring off-diagonal observables"
+    `ADTTerm` on the ADT path only supports vectors of diagonal entries. To measure off-diagonal quantities such as $\langle\sigma_x\rangle$, you can: (i) switch to `PTLattice` + `NonDiagonalHyb` (physically equivalent to `AdditiveHyb` for real diagonal operators) and measure in batch with `ContourOperator` (recommended; see the example in the previous section); or (ii) stay on the ADT path and use **operator insertion** (see the tip above). See [Practice guide](@ref) for details.
 
-## 玻色杂质：虚时间演化与 Matsubara 关联函数
+## Bosonic impurity: imaginary-time evolution and Matsubara correlations
 
-此时杂质本身是玻色模（局域 Hilbert 空间截断为 `d`），在虚时间轮廓上计算 Matsubara Green 函数 $\langle \mathcal{T}_\tau \hat{a}(\tau)\hat{a}^\dagger(0)\rangle$。
+Here the impurity itself is a bosonic mode (with the local Hilbert space truncated to `d`), and the Matsubara Green's function $\langle \mathcal{T}_\tau \hat{a}(\tau)\hat{a}^\dagger(0)\rangle$ is computed on the imaginary-time contour.
 
 ```julia
-lattice = ADTLattice(N=N, δτ=δτ, contour=:imag)      # 虚时间轮廓
-# 或对非对角耦合：PTLattice(...)
+lattice = ADTLattice(N=N, δτ=δτ, contour=:imag)      # imaginary-time contour
+# or, for off-diagonal coupling: PTLattice(...)
 
-a = bosonaoperator(d=d)                              # 玻色湮灭算符（ImpurityModelBase）
+a = bosonaoperator(d=d)                              # bosonic annihilation operator (ImpurityModelBase)
 n = bosondensityoperator(d=d)
 
-hyb  = AdditiveHyb(diag(n))                          # 对角耦合
-spec = Leggett(d=1, ωc=1)                            # 或自定义 spectrum(...)
+hyb  = AdditiveHyb(diag(n))                          # diagonal coupling
+spec = Leggett(d=1, ωc=1)                            # or a custom spectrum(...)
 bath = bosonicbath(spec, β=β)
 corr = correlationfunction(bath, lattice)
 
 mpsI  = hybriddynamics(lattice, corr, hyb, trunc=trunc)
 model = ImpurityHamiltonian(ϵ_d .* n)                # H_S
 mpsK  = sysdynamics(lattice, model, trunc=trunc)
-Zval  = integrate(mpsK, mpsI)                        # 配分函数 Z
+Zval  = integrate(mpsK, mpsI)                        # partition function Z
 
-# 两点关联函数：把算符插入到系统动力学中
+# Two-point correlation function: insert operators into the system dynamics
 op1, op2 = [0 0; 1 0], [0 1; 0 0]
 c1, c2   = ContourIndex(1), ContourIndex(1)
 ct       = ContourOperator([c1, c2], [op1, op2])
@@ -158,7 +158,7 @@ mpsK2    = sysdynamics(lattice, model, ct, trunc=trunc)
 v        = integrate(mpsK2, mpsI) / Zval
 ```
 
-对**非对角耦合**的玻色杂质（如 `benchmark/bosonicimpurity.jl`）：
+For a bosonic impurity with **off-diagonal coupling** (e.g., `benchmark/bosonicimpurity.jl`):
 
 ```julia
 lattice = PTLattice(N=N, δt=δt, d=d, contour=:real)
@@ -169,10 +169,10 @@ alg  = XTRGIF(k=5, fast=true,
 mpsI = hybriddynamics(lattice, corr, hyb, alg)
 ```
 
-## 含时系统-浴耦合
+## Time-dependent system-bath coupling
 
-对含时耦合（见 `src/tdinfluencefunctional/`），使用含时版本的混合化样式：`AdditiveTdHyb`、`NonAdditiveTdHyb`、`NonDiagonalTdHyb`。它们接受一个函数 `f(t)` 描述耦合强度的时间依赖：
+For time-dependent coupling (see `src/tdinfluencefunctional/`), use the time-dependent hybridization styles: `AdditiveTdHyb`, `NonAdditiveTdHyb`, `NonDiagonalTdHyb`. They accept a function `f(t)` describing the time dependence of the coupling strength:
 
 ```julia
-hyb = NonDiagonalTdHyb(op, t -> f(t))   # 或 AdditiveTdHyb / NonAdditiveTdHyb
+hyb = NonDiagonalTdHyb(op, t -> f(t))   # or AdditiveTdHyb / NonAdditiveTdHyb
 ```

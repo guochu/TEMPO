@@ -1,256 +1,256 @@
-# 使用手册
+# Manual
 
-本页按组件介绍核心 API 的用法与要点；逐项符号文档见 [API 参考](@ref)。目录：
+This page introduces the usage and key points of the core API, organized by component; full per-symbol documentation can be found in the [API reference](@ref). Contents:
 
-1. [截断方案 `TruncationScheme`](@ref)
-2. [格点 `ADTLattice` / `PTLattice`](@ref)
-3. [系统算符 `AbstractImpurityOperator`](@ref)
-4. [混合化样式 `HybridizationStyle`](@ref)
-5. [影响泛函构建算法 `InfluenceFunctionalAlgorithm`](@ref)
-6. [浴与关联函数（`ImpurityModelBase`）](@ref)
-7. [ADT / PT 张量操作](@ref)
-8. [观测量](@ref)
-9. [MPO 哈密顿量（长程相互作用工具）](@ref)
-10. [超参数与误差来源](@ref)
-11. [代码结构](@ref)
-12. [与文献的对应关系](@ref)
+1. [Truncation schemes `TruncationScheme`](@ref)
+2. [Lattices `ADTLattice` / `PTLattice`](@ref)
+3. [System operators `AbstractImpurityOperator`](@ref)
+4. [Hybridization styles `HybridizationStyle`](@ref)
+5. [Influence functional algorithms `InfluenceFunctionalAlgorithm`](@ref)
+6. [Baths and correlation functions (`ImpurityModelBase`)](@ref)
+7. [ADT / PT tensor operations](@ref)
+8. [Observables](@ref manual_observables)
+9. [MPO Hamiltonians (long-range interaction tools)](@ref)
+10. [Hyperparameters and sources of error](@ref)
+11. [Code structure](@ref)
+12. [Correspondence with the literature](@ref)
 
-## 截断方案 `TruncationScheme`
+## Truncation schemes `TruncationScheme`
 
-张量网络计算中压缩键维的截断方案：
+Truncation schemes for compressing the bond dimension in tensor network computations:
 
-| 类型 | 构造方式 | 说明 |
+| Type | Construction | Description |
 |---|---|---|
-| `TruncationDimCutoff` | `truncdimcutoff(D=χ, ϵ=ε, add_back=0)` | 同时限制最大键维 `D` 与截断阈值 `ϵ`（推荐） |
-| `TruncateDim` | `truncdim(D)` | 只限制键维 |
-| `TruncateCutoff` | `trunccutoff(ϵ=ε)` | 只按奇异值阈值截断 |
-| `NoTruncation` | `NoTruncation()` | 不截断 |
+| `TruncationDimCutoff` | `truncdimcutoff(D=χ, ϵ=ε, add_back=0)` | Limits both the maximum bond dimension `D` and the truncation threshold `ϵ` (recommended) |
+| `TruncateDim` | `truncdim(D)` | Limits only the bond dimension |
+| `TruncateCutoff` | `trunccutoff(ϵ=ε)` | Truncates only by the singular-value threshold |
+| `NoTruncation` | `NoTruncation()` | No truncation |
 
-预定义的默认值（`src/defaults.jl`）：
+Predefined defaults (`src/defaults.jl`):
 
 ```julia
 DefaultTruncation        # D=100, ϵ=1e-14
-DefaultITruncation       # D=200,  ϵ=1e-10   （构建 IF 默认）
-DefaultKTruncation       # D=1000, ϵ=1e-10   （系统动力学默认）
+DefaultITruncation       # D=200,  ϵ=1e-10   (default for building the IF)
+DefaultKTruncation       # D=1000, ϵ=1e-10   (default for system dynamics)
 DefaultIntegrationTruncation  # D=10000, ϵ=1e-12
 DefaultMPOTruncation     # D=10000, ϵ=1e-12
 ```
 
-## 格点 `ADTLattice` / `PTLattice`
+## Lattices `ADTLattice` / `PTLattice`
 
-统一构造入口：
+Unified construction entry points:
 
 ```julia
-lattice = ADTLattice(N=Nt, δt=δt, contour=:real)      # 实时间
-lattice = PTLattice(N=N,  δτ=δτ, contour=:imag)       # 虚时间
+lattice = ADTLattice(N=Nt, δt=δt, contour=:real)      # real time
+lattice = PTLattice(N=N,  δτ=δτ, contour=:imag)       # imaginary time
 lattice = PTLattice(Nt=Nt, Nτ=Nτ, δt=δt, δτ=δτ, d=d, contour=:mixed)
 ```
 
-常用属性与函数：
+Commonly used properties and functions:
 
-- `length(lattice)`：位点总数；`phydim(lattice)`：局域维数 `d`；
-- `lattice.d`、`lattice.N` / `Nt` / `Nτ`、`lattice.δt` / `δτ`、`lattice.t`、`lattice.β`（虚时间时 `N*δτ`）；
-- `branches(lattice)`：返回 `(:+, :-)`（实时间）或 `(:τ,)`（虚时间）等分支；
-- `index(lattice, i, branch=:+)`：将 (时间步, 分支) 映射为位点位置；
-- `ContourIndex(i, :+)`：轮廓索引对象；
-- `vacuumstate(lattice)`：初始化真空态 ADT/PT。
+- `length(lattice)`: total number of sites; `phydim(lattice)`: local dimension `d`;
+- `lattice.d`, `lattice.N` / `Nt` / `Nτ`, `lattice.δt` / `δτ`, `lattice.t`, `lattice.β` (`N*δτ` for imaginary time);
+- `branches(lattice)`: returns the branches, e.g. `(:+, :-)` (real time) or `(:τ,)` (imaginary time);
+- `index(lattice, i, branch=:+)`: maps a (time step, branch) pair to a site position;
+- `ContourIndex(i, :+)`: a contour index object;
+- `vacuumstate(lattice)`: initializes the vacuum-state ADT/PT.
 
-!!! note "注意网格端点"
-    `N` 个时间步覆盖的时间区间是 `t = N*δt`，采样点为 `i = 1..N` 对应 `t_i = i*δt`。与外部数据（如精确对角化）对比时注意网格是否包含端点、起始点，建议按时间显式对齐而不是按下标对齐。
+!!! note "Mind the grid endpoints"
+    `N` time steps cover the time interval `t = N*δt`, with sample points `i = 1..N` corresponding to `t_i = i*δt`. When comparing against external data (e.g. exact diagonalization), check whether the grid includes the endpoints and the starting point; it is recommended to align explicitly in time rather than by index.
 
-## 系统算符 `AbstractImpurityOperator`
+## System operators `AbstractImpurityOperator`
 
-| 类型 | 构造 | 说明 |
+| Type | Construction | Description |
 |---|---|---|
-| `ImpurityHamiltonian` | `ImpurityHamiltonian(m::Matrix)` | 幺正演化 $e^{\mp i \hat{H}_S \delta t}$ |
-| `ImpurityLindbladian` | `ImpurityLindbladian(H, jumpops)` | 含耗散（Lindblad）演化，`jumpops` 为跃迁算符列表 |
+| `ImpurityHamiltonian` | `ImpurityHamiltonian(m::Matrix)` | Unitary evolution $e^{\mp i \hat{H}_S \delta t}$ |
+| `ImpurityLindbladian` | `ImpurityLindbladian(H, jumpops)` | Dissipative (Lindblad) evolution; `jumpops` is a list of jump operators |
 
-由 `sysdynamics(lattice, model, trunc=...)` 生成裸系统动力学张量 `mpsK`（ADT 或 PT）。
+`sysdynamics(lattice, model, trunc=...)` generates the bare system dynamics tensor `mpsK` (ADT or PT).
 
-## 混合化样式 `HybridizationStyle`
+## Hybridization styles `HybridizationStyle`
 
-描述系统-浴耦合的具体形式：
+Describes the specific form of the system–bath coupling:
 
-| 类型 | 耦合形式 | 约束 | 框架 |
+| Type | Coupling form | Constraint | Framework |
 |---|---|---|---|
-| `AdditiveHyb(op)` | $\hat{A}(\hat{b}^\dagger+\hat{b})$ 型，对角 | `op` 为向量或对角矩阵（厄米） | ADT |
-| `NonAdditiveHyb(op)` | $\hat{A}(\hat{a}+\hat{a}^\dagger)$，$\hat{A}=\hat{A}^\dagger$ | `op` 厄米矩阵 | PT |
-| `NonDiagonalHyb(op)` | $\hat{A}\hat{a} + \hat{A}^\dagger \hat{a}^\dagger$ | `op` 任意方阵 | PT（文献的核心情形） |
+| `AdditiveHyb(op)` | $\hat{A}(\hat{b}^\dagger+\hat{b})$ type, diagonal | `op` is a vector or a diagonal matrix (Hermitian) | ADT |
+| `NonAdditiveHyb(op)` | $\hat{A}(\hat{a}+\hat{a}^\dagger)$, $\hat{A}=\hat{A}^\dagger$ | `op` is a Hermitian matrix | PT |
+| `NonDiagonalHyb(op)` | $\hat{A}\hat{a} + \hat{A}^\dagger \hat{a}^\dagger$ | `op` is any square matrix | PT (the core case in the paper) |
 
-含时版本（`TdHybridizationStyle`）：`AdditiveTdHyb`、`NonAdditiveTdHyb`、`NonDiagonalTdHyb`。
+Time-dependent versions (`TdHybridizationStyle`): `AdditiveTdHyb`, `NonAdditiveTdHyb`, `NonDiagonalTdHyb`.
 
-## 影响泛函构建算法 `InfluenceFunctionalAlgorithm`
+## Influence functional algorithms `InfluenceFunctionalAlgorithm`
 
 ```julia
-# 1) 部分影响泛函（Partial IF）：仅适用于对角耦合 AdditiveHyb
+# 1) Partial influence functional (Partial IF): only for the diagonal coupling AdditiveHyb
 alg = PartialIF(trunc=trunc)
 
-# 2) 平移不变影响泛函（XTRG-IF，XTRG 式），文献推荐
+# 2) Translationally invariant influence functional (XTRG-IF, XTRG-style), recommended by the paper
 alg = XTRGIF(;
-    algexpan = OverDeterminedProny(n=20, tol=1.0e-8, verbosity=2),  # 混合化函数指数展开
-    algevo   = WII(),        # 或 WI()、ComplexStepper()、FirstOrderStepper()
-    algmult  = DMRGMult1(trunc, initguess=:rand, maxiter=10),   # 或 SVDCompression(trunc)
-    k        = 7,            # XTRG 步数：时间步长 1/2^k
-    fast     = true,         # true：树形二分方案（约 k 次乘法）；false：串行 2^k-1 次
+    algexpan = OverDeterminedProny(n=20, tol=1.0e-8, verbosity=2),  # exponential expansion of the hybridization function
+    algevo   = WII(),        # or WI(), ComplexStepper(), FirstOrderStepper()
+    algmult  = DMRGMult1(trunc, initguess=:rand, maxiter=10),   # or SVDCompression(trunc)
+    k        = 7,            # number of XTRG steps: time step 1/2^k
+    fast     = true,         # true: tree/bisection scheme (about k multiplications); false: serial 2^k-1 multiplications
     verbosity= 0,
 )
 ```
 
-- `algexpan`：`ExponentialExpansionAlgorithm`，包括 `OverDeterminedProny`、`DeterminedProny`（`exponential_expansion`、`expansion_error` 可用于误差分析，由重导出的 `ExpExp` 包提供）；
-- `algevo`：`TimeEvoMPOAlgorithm`，把 $\hat{H}_{\text{eff}}$ 指数化为 MPO 的步进器（`WI`/`WII`/`FirstOrderStepper`/`ComplexStepper`）；
-- `algmult`：`DMRGAlgorithm`，MPO-MPO 乘法的压缩算法，`DMRGMult1`（单站点 DMRG 迭代，`initguess ∈ {:svd, :pre, :rand}`，`maxiter`）或 `SVDCompression`。
+- `algexpan`: an `ExponentialExpansionAlgorithm`, including `OverDeterminedProny` and `DeterminedProny` (`exponential_expansion` and `expansion_error` can be used for error analysis; provided by the re-exported `ExpExp` package);
+- `algevo`: a `TimeEvoMPOAlgorithm`, the stepper that exponentiates $\hat{H}_{\text{eff}}$ into an MPO (`WI`/`WII`/`FirstOrderStepper`/`ComplexStepper`);
+- `algmult`: a `DMRGAlgorithm` that compresses MPO–MPO multiplications, either `DMRGMult1` (single-site DMRG iteration, `initguess ∈ {:svd, :pre, :rand}`, `maxiter`) or `SVDCompression`.
 
-构建 IF 的入口函数：
+Entry-point functions for building the IF:
 
 ```julia
-mpsI = hybriddynamics(lattice, corr, hyb)                 # 默认 PartialIF / 默认截断
-mpsI = hybriddynamics(lattice, corr, hyb, trunc=trunc)    # 对角耦合 + 部分 IF
-mpsI = hybriddynamics(lattice, corr, hyb, alg)            # 指定 IF 算法（对角或非对角）
-mpsI = hybriddynamics!(gmps, lattice, corr, hyb, alg)     # 就地版本
-mpsI = hybriddynamics_naive(lattice, corr, hyb, trunc=trunc)  # N² 门操作的朴素参考实现（对角）
+mpsI = hybriddynamics(lattice, corr, hyb)                 # default PartialIF / default truncation
+mpsI = hybriddynamics(lattice, corr, hyb, trunc=trunc)    # diagonal coupling + partial IF
+mpsI = hybriddynamics(lattice, corr, hyb, alg)            # specify the IF algorithm (diagonal or off-diagonal)
+mpsI = hybriddynamics!(gmps, lattice, corr, hyb, alg)     # in-place version
+mpsI = hybriddynamics_naive(lattice, corr, hyb, trunc=trunc)  # naive reference implementation with N² gate operations (diagonal)
 ```
 
-> 对角耦合，`hybriddynamics` 既可用 `PartialIF`（逐位点乘，每因子键维为 2），也可用 `XTRGIF`。对非对角耦合只能使用 `XTRGIF`。
+> For diagonal coupling, `hybriddynamics` can use either `PartialIF` (site-by-site multiplication, each factor having bond dimension 2) or `XTRGIF`. For off-diagonal coupling, only `XTRGIF` can be used.
 
-## 浴与关联函数（`ImpurityModelBase`）
+## Baths and correlation functions (`ImpurityModelBase`)
 
 ```julia
-spec = spectrum(f, lb=0, ub=wc)          # 由函数定义谱密度 J(ω)
-spec = Leggett(d=1, ωc=5, α=0.1)         # 预定义 Leggett 谱
-bath = bosonicbath(spec, β=β)            # 玻色浴（有限温度 β）
-corr = correlationfunction(bath, lattice) # 离散化到格点上的关联函数 Δ(τ,τ')
+spec = spectrum(f, lb=0, ub=wc)          # define the spectral density J(ω) from a function
+spec = Leggett(d=1, ωc=5, α=0.1)         # predefined Leggett spectrum
+bath = bosonicbath(spec, β=β)            # bosonic bath (finite temperature β)
+corr = correlationfunction(bath, lattice) # correlation function Δ(τ,τ') discretized on the lattice
 ```
 
-`correlationfunction` 会根据格点轮廓自动调用 `Δt`（实时间）、`Δτ`（虚时间）或 `Δm`（混合轮廓）。
+`correlationfunction` automatically calls `Δt` (real time), `Δτ` (imaginary time), or `Δm` (mixed contour) depending on the lattice contour.
 
-要点：
-- 零温取 `β=Inf`；
-- `spectrum` 的积分区间 `[lb, ub]` 应覆盖谱的主要权重（如 Ohmic 谱取 `ub=3~5ωc`）；若 $J(\omega)$ 在 $\omega=0$ 发散或与发散核卷积，需从非零下界开始（详见[实践指南](@ref)）。
+Key points:
+- zero temperature corresponds to `β=Inf`;
+- the integration interval `[lb, ub]` of `spectrum` should cover the main weight of the spectrum (e.g. take `ub=3~5ωc` for an Ohmic spectrum); if $J(\omega)$ diverges at $\omega=0$ or is convolved with a divergent kernel, start from a nonzero lower bound (see the [Practice guide](@ref) for details).
 
-## ADT / PT 张量操作
+## ADT / PT tensor operations
 
-- `mult(a, b, algmult)` / `mult!(a, b, trunc)`：张量网络乘法（元素级乘积 / MPO 乘法）；
-- `integrate(lattice, args...)` / `integrate(mpsA, mpsB)`：求配分函数（路径积分求和）；
-- `apply!(term, mps)`：应用局域算符；
-- `canonicalize!`、`leftorth!`、`rightorth!`：正交化（可指定 `Orthogonalize`）；
-- `bond_dimension(mps)`、`bond_dimensions(mps)`：键维查询；
-- `distance(mps1, mps2)` / `distance2`：两个张量的距离（相对误差验证用）；
-- `randomadt` / `randompt`：随机张量（测试用）；`vacuumstate(lattice)`：真空态。
+- `mult(a, b, algmult)` / `mult!(a, b, trunc)`: tensor network multiplication (elementwise product / MPO multiplication);
+- `integrate(lattice, args...)` / `integrate(mpsA, mpsB)`: computes the partition function (path-integral sum);
+- `apply!(term, mps)`: applies a local operator;
+- `canonicalize!`, `leftorth!`, `rightorth!`: orthogonalization (`Orthogonalize` can be specified);
+- `bond_dimension(mps)`, `bond_dimensions(mps)`: bond dimension queries;
+- `distance(mps1, mps2)` / `distance2`: distance between two tensors (for relative-error validation);
+- `randomadt` / `randompt`: random tensors (for testing); `vacuumstate(lattice)`: vacuum state.
 
-## 观测量
+## [Observables](@id manual_observables)
 
-共有两条测量路径，均适用于 ADT 与 PT：
+There are two measurement paths, both applicable to ADT and PT:
 
-**路径 A：算符插入（任意算符，含非对角与两点关联）**
+**Path A: operator insertion (arbitrary operators, including off-diagonal and two-point correlations)**
 
-把算符（可以是任意矩阵）作为 `ContourOperator` 插入系统动力学，再整体求值：
+Insert the operator (which can be any matrix) into the system dynamics as a `ContourOperator`, then evaluate everything at once:
 
 ```julia
-# 单点：⟨op(t_i)⟩
+# Single point: ⟨op(t_i)⟩
 ct   = ContourOperator(ContourIndex(i), op)
 mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
-mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp)    # 实时间需 ρ₀；虚时间不用
+mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp)    # real time requires ρ₀; imaginary time does not
 mps2 = mult!(mpsK, mpsI, trunc=trunc)
 v    = integrate(mps2) / integrate(mps)
 
-# 两点关联：⟨op2(t_i) op1(t_j)⟩
+# Two-point correlation: ⟨op2(t_i) op1(t_j)⟩
 ct   = ContourOperator([ContourIndex(i), ContourIndex(j)], [op2, op1])
 mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
-# ……同样 boundarycondition! → mult! → integrate/integrate
+# ... likewise: boundarycondition! → mult! → integrate/integrate
 ```
 
-**路径 B：环境缓存（批量单点观测量）**
+**Path B: environment caches (batched single-point observables)**
 
-先建一次缓存，再逐点测（已归一化）：
+Build the cache once, then measure point by point (already normalized):
 
 ```julia
-# PT 框架（非对角耦合，或需要非对角观测量）
+# PT framework (off-diagonal coupling, or off-diagonal observables needed)
 cache = environments(lattice, mps, ρ₀=ρimp)
 v = expectationvalue(ContourOperator(ContourIndex(i, :+), op), cache)
 
-# ADT 框架（对角耦合，对角观测量）
+# ADT framework (diagonal coupling, diagonal observables)
 cache = environments(lattice, mpsK, mpsI)
 v = expectationvalue(ADTTerm(index(lattice, i, branch=:+), zdiag), cache)
 ```
 
-虚时间 / 混合轮廓同样支持（PT 用 `environments(lattice, mps)`，ADT 用 `environments(lattice, mpsK, mpsI)`）。ADT 的多点形式 `ADTTerm((pos2, pos1), (v2, v1))` 可测对角两点关联。
+Imaginary time / mixed contours are supported as well (PT uses `environments(lattice, mps)`, ADT uses `environments(lattice, mpsK, mpsI)`). The multi-point ADT form `ADTTerm((pos2, pos1), (v2, v1))` can measure diagonal two-point correlations.
 
-辅助函数：`Zvalue(cache)`（配分函数）、`Zvalue2(cache)`、`TransferMatrix`（转移矩阵）、
-`correlation(lattice, model, op, mpsI[, ρ0])`（两点关联函数）、`heatcurrents`。
+Auxiliary functions: `Zvalue(cache)` (partition function), `Zvalue2(cache)`, `TransferMatrix` (transfer matrix),
+`correlation(lattice, model, op, mpsI[, ρ0])` (two-point correlation function), `heatcurrents`.
 
-## MPO 哈密顿量（长程相互作用工具）
+## MPO Hamiltonians (long-range interaction tools)
 
-`src/mpohamiltonian/` 提供了构造长程（指数衰减）相互作用哈密顿量 MPO 的独立工具，用于其他一维量子多体问题：
+`src/mpohamiltonian/` provides a standalone tool for constructing MPOs of Hamiltonians with long-range (exponentially decaying) interactions, intended for other one-dimensional quantum many-body problems:
 
 ```julia
-# SchurMPOTensor：把 [局域项 + 指数衰减长程项] 编码为紧凑 MPO 站点张量
-h = SchurMPOTensor(h1, h2s)    # h2s 为 ExponentialDecayTerm / GenericDecayTerm / PowerlawDecayTerm 列表
+# SchurMPOTensor: encodes [local terms + exponentially decaying long-range terms] into a compact MPO site tensor
+h = SchurMPOTensor(h1, h2s)    # h2s is a list of ExponentialDecayTerm / GenericDecayTerm / PowerlawDecayTerm
 mpo = MPOHamiltonian([h for _ in 1:L])
-tensors = tompotensors(mpo)              # 转成稠密 MPO 站点张量
-tensors2 = timeevompo(tensors, dt, WII())   # 时间演化（WI / WII / ComplexStepper / FirstOrderStepper）
+tensors = tompotensors(mpo)              # convert to dense MPO site tensors
+tensors2 = timeevompo(tensors, dt, WII())   # time evolution (WI / WII / ComplexStepper / FirstOrderStepper)
 ```
 
-## 超参数与误差来源
+## Hyperparameters and sources of error
 
-本方法共有四类可控误差来源（文献 Sec. IV）：
+The method has four classes of controllable error sources (Sec. IV of the paper):
 
-| 超参数 | 含义 | 建议默认 | 误差来源 |
+| Hyperparameter | Meaning | Suggested default | Error source |
 |---|---|---|---|
-| `δt` / `δτ` | 轮廓离散步长 | 收敛性检查确定 | QuAPI 一阶 Trotter 分解误差，整体 $O(t\delta t)$ |
-| `χ`（`trunc.D`） | MPO/MPS 键维截断 | 文献示例 30–200 | MPO 压缩（截断）误差 |
-| `n`（`algexpan`） | 混合化函数指数展开项数 | 文献默认 20 | Prony 近似误差 |
-| `m`（`alg.k`） | XTRG 步数（时间步 $1/2^m$） | 文献默认 7 | XTRG 热态构造误差（指数收敛） |
-| `d`（格点） | 玻色杂质局域 Hilbert 空间截断 | 依温度而定 | 局域截断误差 |
+| `δt` / `δτ` | Contour discretization step | determined by convergence checks | QuAPI first-order Trotter decomposition error, overall $O(t\delta t)$ |
+| `χ` (`trunc.D`) | MPO/MPS bond dimension truncation | 30–200 in the paper's examples | MPO compression (truncation) error |
+| `n` (`algexpan`) | Number of terms in the exponential expansion of the hybridization function | 20 by default in the paper | Prony approximation error |
+| `m` (`alg.k`) | Number of XTRG steps (time step $1/2^m$) | 7 by default in the paper | XTRG thermal-state construction error (exponentially convergent) |
+| `d` (lattice) | Local Hilbert space truncation of the bosonic impurity | depends on temperature | local truncation error |
 
-要点（均已在文献中以 JC 模型、双单模浴、非相互作用玻色模、sub-Ohmic 浴等算例验证）：
+Key points (all verified in the paper with examples such as the JC model, two single-mode baths, non-interacting bosonic modes, and a sub-Ohmic bath):
 
-- 误差随 `χ`、`m`、`n` 增加快速饱和；`δt` 越小误差单调下降；
-- 强耦合一般比弱耦合更难收敛（需要更大 `χ`）；
-- JC 型（粒子数守恒）耦合生成的纠缠远少于 Rabi 型耦合，通常收敛更快；
-- 零温情形（$\beta=\infty$）一般比有限温更容易收敛；
-- 计算成本主要来自 XTRG 中的 MPO-MPO 乘法，理论标度为 $O(N\chi^4 d^3)$。
+- errors saturate quickly as `χ`, `m`, and `n` increase; the error decreases monotonically as `δt` shrinks;
+- strong coupling is generally harder to converge than weak coupling (requires larger `χ`);
+- JC-type (number-conserving) coupling generates far less entanglement than Rabi-type coupling and usually converges faster;
+- the zero-temperature case ($\beta=\infty$) is generally easier to converge than the finite-temperature case;
+- the computational cost is dominated by MPO–MPO multiplications in XTRG, scaling theoretically as $O(N\chi^4 d^3)$.
 
-## 代码结构
+## Code structure
 
 ```
 src/
-├── TEMPO.jl                    # 模块定义与导出符号
-├── tensorops/                  # 截断、张量操作、正交化等基础工具（algorithms.jl 为 DMRG 乘法/MPS 算法）
-├── defaults.jl                 # 默认超参数
-├── mpohamiltonian/             # MPO 哈密顿量（SchurMPO、长程项、时间演化步进器）
-├── contourindices.jl           # ContourIndex、branch
-├── adt/  pt/                   # 增强密度张量（MPS）与过程张量（MPO）数据结构及运算
-├── conversions.jl              # PT ↔ ADT 转换辅助（copy 张量等）
-├── adtterms.jl / fockterms.jl  # ADTTerm / FockTerm / ProdFockTerm 等局域项
-├── adtlattices/ ptlattices/    # 实/虚/混合轮廓格点定义（Fock 排序）
-├── contouroperators.jl         # ContourOperator（PT 上的算符）
-├── correlationfunction.jl      # 浴关联函数到格点的离散化
-├── influencefunctional/        # Feynman-Vernon IF：PartialIF / 平移不变 IF（ADT 与 PT 两种）
-├── tdinfluencefunctional/      # 含时耦合的 IF 与含时混合化样式
-├── boundarycondition.jl        # 初始态 / 边界条件
-├── models/                     # 幺正（ImpurityHamiltonian）与耗散（ImpurityLindbladian）动力学
-└── observables/                # 环境缓存、期望值、转移矩阵、关联函数、热流
+├── TEMPO.jl                    # module definition and exported symbols
+├── tensorops/                  # basic tools for truncation, tensor operations, orthogonalization, etc. (algorithms.jl contains DMRG multiplication / MPS algorithms)
+├── defaults.jl                 # default hyperparameters
+├── mpohamiltonian/             # MPO Hamiltonians (SchurMPO, long-range terms, time-evolution steppers)
+├── contourindices.jl           # ContourIndex, branch
+├── adt/  pt/                   # augmented density tensor (MPS) and process tensor (MPO) data structures and operations
+├── conversions.jl              # PT ↔ ADT conversion helpers (copy tensors etc.)
+├── adtterms.jl / fockterms.jl  # local terms such as ADTTerm / FockTerm / ProdFockTerm
+├── adtlattices/ ptlattices/    # real / imaginary / mixed contour lattice definitions (Fock ordering)
+├── contouroperators.jl         # ContourOperator (operators on the PT)
+├── correlationfunction.jl      # discretization of bath correlation functions onto the lattice
+├── influencefunctional/        # Feynman-Vernon IF: PartialIF / translationally invariant IF (both ADT and PT)
+├── tdinfluencefunctional/      # IF for time-dependent couplings and time-dependent hybridization styles
+├── boundarycondition.jl        # initial state / boundary conditions
+├── models/                     # unitary (ImpurityHamiltonian) and dissipative (ImpurityLindbladian) dynamics
+└── observables/                # environment caches, expectation values, transfer matrices, correlation functions, heat currents
 
-docs/tutorials/                  # 教程：spinboson 与三篇论文复现 notebook
-benchmark/                       # 基准算例：自旋玻色子、独立玻色模、实时间等
-test/                            # 测试套件（含与 Exact Diagonalization 的对照）
+docs/tutorials/                  # tutorials: spinboson and three paper-reproduction notebooks
+benchmark/                       # benchmark cases: spin–boson, independent bosonic modes, real time, etc.
+test/                            # test suite (including cross-checks against exact diagonalization)
 ```
 
-## 与文献的对应关系
+## Correspondence with the literature
 
-| 文献内容 | 工具包实现 |
+| Paper | Package implementation |
 |---|---|
-| 对角 + 对易耦合（标准 TEMPO） | `ADTLattice` + `AdditiveHyb` + `PartialIF`/`XTRGIF` |
-| 对角 + 非对易耦合（多浴） | 多个 `AdditiveHyb` 的 IF 相乘（`mult!`） |
-| 非对角耦合（共轭对，核心推广） | `PTLattice` + `NonDiagonalHyb` + `XTRGIF` |
-| 实时间 Keldysh 轮廓 | `contour=:real` |
-| 虚时间轮廓 | `contour=:imag` |
-| L 形 Kadanoff–Baym 轮廓 | `contour=:mixed`（`MixedPTLattice`/`MixedADTLattice`） |
-| QuAPI 离散化（附录 C） | `correlationfunction(bath, lattice)` 中的 `Δt`/`Δτ`/`Δm` |
-| 混合化函数的指数展开（附录 D） | `OverDeterminedProny`/`DeterminedProny`（`algexpan`） |
-| XTRG 构造有效热态（文献 Fig. 3） | `XTRGIF(k=..., fast=...)` |
-| PT 中系统哈密顿量的吸收（文献 Fig. 2b） | `sysdynamics(lattice, model)` + `mult!` |
-| 观测量计算（文献 Fig. 1d, 1e） | `environments` + `expectationvalue` |
-| JC 自旋玻色子模型 | `docs/tutorials/spinboson/jctype.jl` |
-| 标准自旋玻色子模型 | `docs/tutorials/spinboson/rabitype.jl`、`benchmark/sb.jl` |
-| 非相互作用/相互作用玻色杂质 | `benchmark/independentbosons.jl`、`bosonicimpurity.jl` |
+| Diagonal + commuting coupling (standard TEMPO) | `ADTLattice` + `AdditiveHyb` + `PartialIF`/`XTRGIF` |
+| Diagonal + non-commuting coupling (multiple baths) | IFs of multiple `AdditiveHyb` multiplied together (`mult!`) |
+| Off-diagonal coupling (conjugate pair, the core generalization) | `PTLattice` + `NonDiagonalHyb` + `XTRGIF` |
+| Real-time Keldysh contour | `contour=:real` |
+| Imaginary-time contour | `contour=:imag` |
+| L-shaped Kadanoff–Baym contour | `contour=:mixed` (`MixedPTLattice`/`MixedADTLattice`) |
+| QuAPI discretization (Appendix C) | `Δt`/`Δτ`/`Δm` in `correlationfunction(bath, lattice)` |
+| Exponential expansion of the hybridization function (Appendix D) | `OverDeterminedProny`/`DeterminedProny` (`algexpan`) |
+| XTRG construction of the effective thermal state (Fig. 3 of the paper) | `XTRGIF(k=..., fast=...)` |
+| Absorption of the system Hamiltonian into the PT (Fig. 2b of the paper) | `sysdynamics(lattice, model)` + `mult!` |
+| Observable computation (Fig. 1d, 1e of the paper) | `environments` + `expectationvalue` |
+| JC spin–boson model | `docs/tutorials/spinboson/jctype.jl` |
+| Standard spin–boson model | `docs/tutorials/spinboson/rabitype.jl`, `benchmark/sb.jl` |
+| Non-interacting / interacting bosonic impurity | `benchmark/independentbosons.jl`, `bosonicimpurity.jl` |

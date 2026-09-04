@@ -1,57 +1,57 @@
 # TEMPO.jl
 
-本工具包是 **时间演化矩阵乘积算符（Time-Evolving Matrix Product Operator, TEMPO）** 方法的一个 Julia 实现，其算法理论基于文献：
+This package is a Julia implementation of the **Time-Evolving Matrix Product Operator (TEMPO)** method, with the algorithmic theory based on the publication:
 
 > C. Guo, W. Wu, X. Xu, T. Jiang, P.-X. Chen, and R. Chen,
 > *Time-evolving matrix product operators for off-diagonal system-bath coupling*,
 > **Phys. Rev. B 114, 125413 (2026)**.
 
-与只支持对角系统-浴耦合的原始 TEMPO 不同，本实现基于**过程张量（Process Tensor, PT）**框架，将 TEMPO 推广到了更一般的**非对角系统-浴耦合**情形（系统通过一对共轭的非厄米算符 $\hat{A}^\dagger, \hat{A}$ 与浴耦合），并且统一了：
+Unlike the original TEMPO, which only supports diagonal system-bath coupling, this implementation is built on the **process tensor (PT)** framework and generalizes TEMPO to the more general case of **off-diagonal system-bath coupling** (the system couples to the bath through a pair of conjugate non-Hermitian operators $\hat{A}^\dagger, \hat{A}$), while unifying:
 
-- 标准 TEMPO（对角、对易耦合，`ADT` + 部分影响泛函）；
-- 对角但非对易的多浴耦合；
-- 非对角（共轭对）耦合（`PT` + 平移不变影响泛函）；
-- 实时间、虚时间、以及混合（Kadanoff–Baym）轮廓上的演化；
-- 含时系统-浴耦合。
+- standard TEMPO (diagonal, commuting coupling, `ADT` + partial influence functional);
+- diagonal but non-commuting multi-bath coupling;
+- off-diagonal (conjugate-pair) coupling (`PT` + translationally invariant influence functionals);
+- evolution on real-time, imaginary-time, and mixed (Kadanoff–Baym) contours;
+- time-dependent system-bath coupling.
 
-## 文档导航
+## Documentation
 
-| 页面 | 内容 |
+| Page | Content |
 |---|---|
-| [快速上手](@ref) | 三类典型问题的完整计算流程（可直接照抄运行） |
-| [使用手册](@ref) | 核心组件、超参数与误差来源、代码结构、文献对应 |
-| [实践指南](@ref) | 实战经验：路径选择、收敛检验、常见坑与诊断（**做一般计算任务前建议先读**） |
-| [实现细节](@ref) | 内部数据结构、算法流程与张量约定 |
-| [API 参考](@ref) | 全部导出符号的逐项文档 |
+| [Quickstart](@ref) | Complete workflows for three classes of typical problems (can be copied and run as-is) |
+| [Manual](@ref) | Core components, hyperparameters and error sources, code structure, correspondence with the literature |
+| [Practice guide](@ref) | Practical experience: path selection, convergence checks, common pitfalls and diagnostics (**recommended reading before any general computation task**) |
+| [Internals](@ref) | Internal data structures, algorithm flow, and tensor conventions |
+| [API reference](@ref) | Item-by-item documentation of all exported symbols |
 
-配套的论文复现 notebook 见 `docs/tutorials/`（strathearn2018、otterpohl2025、guo2026、spinboson）。
+Notebooks reproducing the accompanying paper can be found in `docs/tutorials/` (strathearn2018, otterpohl2025, guo2026, spinboson).
 
-## 安装
+## Installation
 
-本工具包依赖以下包（见 `Project.toml`）：
+This package depends on the following packages (see `Project.toml`):
 
-| 包 | 作用 |
+| Package | Purpose |
 |---|---|
-| `ImpurityModelBase` | 定义谱密度、浴（`bosonicbath`）、玻色算符等基础对象 |
-| `QuAPI` | 提供 `ContourIndex`、`branch`、`index` 等轮廓基础类型 |
-| `ExpExp` | 混合化函数的指数展开（Prony 方法） |
-| `TensorOperations` | 张量网络缩并 |
-| `Polynomials`、`LinearAlgebra`、`Statistics`、`TupleTools`、`Logging` | 通用数值与线性代数工具 |
+| `ImpurityModelBase` | Defines basic objects such as spectral densities, baths (`bosonicbath`), and bosonic operators |
+| `QuAPI` | Provides basic contour types such as `ContourIndex`, `branch`, and `index` |
+| `ExpExp` | Exponential expansion of hybridization functions (Prony method) |
+| `TensorOperations` | Tensor network contractions |
+| `Polynomials`, `LinearAlgebra`, `Statistics`, `TupleTools`, `Logging` | General-purpose numerical and linear-algebra utilities |
 
-在 Julia 中激活项目后即可使用：
+After activating the project in Julia, it can be used as follows:
 
 ```julia
 using TEMPO, ImpurityModelBase, LinearAlgebra
 ```
 
 !!! note
-    `spectrum`、`bosonicbath`、`bosonaoperator`、`bosondensityoperator`、`Leggett` 等函数定义在 `ImpurityModelBase` 中，需要一并 `using`。
+    Functions such as `spectrum`, `bosonicbath`, `bosonaoperator`, `bosondensityoperator`, and `Leggett` are defined in `ImpurityModelBase` and must be loaded together with `using`.
 
-## 核心概念
+## Core concepts
 
-### 量子杂质问题（QIP）
+### The quantum impurity problem (QIP)
 
-考虑一个"杂质"系统 $\hat{H}_S$ 线性耦合到无相互作用的玻色浴：
+Consider an "impurity" system $\hat{H}_S$ linearly coupled to a non-interacting bosonic bath:
 
 ```math
 \hat{H} = \hat{H}_S + \hat{H}_{\text{int}},
@@ -59,25 +59,25 @@ using TEMPO, ImpurityModelBase, LinearAlgebra
 \hat{H}_{\text{int}} = \hat{H}_{\text{hyb}} + \hat{H}_B .
 ```
 
-- **对角（diagonal）耦合**（原始 TEMPO/QuAPI）：
+- **Diagonal coupling** (original TEMPO/QuAPI):
 
   ```math
   \hat{H}_{\text{hyb}} = \sum_{l,k} \hat{A}_l\, (V_{l,k} \hat{b}^\dagger_{l,k} + \mathrm{H.c.}),
   ```
-  其中 $\hat{A}_l$ 是厄米算符，耦合项中 $\hat{A}_l$ 只与 $\hat{b}^\dagger+\hat{b}$ 的线性组合成对出现。
+  where $\hat{A}_l$ is a Hermitian operator, and in the coupling term $\hat{A}_l$ only appears paired with linear combinations of $\hat{b}^\dagger+\hat{b}$.
 
-- **非对角（off-diagonal）耦合**（本文献的推广）：
+- **Off-diagonal coupling** (the generalization introduced in this work):
 
   ```math
   \hat{H}_{\text{hyb}} = \sum_{l,k} \left( V_{l,k} \hat{A}_l \hat{b}^\dagger_{l,k} + \mathrm{H.c.} \right),
   ```
-  其中 $\hat{A}_l$ 可以是非厄米算符（例如 Jaynes–Cummings 型 $\hat{A}=\hat{\sigma}_-$）。
+  where $\hat{A}_l$ can be a non-Hermitian operator (e.g., the Jaynes–Cummings type $\hat{A}=\hat{\sigma}_-$).
 
-非对角耦合无法通过重新组合化为"对角且非对易"的情形，需要新的框架。
+Off-diagonal coupling cannot be recombined into a "diagonal but non-commuting" case and therefore requires a new framework.
 
-### Feynman–Vernon 影响泛函（IF）
+### The Feynman–Vernon influence functional (IF)
 
-TEMPO 类方法的关键出发点是对浴求迹后得到的 Feynman–Vernon 影响泛函。对非对角耦合，它在 Keldysh 轮廓 $C$ 上具有算符路径形式：
+The key starting point of TEMPO-type methods is the Feynman–Vernon influence functional obtained after tracing out the bath. For off-diagonal coupling, it takes the operator path form on the Keldysh contour $C$:
 
 ```math
 \mathcal{I}[\hat{A}^\dagger, \hat{A}]
@@ -85,7 +85,7 @@ TEMPO 类方法的关键出发点是对浴求迹后得到的 Feynman–Vernon �
     \hat{A}^\dagger(\tau)\, \Delta(\tau,\tau')\, \hat{A}(\tau') \right],
 ```
 
-其中**混合化函数（hybridization function）**由谱密度给出：
+where the **hybridization function** is determined by the spectral density:
 
 ```math
 \Delta(\tau,\tau') = i \int \mathrm{d}\omega\, J(\omega)\, D_\omega(\tau,\tau'),
@@ -93,21 +93,21 @@ TEMPO 类方法的关键出发点是对浴求迹后得到的 Feynman–Vernon �
 J(\omega) = \sum_k |V_k|^2 \delta(\omega - \omega_k).
 ```
 
-对角耦合时该 IF 对应经典配分函数（可表示为 MPS / ADT）；非对角耦合时它对应一个有效量子多体哈密顿量的热态 $\mathrm{e}^{-\hat{H}_{\text{eff}}}$，需要表示为 **MPO（即 PT）**。
+For diagonal coupling, this IF corresponds to a classical partition function (and can be represented as an MPS / ADT); for off-diagonal coupling, it corresponds to the thermal state $\mathrm{e}^{-\hat{H}_{\text{eff}}}$ of an effective quantum many-body Hamiltonian and must be represented as an **MPO (i.e., a PT)**.
 
-### 两种张量网络：ADT 与 PT
+### Two tensor networks: ADT and PT
 
-| 对象 | 全称 | 表示 | 适用耦合 |
+| Object | Full name | Representation | Applicable coupling |
 |---|---|---|---|
-| `ADT` | 增强密度张量（Augmented Density Tensor） | MPS | 对角耦合（原始 TEMPO） |
-| `ProcessTensor` (`PT`) | 过程张量 | MPO | 对角非对易、非对角耦合（文献扩展） |
+| `ADT` | Augmented density tensor | MPS | Diagonal coupling (original TEMPO) |
+| `ProcessTensor` (`PT`) | Process tensor | MPO | Diagonal non-commuting and off-diagonal coupling (extension of this work) |
 
-一个 PT 可通过对相邻位点施加 3D copy 张量系统地转换为 ADT（文献 Fig. 4）。
+A PT can be systematically converted into an ADT by inserting 3D copy tensors between neighboring sites (Fig. 4 of the paper).
 
-### 轮廓（Contour）
+### Time contours
 
-本工具包支持三种时间轮廓，通过 `contour` 关键字选择：
+This package supports three time contours, selected via the `contour` keyword:
 
-- `contour=:real`（等价于 `:Keldysh`）：实时间演化，系统初态为 $\hat{\rho}_S \otimes \hat{\rho}_B$；
-- `contour=:imag`：虚时间演化（$0\to\beta$），对应有限温度配分函数与 Matsubara 关联函数；
-- `contour=:mixed`（等价于 `:Kadanoff`）：L 形 Kadanoff–Baym 轮廓（虚时间 + 实时间混合）。
+- `contour=:real` (equivalent to `:Keldysh`): real-time evolution, with the initial system state $\hat{\rho}_S \otimes \hat{\rho}_B$;
+- `contour=:imag`: imaginary-time evolution ($0\to\beta$), corresponding to the finite-temperature partition function and Matsubara correlation functions;
+- `contour=:mixed` (equivalent to `:Kadanoff`): the L-shaped Kadanoff–Baym contour (a mix of imaginary and real time).

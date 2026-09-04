@@ -1,17 +1,17 @@
-# API 参考
+# API reference
 
-本页按功能分类列出 `TEMPO` 的导出符号文档（由 docstring 自动生成）。使用方式：
+This page lists the documentation of `TEMPO`'s exported symbols grouped by functionality (generated automatically from the docstrings). Usage:
 
 ```julia
 using TEMPO, ImpurityModelBase, LinearAlgebra
 ```
 
-说明：
-- `branch`、`index` 由 `QuAPI` 提供，`scalartype`、`space_l`、`space_r` 由 `TensorOperations` 提供，经 TEMPO 重导出；
-- 指数展开函数（`OverDeterminedProny`、`DeterminedProny`、`exponential_expansion`、`expansion_error`）由 `ExpExp` 包提供并重导出，见文末[指数展开（`ExpExp`，重导出）](@ref)小节的签名速查；
-- `phydim`、`spectrum`、`bosonicbath` 等在 `ImpurityModelBase` 中定义。
+Notes:
+- `branch` and `index` are provided by `QuAPI`, and `scalartype`, `space_l`, `space_r` by `TensorOperations`; all are reexported through TEMPO;
+- The exponential-expansion functions (`OverDeterminedProny`, `DeterminedProny`, `exponential_expansion`, `expansion_error`) are provided by the `ExpExp` package and reexported; see the signature quick reference in the [Exponential expansion (`ExpExp`, reexported)](@ref) section at the end of this page;
+- `phydim`, `spectrum`, `bosonicbath`, etc. are defined in `ImpurityModelBase`.
 
-## 截断方案
+## Truncation schemes
 
 ```@autodocs; canonical = false
 Modules = [TEMPO]
@@ -19,28 +19,28 @@ Pages = ["tensorops/tensorops.jl", "tensorops/truncation.jl", "tensorops/distanc
          "conversions.jl", "defaults.jl"]
 ```
 
-## 张量分解与矩阵操作
+## Tensor factorizations and matrix operations
 
 ```@autodocs; canonical = false
 Modules = [TEMPO]
 Pages = ["tensorops/matrixalgebra.jl", "tensorops/tensorfactorizations.jl", "tensorops/distance.jl"]
 ```
 
-## MPS/DMRG 乘法算法
+## MPS/DMRG multiplication algorithms
 
 ```@autodocs; canonical = false
 Modules = [TEMPO]
 Pages = ["algorithms.jl"]
 ```
 
-## 轮廓索引
+## Contour indices
 
 ```@autodocs; canonical = false
 Modules = [TEMPO]
 Pages = ["contourindices.jl"]
 ```
 
-## MPO 哈密顿量
+## MPO Hamiltonians
 
 ```@autodocs; canonical = false
 Modules = [TEMPO]
@@ -52,7 +52,7 @@ Pages = ["mpohamiltonian/def.jl", "mpohamiltonian/abstractmpotensor.jl",
          "mpohamiltonian/schurmpo/w1w2.jl"]
 ```
 
-## 增强密度张量 ADT
+## Augmented density tensor (ADT)
 
 ```@autodocs; canonical = false
 Modules = [TEMPO]
@@ -61,7 +61,7 @@ Pages = ["adt/def.jl", "adt/adt.jl", "adt/abstractdefs.jl", "adt/orth.jl",
          "adt/integrate.jl", "adt/util.jl", "adt/linalg.jl"]
 ```
 
-## 过程张量 ProcessTensor
+## Process tensors
 
 ```@autodocs; canonical = false
 Modules = [TEMPO]
@@ -69,14 +69,14 @@ Pages = ["pt/def.jl", "pt/orth.jl", "pt/mult/mult.jl", "pt/mult/svdmult.jl",
          "pt/mult/iterativemult.jl", "pt/util.jl", "pt/linalg.jl"]
 ```
 
-## 局域算符项（ADTTerm / FockTerm）
+## Local operator terms (ADTTerm / FockTerm)
 
 ```@autodocs; canonical = false
 Modules = [TEMPO]
 Pages = ["adtterms.jl", "fockterms.jl", "contouroperators.jl"]
 ```
 
-## 格点 Lattice
+## Lattices
 
 ```@autodocs; canonical = false
 Modules = [TEMPO]
@@ -86,14 +86,14 @@ Pages = ["adtlattices/adtlattices.jl", "adtlattices/fockordering.jl",
          "ptlattices/mixedtime.jl", "ptlattices/integrate.jl"]
 ```
 
-## 浴关联函数
+## Bath correlation functions
 
 ```@autodocs; canonical = false
 Modules = [TEMPO]
 Pages = ["correlationfunction.jl"]
 ```
 
-## 影响泛函 IF
+## Influence functionals (IF)
 
 ```@autodocs; canonical = false
 Modules = [TEMPO]
@@ -112,7 +112,7 @@ Pages = ["influencefunctional/influencefunctional.jl",
          "influencefunctional/tdvpif/tdvpif.jl"]
 ```
 
-## 含时影响泛函与 BEC 影响泛函
+## Time-dependent and BEC influence functionals
 
 ```@autodocs; canonical = false
 Modules = [TEMPO]
@@ -121,14 +121,14 @@ Pages = ["tdinfluencefunctional/tdinfluencefunctional.jl",
          "becinfluencefunctional/becinfluencefunctional.jl"]
 ```
 
-## 边界条件与初态
+## Boundary conditions and initial states
 
 ```@autodocs; canonical = false
 Modules = [TEMPO]
 Pages = ["boundarycondition.jl"]
 ```
 
-## 系统模型 Models
+## System models
 
 ```@autodocs; canonical = false
 Modules = [TEMPO]
@@ -136,7 +136,7 @@ Pages = ["models/def.jl", "models/models.jl", "models/dissipative.jl",
          "models/unitary/unitary.jl", "models/unitary/adt.jl", "models/unitary/pt.jl"]
 ```
 
-## 观测量 Observables
+## Observables
 
 ```@autodocs; canonical = false
 Modules = [TEMPO]
@@ -148,32 +148,32 @@ Pages = ["observables/adt/adt.jl", "observables/adt/envs.jl", "observables/adt/t
          "observables/correlations.jl", "observables/heatcurrents.jl"]
 ```
 
-## 指数展开（`ExpExp`，重导出）
+## Exponential expansion (`ExpExp`, reexported)
 
-指数展开将数据 $f(x)$（$x = 1,\dots,N$）拟合为指数和 $f(x) \approx \sum_i \alpha_i \beta_i^{x}$，用于把混合化函数表示为 MPO 可演化的形式。
+The exponential expansion fits data $f(x)$ ($x = 1,\dots,N$) to a sum of exponentials $f(x) \approx \sum_i \alpha_i \beta_i^{x}$, used to represent hybridization functions in a form that is evolvable with MPOs.
 
 ```julia
 OverDeterminedProny(; n::Int=10, tol::Real=1.0e-8, verbosity::Int=1, stepsize=1)
 DeterminedProny(; n::Int=10, tol::Real=1.0e-8, verbosity::Int=1, stepsize=1)
-#   n         最大展开项数（迭代上限）
-#   tol       相对误差阈值（tol*norm(f)），达到即提前收敛
-#   verbosity ≥1 打印不收敛警告，≥2 打印收敛信息
-#   stepsize  均匀采样步长；nothing 时自动选择
+#   n         maximum number of expansion terms (iteration cap)
+#   tol       relative error threshold (tol*norm(f)); converges early once reached
+#   verbosity ≥1 prints a non-convergence warning, ≥2 prints convergence info
+#   stepsize  uniform sampling step size; chosen automatically when nothing
 
 exponential_expansion(f::Vector{<:Number}, [L::Int,] alg=OverDeterminedProny())
-#   → (αs, βs)：满足 f(x) ≈ Σᵢ αᵢ βᵢˣ；传入函数时自动采样 k=1:L
+#   → (αs, βs) such that f(x) ≈ Σᵢ αᵢ βᵢˣ; when a function is passed, k=1:L is sampled automatically
 
 expansion_error(f, p) / expansion_error(f, coeffs, alphas)
-#   展开在采样点上的 2-范数误差
+#   2-norm error of the expansion at the sampled points
 ```
 
-## 默认值速查（`src/defaults.jl`）
+## Default values (`src/defaults.jl`)
 
-| 常量 | 值 | 用途 |
+| Constant | Value | Purpose |
 |---|---|---|
-| `DefaultTruncation` | `truncdimcutoff(D=100, ϵ=1e-14)` | 通用默认 |
-| `DefaultITruncation` | `truncdimcutoff(D=200, ϵ=1e-10)` | 构建 IF / mult 默认 |
-| `DefaultKTruncation` | `truncdimcutoff(D=1000, ϵ=1e-10)` | 系统动力学默认 |
-| `DefaultIntegrationTruncation` | `truncdimcutoff(D=10000, ϵ=1e-12)` | 初态吸收 |
-| `DefaultMPOTruncation` | `truncdimcutoff(D=10000, ϵ=1e-12)` | MPO 压缩 |
-| `DefaultMultAlg` | `DMRGMult1(DefaultITruncation)` | `mult` 默认算法 |
+| `DefaultTruncation` | `truncdimcutoff(D=100, ϵ=1e-14)` | General default |
+| `DefaultITruncation` | `truncdimcutoff(D=200, ϵ=1e-10)` | Default for IF construction / `mult` |
+| `DefaultKTruncation` | `truncdimcutoff(D=1000, ϵ=1e-10)` | Default for system dynamics |
+| `DefaultIntegrationTruncation` | `truncdimcutoff(D=10000, ϵ=1e-12)` | Initial-state absorption |
+| `DefaultMPOTruncation` | `truncdimcutoff(D=10000, ϵ=1e-12)` | MPO compression |
+| `DefaultMultAlg` | `DMRGMult1(DefaultITruncation)` | Default algorithm for `mult` |
