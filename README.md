@@ -125,13 +125,14 @@ Covers all core paths (lattices, influence functional construction, time-depende
 - `strathearn2018` — original TEMPO (Nat. Commun. 9, 3322 (2018))
 - `otterpohl2025` — PT representation for off-diagonal coupling
 - `guo2026` — this paper (Phys. Rev. B 114, 125413 (2026))
+- `thermalstate` — mean-force Gibbs state at strong coupling (PRB 108, 115437 (2023))
 - `spinboson` — Rabi-type / JC-type spin-boson models
 
-Generation and execution:
+Generation and execution (each tutorial directory has its own `gen_nb.jl`):
 
 ```bash
-julia --project=docs docs/tutorials/gen_notebooks.jl   # generate .ipynb files
-julia --project=docs docs/tutorials/run_notebook.jl    # run without a Jupyter environment
+julia --project=docs docs/tutorials/thermalstate/gen_nb.jl              # generate a tutorial notebook
+julia --project=. docs/tutorials/run_notebook.jl docs/tutorials/thermalstate/thermalstate.ipynb   # execute it
 ```
 
 ## Related project: GTEMPO
