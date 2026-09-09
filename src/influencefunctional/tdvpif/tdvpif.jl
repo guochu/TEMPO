@@ -64,12 +64,27 @@ end
 # `_renormalize!` bookkeeping, so the output value is e^H·z(0) regardless of
 # the gauge of the input.
 function _tdvpif_hybriddynamics_adt!(z::ADT, H::ADT, alg::TDVPIF)
+	# On the imaginary axis the correlation/hybridization are real-typed, yet the
+	# Prony (algexpan) exponential expansion of a real correlation can legitimately
+	# return complex exponents, which makes the influence operator H complex. The
+	# flow must then run in complex arithmetic; promote the flow state accordingly.
+	z = _tdvpif_promote_flowstate(z, H)
 	increase_bond!(z, alg.trunc.D)
 	canonicalize!(z, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
 	_tdvpif_flow_adt!(z, H, alg)
 	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
 	alg.callback(Float64[])
 	return z
+end
+
+# promote the flow state to the scalar type of the influence operator H when the
+# latter is wider (e.g. ComplexF64 from a complex Prony exponential expansion);
+# no-op otherwise. `complex` exists for both ADT and ProcessTensor.
+function _tdvpif_promote_flowstate(z::Dense1DTN, H::Dense1DTN)
+	T = promote_type(scalartype(z), scalartype(H))
+	(T <: Complex) || return z
+	(T == scalartype(z)) && return z
+	return complex(z)
 end
 
 # absorb the global scaling factor of a tensor network into its site tensors
@@ -261,6 +276,8 @@ end
 # influence functional or any impurity-dynamics MPO, e.g. the output of
 # `sysdynamics` with Lindblad dissipation).
 function _tdvpif_hybriddynamics_pt!(z::ProcessTensor, H::ProcessTensor, alg::TDVPIF)
+	# same complex-promotion rationale as in `_tdvpif_hybriddynamics_adt!`
+	z = _tdvpif_promote_flowstate(z, H)
 	increase_bond!(z, alg.trunc.D)
 	canonicalize!(z, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
 	_tdvpif_flow_pt!(z, H, alg)
