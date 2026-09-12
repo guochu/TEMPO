@@ -42,7 +42,7 @@ trunc2 = truncdimcutoff(D=2*chi, ϵ=1.0e-10, add_back=0)
 # 两种待比较的影响泛函算法（相同的 Prony 展开保证公平）
 algexpan = OverDeterminedProny(n=20, tol=1.0e-8)
 algs = [
-	"XTRGIF" => XTRGIF(k=5, fast=true, algmult=DMRGMult1(trunc), algexpan=algexpan),
+	"XTRGIF" => XTRGIF(k=5, fast=true, algmult=DMRG1(trunc), algexpan=algexpan),
 	"TDVPIF"                 => TDVPIF(trunc=trunc, δ=0.1, algexpan=algexpan),
 ]
 

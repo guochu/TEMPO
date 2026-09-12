@@ -13,14 +13,14 @@ The product `ADT`.
 """
 mult(x::ADT, y::ADT, alg::SVDCompression) = mult(x, y, trunc=alg.trunc, verbosity=alg.verbosity)
 """
-	mult(x::ADT, y::ADT, alg::DMRGMultAlgorithm)
+	mult(x::ADT, y::ADT, alg::DMRGAlgorithm)
 
-Compute the product of two MPS using a DMRG iterative algorithm (e.g., `DMRGMult1`).
+Compute the product of two MPS using a DMRG iterative algorithm (e.g., `DMRG1`).
 
 # Returns
 The product `ADT`.
 """
-mult(x::ADT, y::ADT, alg::DMRGMultAlgorithm) = iterativemult(x, y, alg)
+mult(x::ADT, y::ADT, alg::DMRGAlgorithm) = iterativemult(x, y, alg)
 
 
 """
@@ -35,17 +35,14 @@ Equivalent to `mult!(x, y, trunc=alg.trunc, verbosity=alg.verbosity)`.
 """
 mult!(x::ADT, y::ADT, alg::SVDCompression) = mult!(x, y, trunc=alg.trunc, verbosity=alg.verbosity)
 """
-	mult!(x::ADT, y::ADT, alg::DMRGMultAlgorithm)
+	mult!(x::ADT, y::ADT, alg::DMRGAlgorithm)
 
-Compute the product of two MPS in place using a DMRG iterative algorithm (e.g., `DMRGMult1`), storing the result in `x`.
+Compute the product of two MPS in place using a DMRG iterative algorithm (e.g., `DMRG1`), storing the result in `x`.
 
 # Returns
 `x` itself.
 """
-function mult!(x::ADT, y::ADT, alg::DMRGMultAlgorithm)
+function mult!(x::ADT, y::ADT, alg::DMRGAlgorithm)
 	r = iterativemult(x, y, alg)
 	return copy!(x, r)
-end 
-
-const DefaultMultAlg = DMRGMult1(DefaultITruncation)
-# const DefaultMultAlg = SVDCompression(DefaultITruncation)
+end

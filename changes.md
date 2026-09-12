@@ -1,3 +1,32 @@
+# 接口调整说明（2026-09-09）：DMRG 迭代乘法算法更名与算法定义归位
+
+本轮对齐 GTEMPO 的算法类型层级：删除 `DMRGMultAlgorithm`，`DMRGMult1` 更名为 `DMRG1`，并把算法类型定义集中到 `src/algorithms.jl`、默认值集中到 `src/defaults.jl`。行为不变，全套测试通过（93 个 testset，0 Fail / 0 Error）。
+
+## 类型层级
+
+| 旧名（已删除） | 新名 | 说明 |
+|---|---|---|
+| `DMRGMultAlgorithm` | —（删除） | 原 `DMRGMult1` 的父类型；相关方法（`mult`/`mult!`/`iterativemult`/`compute!`/`sweep!`/`finalize!`）改分派到 `DMRGAlgorithm` |
+| `DMRGMult1` | `DMRG1` | 单点 DMRG 迭代乘法；直接继承 `DMRGAlgorithm`。字段与构造器不变（`trunc`, `maxiter`, `tol`, `initguess ∈ {:svd, :pre, :rand}`, `verbosity`, `callback`） |
+
+注：TEMPO 中不存在 `DMRGMult2`，故本轮仅涉及 `DMRG1`。
+
+## 定义位置迁移
+
+- **迁入 `src/algorithms.jl`**（与 `MPSAlgorithm`/`DMRGAlgorithm`/`SVDCompression` 同处）：
+  - `MatrixProductOrthogonalAlgorithm` 抽象类型与 `Orthogonalize{A<:Union{QR, SVD}, T<:TruncationScheme}` 及其三个构造器（原 `src/adt/orth.jl`）；
+  - `AllowedInitGuesses` 常量、`DMRG1` 结构体/构造器/`Base.similar`（原 `src/adt/mult/iterativemult.jl`）；
+  - `Base.getproperty(::DMRGAlgorithm, :D/:ϵ)`（原分派于 `DMRGMultAlgorithm`）。
+- **迁入 `src/defaults.jl`**：`DefaultMultAlg = DMRG1(DefaultITruncation)`（原 `src/adt/mult/mult.jl`；置于 `DefaultITruncation` 之后，无初始化顺序问题）。
+
+## 迁移指南
+
+- `DMRGMult1(...)` → `DMRG1(...)`；`DMRG1` 已导出，`DMRGMult1` 不再导出。
+- 类型注解 `::DMRGMultAlgorithm` → `::DMRGAlgorithm`。
+- `Orthogonalize`、`leftorth!`/`rightorth!`/`canonicalize!`、`SVDCompression` 等接口不变。
+
+---
+
 # 接口调整说明（2026-09-03 / 09-04）
 
 这一波改动重构了底层张量分解模块的文件组织与函数接口，并统一了原地 / 非原地版本的语义。

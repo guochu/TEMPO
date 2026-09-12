@@ -1,67 +1,4 @@
-abstract type DMRGMultAlgorithm <: DMRGAlgorithm end
-
-const AllowedInitGuesses = (:svd, :pre, :rand)
-
-"""
-	DMRGMult1 <: DMRGMultAlgorithm
-
-Configuration of an MPS product compression algorithm based on DMRG iterative sweeping.
-
-# Fields
-- `trunc::TruncationDimCutoff`: truncation scheme (bond dimension and truncation error)
-- `maxiter::Int`: maximum number of iterations
-- `tol::Float64`: convergence tolerance
-- `initguess::Symbol`: initial guess, one of `:svd`, `:pre`, `:rand`
-- `verbosity::Int`: verbosity level
-- `callback::Function`: callback function
-
-Main constructor: `DMRGMult1(trunc; maxiter=5, tol=1e-12, initguess=:svd, verbosity=0, callback=Returns(nothing))`.
-"""
-struct DMRGMult1 <: DMRGMultAlgorithm
-    trunc::TruncationDimCutoff 
-    maxiter::Int
-    tol::Float64 
-    initguess::Symbol
-    verbosity::Int 
-    callback::Function
-end
-"""
-	DMRGMult1(trunc::TruncationDimCutoff; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0, callback::Function=Returns(nothing))
-
-Construct a `DMRGMult1` algorithm configuration.
-
-# Arguments
-- `trunc::TruncationDimCutoff`: truncation scheme (can be constructed with `truncdimcutoff(D, ϵ)`)
-- `maxiter::Int`: maximum number of iterations
-- `tol::Float64`: convergence tolerance
-- `initguess::Symbol`: initial guess, must be one of `:svd`, `:pre`, `:rand`, otherwise an `ArgumentError` is thrown
-- `verbosity::Int`: verbosity level
-- `callback::Function`: callback function
-"""
-function DMRGMult1(trunc::TruncationDimCutoff; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0, callback::Function=Returns(nothing))
-    (initguess in AllowedInitGuesses) || throw(ArgumentError("initguess must be one of $(AllowedInitGuesses)"))
-    return DMRGMult1(trunc, maxiter, tol, initguess, verbosity, callback)
-end 
-"""
-	DMRGMult1(; trunc::TruncationDimCutoff=DefaultITruncation, kwargs...)
-
-Construct a `DMRGMult1` from keyword arguments, with default truncation scheme `DefaultITruncation`.
-"""
-DMRGMult1(; trunc::TruncationDimCutoff=DefaultITruncation, kwargs...) = DMRGMult1(trunc; kwargs...)
-Base.similar(x::DMRGMult1; trunc::TruncationDimCutoff=x.trunc, maxiter::Int=x.maxiter, tol::Float64=x.tol, initguess::Symbol=x.initguess, verbosity::Int=x.verbosity, callback=x.callback) = DMRGMult1(
-            trunc=trunc, maxiter=maxiter, tol=tol, initguess=initguess, verbosity=verbosity, callback=callback)
-
-
-function Base.getproperty(x::DMRGMultAlgorithm, s::Symbol)
-    if s == :D
-        return x.trunc.D
-    elseif s == :ϵ
-        return x.trunc.ϵ
-    else
-        getfield(x, s)
-    end
-end
-
+# DMRG1 / DMRGAlgorithm / AllowedInitGuesses are defined in src/algorithms.jl
 
 # z is the output GMPS
 struct ADTIterativeMultCache{_O, _A, _B, _H} 
@@ -91,7 +28,7 @@ function mult_cache(z::ADT, x::ADT, y::ADT)
     return ADTIterativeMultCache(z, x, y, hstorage)
 end
 
-function iterativemult(x::ADT, y::ADT, alg::DMRGMultAlgorithm)
+function iterativemult(x::ADT, y::ADT, alg::DMRGAlgorithm)
     if alg.initguess == :svd
         z = _svd_guess(x, y, alg.D)
     elseif alg.initguess == :rand
@@ -111,7 +48,7 @@ function iterativemult(x::ADT, y::ADT, alg::DMRGMultAlgorithm)
     return z
 end
 
-compute!(env::ADTIterativeMultCache, alg::DMRGMultAlgorithm) = iterative_compute!(env, alg)
+compute!(env::ADTIterativeMultCache, alg::DMRGAlgorithm) = iterative_compute!(env, alg)
 
 
 function iterative_compute!(m, alg)
@@ -146,14 +83,14 @@ function iterative_error_2(m::AbstractVector)
 	return σ / abs(μ)
 end
 
-sweep!(m::ADTIterativeMultCache, alg::DMRGMultAlgorithm) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
+sweep!(m::ADTIterativeMultCache, alg::DMRGAlgorithm) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
 
-function finalize!(m::ADTIterativeMultCache, alg::DMRGMultAlgorithm) end
-function finalize!(m::ADTIterativeMultCache, alg::DMRGMult1)
+function finalize!(m::ADTIterativeMultCache, alg::DMRGAlgorithm) end
+function finalize!(m::ADTIterativeMultCache, alg::DMRG1)
     leftsweep!(m, alg)
     rightsweep_final!(m, alg)
 end
-function leftsweep!(m::ADTIterativeMultCache, alg::DMRGMult1)
+function leftsweep!(m::ADTIterativeMultCache, alg::DMRG1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
@@ -176,7 +113,7 @@ function leftsweep!(m::ADTIterativeMultCache, alg::DMRGMult1)
     return kvals    
 end
 
-function rightsweep!(m::ADTIterativeMultCache, alg::DMRGMult1)
+function rightsweep!(m::ADTIterativeMultCache, alg::DMRG1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
@@ -204,7 +141,7 @@ function rightsweep!(m::ADTIterativeMultCache, alg::DMRGMult1)
     return kvals    
 end
 
-function rightsweep_final!(m::ADTIterativeMultCache, alg::DMRGMult1)
+function rightsweep_final!(m::ADTIterativeMultCache, alg::DMRG1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)

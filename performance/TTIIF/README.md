@@ -69,7 +69,7 @@ free bosons 组：δτ=0.1/δt=0.1，虚时间 β=1、实时间 β=2），观测
 模型：玻色子杂质模式（ϵ_d=1）线性耦合到 Ohmic 型连续谱热库（`H = ϵ_d a†a + Σωₖbₖ†bₖ + Σgₖ(a†bₖ + abₖ†)`），
 参考解为跳跃矩阵 `A = [ϵ_d gᵀ; g diag(ω)]` 对角化后的自由玻色子严格解（`freebosons_Gτ` / `freebosons_greater_lesser`，
 连续谱以 δw=0.01 离散化）。杂质局域希尔伯特空间截断 d：虚时间 10、实时间 4；`algexpan=OverDeterminedProny(n=20, tol=1e-8)`，
-XTRG-IF 的乘法用 `DMRGMult1`；实时间初态为占据数 1 的 Fock 态。
+XTRG-IF 的乘法用 `DMRG1`；实时间初态为占据数 1 的 Fock 态。
 
 | 轮廓 | 算法 | IF构建(s) | 观测量扫描(s) | 最大键维 | 相对误差 |
 |---|---|---|---|---|---|

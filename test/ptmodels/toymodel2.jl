@@ -36,7 +36,7 @@ println("------------------------------------")
 	bath = bosonicbath(spec, β=β)
 	corr = correlationfunction(bath, lattice)
 
-	algmult = DMRGMult1(trunc)
+	algmult = DMRG1(trunc)
 	algexpan = OverDeterminedProny(n=20, tol=1.0e-8)
 	alg = XTRGIF(k=5, fast=true, algmult=algmult, algexpan=algexpan)
 	mpsI = hybriddynamics(lattice, corr, hyb, alg)
@@ -162,7 +162,7 @@ end
 	bath = bosonicbath(spec, β=β)
 	corr = correlationfunction(bath, lattice)
 
-	algmult = DMRGMult1(trunc)
+	algmult = DMRG1(trunc)
 	algexpan = OverDeterminedProny(n=20, tol=1.0e-8)
 	alg = XTRGIF(k=5, fast=true, algmult=algmult, algexpan=algexpan, verbosity=2)
 	mpsI = hybriddynamics(lattice, corr, bs, alg)

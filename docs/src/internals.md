@@ -18,7 +18,7 @@ Responsibilities of the individual modules:
 
 | Module | Responsibility |
 |---|---|
-| `tensorops/` + `algorithms.jl` | Truncation schemes, exponential expansion, MPS algorithms (`DMRGMult1`, `SVDCompression`), `transfermatrix`, tensor utilities |
+| `tensorops/` + `algorithms.jl` | Truncation schemes, exponential expansion, MPS algorithms (`DMRG1`, `SVDCompression`), `transfermatrix`, tensor utilities |
 | `defaults.jl` | All default hyperparameters (`Defaults`) |
 | `mpohamiltonian/` | `SchurMPOTensor`, `MPOHamiltonian`, long-range decay terms, `timeevompo` (WI/WII/ComplexStepper) |
 | `adt/` | ADT (MPS) types, orthogonalization, SVD compression, `mult!`, integration/swap gates |
@@ -289,7 +289,7 @@ On the QR path, truncation has no effect (a `@warn` is issued). The truncation e
 3. after finishing at the right end, `_rightorth!(x, SVD(), trunc)` performs the SVD truncation from right to left;
 4. `setscaling!(x, scaling(x)*scaling(y))`.
 
-`mult(x, y) = mult!(copy(x), y)` is the non-mutating version. `DMRGMult1` (a `DMRGAlgorithm`) provides a variant with an `initguess` (default `:svd`), combined with the `D`/`tol` truncation of `SVDCompression`.
+`mult(x, y) = mult!(copy(x), y)` is the non-mutating version. `DMRG1` (a `DMRGAlgorithm`) provides a variant with an `initguess` (default `:svd`), combined with the `D`/`tol` truncation of `SVDCompression`.
 
 ### 10.3 Truncation schemes
 

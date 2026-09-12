@@ -176,4 +176,4 @@ expansion_error(f, p) / expansion_error(f, coeffs, alphas)
 | `DefaultKTruncation` | `truncdimcutoff(D=1000, ϵ=1e-10)` | Default for system dynamics |
 | `DefaultIntegrationTruncation` | `truncdimcutoff(D=10000, ϵ=1e-12)` | Initial-state absorption |
 | `DefaultMPOTruncation` | `truncdimcutoff(D=10000, ϵ=1e-12)` | MPO compression |
-| `DefaultMultAlg` | `DMRGMult1(DefaultITruncation)` | Default algorithm for `mult` |
+| `DefaultMultAlg` | `DMRG1(DefaultITruncation)` | Default algorithm for `mult` |

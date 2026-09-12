@@ -103,7 +103,7 @@ corr = correlationfunction(bath, lattice)
 
 # IF construction algorithm: translationally invariant IF (XTRG-style),
 # using DMRG-type MPO-MPO multiplication + Prony exponential expansion
-algmult  = DMRGMult1(trunc, maxiter=10)
+algmult  = DMRG1(trunc, maxiter=10)
 algexpan = OverDeterminedProny(n=n, tol=1.0e-8, verbosity=2)
 alg = XTRGIF(k=k, fast=true, algmult=algmult, algexpan=algexpan, verbosity=2)
 
@@ -164,7 +164,7 @@ For a bosonic impurity with **off-diagonal coupling** (e.g., `benchmark/bosonici
 lattice = PTLattice(N=N, δt=δt, d=d, contour=:real)
 hyb  = NonDiagonalHyb(a')
 alg  = XTRGIF(k=5, fast=true,
-                             algmult=DMRGMult1(trunc, initguess=:rand),
+                             algmult=DMRG1(trunc, initguess=:rand),
                              algexpan=OverDeterminedProny(n=20, tol=1.0e-8))
 mpsI = hybriddynamics(lattice, corr, hyb, alg)
 ```

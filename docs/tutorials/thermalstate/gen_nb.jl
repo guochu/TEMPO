@@ -87,7 +87,7 @@ function mfgs_obs(; λ, T, χ=30, δτ=0.05)
     bath = bosonicbath(spec, β=β)
     corr = correlationfunction(bath, lattice)
     mpsI = hybriddynamics(lattice, corr, hyb,
-                          XTRGIF(k=10, algmult=DMRGMult1(trunc), algexpan=OverDeterminedProny(n=30, tol=1.0e-10)))
+                          XTRGIF(k=10, algmult=DMRG1(trunc), algexpan=OverDeterminedProny(n=30, tol=1.0e-10)))
     model = ImpurityHamiltonian(Δ .* sz)
     mpsK = sysdynamics(lattice, model, trunc=trunc)
     mps = mult!(mpsK, mpsI, trunc=trunc)

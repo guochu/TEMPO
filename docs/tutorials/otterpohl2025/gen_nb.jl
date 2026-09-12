@@ -77,7 +77,7 @@ function tempo_pc(; α, s=-0.5, δt=0.05, tmax=5.15, wc=10.0, chi=40, k=7, n=20)
     if ispath(mpspath)
         mpsI = Serialization.deserialize(mpspath)
     else
-        algmult = DMRGMult1(trunc, maxiter=10)
+        algmult = DMRG1(trunc, maxiter=10)
         algexpan = OverDeterminedProny(n=n, tol=1.0e-8)
         alg = XTRGIF(k=k, fast=true, algmult=algmult, algexpan=algexpan)
         mpsI = hybriddynamics(lattice, corr, hyb, alg)

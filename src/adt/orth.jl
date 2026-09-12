@@ -1,29 +1,4 @@
-# orthogonalize mps to be left-canonical or right-canonical
-abstract type MatrixProductOrthogonalAlgorithm  end
-
-"""
-	Orthogonalize{A<:Union{QR, SVD}, T<:TruncationScheme}
-
-Configuration of the orthogonalization scheme, used by orthogonalization algorithms such as `leftorth!`, `rightorth!`, and `canonicalize!`.
-
-# Fields
-- `orth::A`: underlying orthogonalization algorithm (`QR` or `SVD`)
-- `trunc::T`: truncation scheme (`TruncationScheme`); only effective with `SVD`, truncation has no effect with `QR`
-- `normalize::Bool`: whether to normalize
-- `verbosity::Int`: verbosity level
-
-Main constructor: `Orthogonalize(; alg=SVD(), trunc=NoTruncation(), normalize=false, verbosity=0)`.
-"""
-struct Orthogonalize{A<:Union{QR, SVD}, T<:TruncationScheme} <: MatrixProductOrthogonalAlgorithm
-	orth::A
-	trunc::T
-	normalize::Bool
-	verbosity::Int
-end
-Orthogonalize(a::Union{QR, SVD}, trunc::TruncationScheme; normalize::Bool=false, verbosity::Int=0) = Orthogonalize(a, trunc, normalize, verbosity)
-Orthogonalize(a::Union{QR, SVD}; trunc::TruncationScheme=NoTruncation(), normalize::Bool=false, verbosity::Int=0) = Orthogonalize(a, trunc, normalize, verbosity)
-Orthogonalize(; alg::Union{QR, SVD} = SVD(), trunc::TruncationScheme=NoTruncation(), normalize::Bool=false, verbosity::Int=0) = Orthogonalize(alg, trunc, normalize, verbosity)
-
+# Orthogonalize / MatrixProductOrthogonalAlgorithm are defined in src/algorithms.jl
 
 """
 	leftorth!(psi::ADT; alg::Orthogonalize=Orthogonalize())

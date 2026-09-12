@@ -51,10 +51,10 @@ end
 
 	base_alg = PartialIF(trunc=trunc)
 	alg2 = XTRGIF(k=5, algevo=WII(), algmult=SVDCompression(trunc))
-	alg3 = XTRGIF(k=5, algmult=DMRGMult1(trunc=trunc, initguess=:svd))
-	alg4 = XTRGIF(k=5, algmult=DMRGMult1(trunc=trunc, initguess=:pre))
-	alg5 = XTRGIF(k=5, algmult=DMRGMult1(trunc=trunc, initguess=:rand, maxiter=10))
-	alg6 = XTRGIF(k=5, algmult=DMRGMult1(trunc=trunc), fast=false)
+	alg3 = XTRGIF(k=5, algmult=DMRG1(trunc=trunc, initguess=:svd))
+	alg4 = XTRGIF(k=5, algmult=DMRG1(trunc=trunc, initguess=:pre))
+	alg5 = XTRGIF(k=5, algmult=DMRG1(trunc=trunc, initguess=:rand, maxiter=10))
+	alg6 = XTRGIF(k=5, algmult=DMRG1(trunc=trunc), fast=false)
 
 	algs = [alg2, alg3, alg4, alg5, alg6]
 

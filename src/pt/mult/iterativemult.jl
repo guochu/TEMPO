@@ -8,7 +8,7 @@ struct MPOMPOIterativeMultCache{_MPO, _IMPO, _OMPO, _H}
 end
 
 
-function iterativemult(x::ProcessTensor, y::ProcessTensor, alg::DMRGMultAlgorithm)
+function iterativemult(x::ProcessTensor, y::ProcessTensor, alg::DMRGAlgorithm)
     # T = promote_type(eltype(mpo), eltype(mps))
     # mpsout = randommpo(T, ophysical_dimensions(mpo), iphysical_dimensions(mps), D=alg.D)
     # rightorth!(mpsout, alg=Orthogonalize(normalize=true))
@@ -41,19 +41,19 @@ function mult_cache(z::ProcessTensor, x::ProcessTensor, y::ProcessTensor)
     return MPOMPOIterativeMultCache(z, x, y, hstorage)
 end
 
-function finalize!(m::MPOMPOIterativeMultCache, alg::DMRGMultAlgorithm) end
-function finalize!(m::MPOMPOIterativeMultCache, alg::DMRGMult1)
+function finalize!(m::MPOMPOIterativeMultCache, alg::DMRGAlgorithm) end
+function finalize!(m::MPOMPOIterativeMultCache, alg::DMRG1)
     leftsweep!(m, alg)
     rightsweep_final!(m, alg)
 end
 
-compute!(env::MPOMPOIterativeMultCache, alg::DMRGMultAlgorithm) = iterative_compute!(env, alg)
+compute!(env::MPOMPOIterativeMultCache, alg::DMRGAlgorithm) = iterative_compute!(env, alg)
 
-sweep!(m::MPOMPOIterativeMultCache, alg::DMRGMultAlgorithm) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
+sweep!(m::MPOMPOIterativeMultCache, alg::DMRGAlgorithm) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
 
 
 
-function leftsweep!(m::MPOMPOIterativeMultCache, alg::DMRGMult1)
+function leftsweep!(m::MPOMPOIterativeMultCache, alg::DMRG1)
     mpoA = m.impo
     mpo = m.mpo
     mpoB = m.ompo
@@ -72,7 +72,7 @@ function leftsweep!(m::MPOMPOIterativeMultCache, alg::DMRGMult1)
     return kvals	
 end
 
-function rightsweep!(m::MPOMPOIterativeMultCache, alg::DMRGMult1)
+function rightsweep!(m::MPOMPOIterativeMultCache, alg::DMRG1)
     mpoA = m.impo
     mpo = m.mpo
     mpoB = m.ompo
@@ -95,7 +95,7 @@ function rightsweep!(m::MPOMPOIterativeMultCache, alg::DMRGMult1)
     return kvals	
 end
 
-function rightsweep_final!(m::MPOMPOIterativeMultCache, alg::DMRGMult1)
+function rightsweep_final!(m::MPOMPOIterativeMultCache, alg::DMRG1)
     mpoA = m.impo
     mpo = m.mpo
     mpoB = m.ompo

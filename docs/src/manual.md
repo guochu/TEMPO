@@ -89,7 +89,7 @@ alg = PartialIF(trunc=trunc)
 alg = XTRGIF(;
     algexpan = OverDeterminedProny(n=20, tol=1.0e-8, verbosity=2),  # exponential expansion of the hybridization function
     algevo   = WII(),        # or WI(), ComplexStepper(), FirstOrderStepper()
-    algmult  = DMRGMult1(trunc, initguess=:rand, maxiter=10),   # or SVDCompression(trunc)
+    algmult  = DMRG1(trunc, initguess=:rand, maxiter=10),   # or SVDCompression(trunc)
     k        = 7,            # number of XTRG steps: time step 1/2^k
     fast     = true,         # true: tree/bisection scheme (about k multiplications); false: serial 2^k-1 multiplications
     verbosity= 0,
@@ -98,7 +98,7 @@ alg = XTRGIF(;
 
 - `algexpan`: an `ExponentialExpansionAlgorithm`, including `OverDeterminedProny` and `DeterminedProny` (`exponential_expansion` and `expansion_error` can be used for error analysis; provided by the re-exported `ExpExp` package);
 - `algevo`: a `TimeEvoMPOAlgorithm`, the stepper that exponentiates $\hat{H}_{\text{eff}}$ into an MPO (`WI`/`WII`/`FirstOrderStepper`/`ComplexStepper`);
-- `algmult`: a `DMRGAlgorithm` that compresses MPO–MPO multiplications, either `DMRGMult1` (single-site DMRG iteration, `initguess ∈ {:svd, :pre, :rand}`, `maxiter`) or `SVDCompression`.
+- `algmult`: a `DMRGAlgorithm` that compresses MPO–MPO multiplications, either `DMRG1` (single-site DMRG iteration, `initguess ∈ {:svd, :pre, :rand}`, `maxiter`) or `SVDCompression`.
 
 Entry-point functions for building the IF:
 
