@@ -43,7 +43,7 @@ export partialif_naive, partialif
 # boundary condition
 export boundarycondition, boundarycondition!, initialstate!
 # models
-export sysdynamics, sysdynamics!, ImpurityHamiltonian, ImpurityLindbladian
+export sysdynamics, sysdynamics!, ImpurityHamiltonian, QuenchedImpurityHamiltonian, TdImpurityOp, TdImpurityHamiltonian, ImpurityLindbladian
 # observables
 export environments, expectationvalue, Zvalue, expectation, TransferMatrix
 export l_LL, r_RR

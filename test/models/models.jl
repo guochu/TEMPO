@@ -9,4 +9,6 @@ include("independentbosons.jl")
 
 include("toymodel.jl")
 
+include("tdimpurity.jl")
+
 include("basic.jl")

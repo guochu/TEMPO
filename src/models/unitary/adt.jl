@@ -1,23 +1,23 @@
 # ADT
 """
-	sysdynamics!(gmps::ADT, lattice::ImagADTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation)
+	sysdynamics!(gmps::ADT, lattice::ImagADTLattice, model::AbstractImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation)
 
 In-place version of [`sysdynamics`](@ref): apply the bare impurity Hamiltonian `model` to the given ADT `gmps`,
 applying the propagator step by step along the imaginary-time branch with truncated orthogonalization.
 """
-function sysdynamics!(gmps::ADT, lattice::ImagADTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation)
+function sysdynamics!(gmps::ADT, lattice::ImagADTLattice, model::AbstractImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation)
 	return sysdynamics_imaginary!(gmps, lattice, model, args...; trunc=trunc)
 end 
 
 
 """
-    sysdynamics!(gmps::ADT, lattice::RealADTLattice, model::ImpurityHamiltonian, args...;
+    sysdynamics!(gmps::ADT, lattice::RealADTLattice, model::AbstractImpurityHamiltonian, args...;
                  branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
 
 Apply system dynamics in place on the real-time contour: with `branch=nothing`, acts successively on the `:+` (forward) and `:-` (backward) branches;
 when `branch` is specified, acts only on the corresponding branch.
 """
-function sysdynamics!(gmps::ADT, lattice::RealADTLattice, model::ImpurityHamiltonian, args...; 
+function sysdynamics!(gmps::ADT, lattice::RealADTLattice, model::AbstractImpurityHamiltonian, args...; 
 						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
 	if isnothing(branch)
 		sysdynamics_forward!(gmps, lattice, model, args...; trunc=trunc)
@@ -29,13 +29,13 @@ function sysdynamics!(gmps::ADT, lattice::RealADTLattice, model::ImpurityHamilto
 end 
 
 """
-    sysdynamics!(gmps::ADT, lattice::MixedADTLattice, model::ImpurityHamiltonian, args...;
+    sysdynamics!(gmps::ADT, lattice::MixedADTLattice, model::AbstractImpurityHamiltonian, args...;
                  branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
 
 Apply system dynamics in place on the mixed contour: with `branch=nothing`, acts successively on the forward, backward and imaginary-time branches;
 when `branch` (`:+`, `:-` or `:τ`) is specified, acts only on the corresponding branch.
 """
-function sysdynamics!(gmps::ADT, lattice::MixedADTLattice, model::ImpurityHamiltonian, args...; 
+function sysdynamics!(gmps::ADT, lattice::MixedADTLattice, model::AbstractImpurityHamiltonian, args...; 
 						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
 	if isnothing(branch)
 		sysdynamics_forward!(gmps, lattice, model, args...; trunc=trunc)
@@ -53,11 +53,11 @@ function sysdynamics!(gmps::ADT, lattice::MixedADTLattice, model::ImpurityHamilt
 	end
 end 
 
-sysdynamics_forward!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+sysdynamics_forward!(mps::ADT, lattice::AbstractADTLattice, model::AbstractImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
 						mps, lattice, model, :+, lattice.Nt, args...; trunc=trunc)
-sysdynamics_backward!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+sysdynamics_backward!(mps::ADT, lattice::AbstractADTLattice, model::AbstractImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
 						mps, lattice, model, :-, lattice.Nt, args...; trunc=trunc)
-sysdynamics_imaginary!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+sysdynamics_imaginary!(mps::ADT, lattice::AbstractADTLattice, model::AbstractImpurityHamiltonian, args...; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
 						mps, lattice, model, :τ, lattice.Nτ, args...; trunc=trunc)
 
 # function sysdynamics!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, ind::ContourIndex, op::AbstractMatrix; 
@@ -124,6 +124,22 @@ function _sysdynamics_util!(gmps::ADT, lattice::AbstractADTLattice, model::Impur
         t = ADTTerm((pos1, pos2), U′)
         apply!(t, gmps)
         canonicalize!(gmps, alg=alg)			
+	end
+	return gmps
+end
+
+# generic per-step loop: the propagator is evaluated at every step, which
+# supports time-dependent models (e.g. `TdImpurityHamiltonian`); for
+# time-independent models the (branch-constant) propagator is unchanged
+function _sysdynamics_util!(gmps::ADT, lattice::AbstractADTLattice, model::AbstractImpurityHamiltonian, branch::Symbol, N::Int; trunc::TruncationScheme=DefaultKTruncation)
+	alg = Orthogonalize(SVD(), trunc)
+	for j in 1:N
+		U = propagator(model, lattice, branch, j, N)
+		a, b = (branch == :-) ? (j, j+1) : (j+1, j)
+		pos1, pos2 = index(lattice, a, branch=branch), index(lattice, b, branch=branch)
+		t = ADTTerm((pos1, pos2), U)
+		apply!(t, gmps)
+		canonicalize!(gmps, alg=alg)
 	end
 	return gmps
 end

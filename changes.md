@@ -1,3 +1,31 @@
+# 接口调整说明（2026-09-09）：含时杂质哈密顿量支持
+
+参考 GTEMPO 的 `QuenchedImpurityHamiltonian` / `TdImpurityHamiltonian`，为 TEMPO 增加含时杂质哈密顿量支持（矩阵约定）。全套测试通过（含新增 testset，0 Fail / 0 Error）。
+
+## 新增类型（`src/models/def.jl`，均已导出）
+
+- **`AbstractImpurityHamiltonian <: AbstractImpurityOperator`**：单元型杂质哈密顿量模型的抽象父类型；`ImpurityHamiltonian` 改为继承它（对外接口不变）。
+- **`QuenchedImpurityHamiltonian(hτ, ht)`**（quench 协议）：虚时间分支（`:τ`）以 `hτ` 演化，实时间分支（`:+`/`:-`）以 `ht` 演化；两矩阵尺寸必须一致。
+- **`TdImpurityOp(m, f)`**：含时项，`t` 时刻贡献 `f(t)·m`。
+- **`TdImpurityHamiltonian(hτ, ht, [TdImpurityOp...] )`**：虚时间分支以常数 `hτ` 演化；实时间分支以逐步哈密顿量 `ht + Σₖ fₖ(t)·mₖ` 演化。调用 `model(t)` 返回 `t` 时刻实分支的哈密顿量矩阵。
+
+## 逐步传播子接口
+
+- 新增 `propagator(model, lattice, branch, j, N)`：第 `j`/`N` 步的传播子；默认回退到（与步无关的）`propagator(model, lattice, branch)`，`TdImpurityHamiltonian` 覆盖之。步时间约定与 GTEMPO 一致：forward 分支 `t = (j-1)δt`，backward 分支 `t = (N-j)δt`。
+- `TdImpurityHamiltonian` 的实分支传播子逐步重算（`exp(-im·δt·H(t))`）；虚分支/常数模型仍为分支常数传播子。
+
+## dynamics 改动
+
+- ADT / PT 的 `sysdynamics!`、`sysdynamics_forward!/backward!/imaginary!` 的模型签名放宽为 `AbstractImpurityHamiltonian`；`ImpurityHamiltonian` 仍走原有的"传播子提升到循环外"的常数值路径（行为不变）。
+- 新增通用逐步循环 `_sysdynamics_util!`（ADT 逐 gate `apply!` + 每步 canonicalize；PT 逐 `ContourOperator` `apply!` + 末尾 canonicalize），支持 `Quenched`（各分支内为常数）与 `Td` 模型。
+- 含时模型三种轮廓（imag / real / mixed）均支持；暂不支持与 `ContourOperator` 插入（`sysdynamics!` 的 cts 变体）及 Lindblad 耗散组合。
+
+## 测试
+
+- 新增 `test/models/tdimpurity.jl`（并入 `test/models/models.jl`）：quench 各分支等价于对应常数模型（ADT/PT × imag/real/±branch）；`Td` 虚分支 == `hτ` 模型；常数 `TdImpurityOp` == `ht + c·m` 常数模型（ADT/PT real + mixed 轮廓路由）；真实含时演化与测试内独立构造的逐步精确传播子逐一比对（固定步时间约定）；`model(t)` 数值校验。
+
+---
+
 # 接口调整说明（2026-09-09）：DMRG 迭代乘法算法更名与算法定义归位
 
 本轮对齐 GTEMPO 的算法类型层级：删除 `DMRGMultAlgorithm`，`DMRGMult1` 更名为 `DMRG1`，并把算法类型定义集中到 `src/algorithms.jl`、默认值集中到 `src/defaults.jl`。行为不变，全套测试通过（93 个 testset，0 Fail / 0 Error）。
