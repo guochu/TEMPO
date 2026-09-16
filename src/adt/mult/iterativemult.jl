@@ -52,12 +52,19 @@ compute!(env::ADTIterativeMultCache, alg::DMRGAlgorithm) = iterative_compute!(en
 
 
 function iterative_compute!(m, alg)
+    # Convergence criterion (cf. ITensor/TeNPy/quimb/block2 DMRG): the maximal
+    # relative change of the single-site residuals ‖mpsj_j‖ between two adjacent
+    # sweeps. At the fixed point every residual is sweep-stationary, so this
+    # difference vanishes. (The first sweep always runs, cf. `delta = 2*tol`.)
     kvals = Float64[]
+    res_prev = Float64[]
     iter = 0
     delta = 2 * alg.tol
     while (iter < alg.maxiter) && (delta >= alg.tol)
         _kvals = sweep!(m, alg)
-        delta = iterative_error_2(_kvals)
+        delta = isempty(res_prev) ? 2 * alg.tol :
+            maximum(abs(v - p) / max(v, p, eps(Float64)) for (v, p) in zip(_kvals, res_prev))
+        res_prev = _kvals
         push!(kvals, delta)
         iter += 1
         (alg.verbosity >= 2) && println("finish the $iter-th sweep with error $delta", "\n")

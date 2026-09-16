@@ -291,13 +291,43 @@ On the QR path, truncation has no effect (a `@warn` is issued). The truncation e
 
 `mult(x, y) = mult!(copy(x), y)` is the non-mutating version. `DMRG1` (a `DMRGAlgorithm`) provides a variant with an `initguess` (default `:svd`), combined with the `D`/`tol` truncation of `SVDCompression`.
 
-### 10.3 Truncation schemes
+### 10.3 Iterative multiplication (`iterativemult`, the `DMRG1` algorithm)
+
+(`src/adt/mult/iterativemult.jl` for the ADT, `src/pt/mult/iterativemult.jl` for the PT; both share `iterative_compute!`.) `mult(x, y, alg::DMRGAlgorithm)` computes a variational approximation $z \approx w \equiv x y$ (the untruncated product network) within the bond dimension `D` of `alg.trunc`, minimizing the loss functional
+
+$$F(z) = \|w - z\|^2$$
+
+by alternating least squares over the site tensors of `z` (a single-site DMRG sweep scheme).
+
+**Sweep structure.** The iteration state is the environment chain `hstorage`, whose left part `hstorage[j]` holds the three-leg contraction $\langle z_{<j} | w_{<j}\rangle$ and whose right part holds $\langle w_{>j} | z_{>j}\rangle$; hence, when site `j` is visited, the left neighbors are the freshly updated left-orthonormal tensors and the right neighbors the right-orthonormal tensors of the previous pass (a mixed-canonical layout, maintained implicitly). Per site, the optimal single-site tensor
+
+```julia
+mpsj = L · w_j · R        # (ADT: reduceH_single_site on the PT path)
+```
+
+is the Riesz representative of the local functional $t \mapsto \langle z(\text{block } t), w\rangle$, and `norm(mpsj)` is pushed into the residual list `kvals`. The left pass (sites `1..L-1`) stores the `QRpos` factor $Q$ and rebuilds the left environments with `conj(z[site])`; the right pass (sites `L..2`) stores the `LQpos` factor; the sweeps are finalized by `finalize!` = one more left pass plus a right pass with truncated SVD (`rightsweep_final!`, which also sets `z.s`). Initial guesses: `:svd` (sequential SVD of the product network, default), `:rand`, `:pre` (bond-extended copy of `x`).
+
+**Loss function and the meaning of the residuals.** With the mixed-canonical layout, each update replaces the visited site by the local optimum, so the loss decreases monotonically (numerically verified down to rounding). At stationarity every residual satisfies
+
+$$\|mpsj_j\|^2 = \|w\|^2 - F^*,$$
+
+i.e. the residuals measure the "mass captured" from $w$; within a sweep they increase monotonically toward the constant $\sqrt{\|w\|^2 - F^*}$, and the loss $F = \|w\|^2 - \|mpsj_j\|^2$ decreases correspondingly.
+
+**Convergence criterion.** `iterative_compute!` stops when the residuals are sweep-stationary: with $r_j^{(t)}$ the residuals of sweep $t$,
+
+$$\delta^{(t)} = \max_j \frac{|r_j^{(t)} - r_j^{(t-1)}|}{\max(r_j^{(t)},\, r_j^{(t-1)})}, \qquad \text{converged when } \delta^{(t)} < \text{`tol`},$$
+
+i.e. the maximal relative change of the residual vector between adjacent sweeps (the first sweep always runs; `delta` is initialized to `2*tol`). This follows the "adjacent-sweep difference" convention of ITensor/TeNPy/quimb/block2 (where the sweep energy is used instead). Note that criteria based on the difference of the *stored tensors* (e.g. MPSKit's $\|AC' - AC\|/\|AC'\|$) are not applicable to this storage scheme: the QR/LQ tails (the center) are dropped during the sweeps, so the stored tensors retain a gauge freedom within their isometry class and keep drifting there even after the loss has converged.
+
+`iterative_error_2` (the relative fluctuation `std/mean` of the residuals within a sweep) is a legacy utility retained for diagnostics; it is no longer used by the criterion.
+
+### 10.4 Truncation schemes
 
 - `truncdim(D)`: truncates only by the maximum bond dimension;
 - `trunccutoff(ε)`: truncates according to the accumulated truncation error;
 - `truncdimcutoff(; D, ε)`: combines the two; `NoTruncation()` performs no truncation.
 
-### 10.4 Transfer matrices
+### 10.5 Transfer matrices
 
 `ADTTransferMatrix` (`src/observables/adt/transfer.jl`) assembles a set of ADTs into a transfer operator:
 
