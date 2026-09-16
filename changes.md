@@ -1,3 +1,27 @@
+# 接口调整说明（2026-09-09）：TTIIF 影响算子函数更名与虚时返回值统一为元组
+
+对齐 GTEMPO 的命名。全套测试通过（0 Fail / 0 Error）。
+
+## 函数更名
+
+| 旧名（已删除） | 新名 | 说明 |
+|---|---|---|
+| `influenceoperator` | `influenceoperators` | 分支影响算子 MPO 组 |
+| `influenceoperatorexponential` | `influenceoperatorsteppers` | 单步演化后的影响算子（stepper）组 |
+| `differentialinfluencefunctional` | `influenceoperatorstepper` | 单步差分影响泛函（各分支 stepper 的乘积） |
+
+## 返回值统一
+
+- **虚时 `influenceoperators` 的返回值由裸 MPO 改为 1 元组 `(mpo,)`**，与实时的 4 元组约定一致；调用方使用 `only(...)` 或 `mpo, = ...` 解包（TDVPIF 的 `hybriddynamics!` 内部已同步改为 `only(influenceoperators(...))`）。
+- `influenceoperatorsteppers` 的返回值本就是元组（虚时 FirstOrder 1 元组 / ComplexStepper 2 元组；实时 4/8 元组），不变。
+
+## 迁移指南
+
+- `influenceoperator(...)` → `only(influenceoperators(...))` 或解包；实时多返回值调用无需改动解包方式，仅函数名变化。
+- `influenceoperatorexponential` / `differentialinfluencefunctional` 直接改名为 `influenceoperatorsteppers` / `influenceoperatorstepper`，参数不变。
+
+---
+
 # 接口调整说明（2026-09-09）：含时杂质哈密顿量支持
 
 参考 GTEMPO 的 `QuenchedImpurityHamiltonian` / `TdImpurityHamiltonian`，为 TEMPO 增加含时杂质哈密顿量支持（矩阵约定）。全套测试通过（含新增 testset，0 Fail / 0 Error）。

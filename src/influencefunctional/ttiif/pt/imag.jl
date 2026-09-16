@@ -1,25 +1,25 @@
 # imaginary-time
 
 """
-	influenceoperator(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle; algexpan=OverDeterminedProny())
+	influenceoperators(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle; algexpan=OverDeterminedProny())
 
-`influenceoperator` method on imaginary-time PT lattices: construct ΣᵢⱼΔᵢⱼ āᵢaⱼ as an MPO (`ProcessTensor`), whose bond dimension is 2n, with n the number of Prony expansion terms.
+`influenceoperators` method on imaginary-time PT lattices: construct ΣᵢⱼΔᵢⱼ āᵢaⱼ as an MPO (`ProcessTensor`), whose bond dimension is 2n, with n the number of Prony expansion terms. Returned as a 1-tuple.
 """
-function influenceoperator(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
+function influenceoperators(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = pt_ti_mpotensor(corr, op1, op2, :τ, :τ, algexpan)
 	mpotensors = _get_mpo3(mpoj)
 	# println(mpotensors[2])
-	return _fit_to_lattice(lattice, mpotensors) 
+	return (_fit_to_lattice(lattice, mpotensors), )
 end
 
 """
-	influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm; algexpan=OverDeterminedProny())
+	influenceoperatorsteppers(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm; algexpan=OverDeterminedProny())
 
-`influenceoperatorexponential` method on imaginary-time PT lattices. `FirstOrderStepper` returns 1 MPO and `ComplexStepper` returns 2 (one before and one after evolution).
+`influenceoperatorsteppers` method on imaginary-time PT lattices. `FirstOrderStepper` returns 1 MPO and `ComplexStepper` returns 2 (one before and one after evolution).
 """
-function influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper; 
+function influenceoperatorsteppers(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper;
 										algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
@@ -28,32 +28,32 @@ function influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagC
 	mpotensors = _get_mpo3(mpoj′)
 	return (_fit_to_lattice(lattice, mpotensors),)
 end
-function influenceoperatorexponential(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper; 
+function influenceoperatorsteppers(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper;
 										algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = pt_ti_mpotensor(corr, op1, op2, :τ, :τ, algexpan)
 	mpoja, mpojb = timeevompo(mpoj, dt, alg)
 	mpo1, mpo2 = _get_mpo3(mpoja), _get_mpo3(mpojb)
-	return _fit_to_lattice(lattice, mpo1), _fit_to_lattice(lattice, mpo2) 
+	return _fit_to_lattice(lattice, mpo1), _fit_to_lattice(lattice, mpo2)
 end
 
 
 """
-	differentialinfluencefunctional(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm; algexpan=OverDeterminedProny())
+	influenceoperatorstepper(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm; algexpan=OverDeterminedProny())
 
-`differentialinfluencefunctional` method on imaginary-time PT lattices.
+`influenceoperatorstepper` method on imaginary-time PT lattices.
 """
-function differentialinfluencefunctional(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper, 
-											algmult::DMRGAlgorithm; 
-											algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny()) 
-	mpo1, = influenceoperatorexponential(lattice, corr, dt, hyb, alg; algexpan=algexpan)
+function influenceoperatorstepper(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper,
+											algmult::DMRGAlgorithm;
+											algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
+	mpo1, = influenceoperatorsteppers(lattice, corr, dt, hyb, alg; algexpan=algexpan)
 	return mpo1
 end
-function differentialinfluencefunctional(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper, 
-											algmult::DMRGAlgorithm; 
-											algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny()) 
-	mpo1, mpo2 = influenceoperatorexponential(lattice, corr, dt, hyb, alg, algexpan=algexpan)
+function influenceoperatorstepper(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper,
+											algmult::DMRGAlgorithm;
+											algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
+	mpo1, mpo2 = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=algexpan)
 	return mult(mpo1, mpo2, algmult)
 end
 

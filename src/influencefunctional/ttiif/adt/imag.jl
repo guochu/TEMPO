@@ -1,7 +1,7 @@
 
 
 """
-	influenceoperator(lattice, corr, hyb; algexpan=OverDeterminedProny())
+	influenceoperators(lattice, corr, hyb; algexpan=OverDeterminedProny())
 
 Construct the (translation-invariant) influence functional as an MPO. The ADT version supports `ImagADTLattice1Order`/`RealADTLattice1Order` lattices with `AdditiveHyb` coupling; the PT version supports `ImagPTLattice1Order`/`RealPTLattice1Order` lattices with `GeneralHybStyle` (e.g. `NonAdditiveHyb`, `NonDiagonalHyb`) coupling.
 
@@ -12,18 +12,18 @@ Construct the (translation-invariant) influence functional as an MPO. The ADT ve
 - `algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny()`: exponential (Prony) expansion algorithm for the bath correlation function.
 
 # Returns
-The influence functional MPO: a single `ADT`/`ProcessTensor` in imaginary time; a tuple of 4 branch MPOs ((+,+), (+,−), (−,+), (−,−)) in real time.
+Tuple of the influence functional MPOs: a 1-tuple in imaginary time; a 4-tuple of branch MPOs ((+,+), (+,−), (−,+), (−,−)) in real time.
 """
-function influenceoperator(lattice::ImagADTLattice1Order, corr2::ImagCorrelationFunction, hyb::AdditiveHyb; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
+function influenceoperators(lattice::ImagADTLattice1Order, corr2::ImagCorrelationFunction, hyb::AdditiveHyb; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = adt_ti_mpotensor(corr, op1, op2, algexpan)
 	mpstensors = _tompsj.(_get_mpo3(mpoj))
-	return _fit_to_lattice(lattice, mpstensors) 
+	return (_fit_to_lattice(lattice, mpstensors), )
 end
 
 """
-	influenceoperatorexponential(lattice, corr, dt, hyb, alg; algexpan=OverDeterminedProny())
+	influenceoperatorsteppers(lattice, corr, dt, hyb, alg; algexpan=OverDeterminedProny())
 
 Construct the influence-functional exponential-operator MPO of a single time step (width `dt`) and time-evolve it with `alg` (`FirstOrderStepper` or `ComplexStepper`). `ComplexStepper` additionally returns the MPOs before and after evolution, so the returned tuple is twice as long as for `FirstOrderStepper` (1/2 in imaginary time and 4/8 in real time).
 
@@ -38,7 +38,7 @@ Construct the influence-functional exponential-operator MPO of a single time ste
 # Returns
 Tuple of time-evolved influence functional MPOs.
 """
-function influenceoperatorexponential(lattice::ImagADTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper; 
+function influenceoperatorsteppers(lattice::ImagADTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper;
 										algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
@@ -47,21 +47,21 @@ function influenceoperatorexponential(lattice::ImagADTLattice1Order, corr2::Imag
 	mpstensors = _tompsj.(_get_mpo3(mpoj′))
 	return (_fit_to_lattice(lattice, mpstensors), )
 end
-function influenceoperatorexponential(lattice::ImagADTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper; 
+function influenceoperatorsteppers(lattice::ImagADTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper;
 										algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = adt_ti_mpotensor(corr, op1, op2, algexpan)
 	mpoja, mpojb = timeevompo(mpoj, dt, alg)
 	mpo1, mpo2 = _tompsj.(_get_mpo3(mpoja)), _tompsj.(_get_mpo3(mpojb))
-	return _fit_to_lattice(lattice, mpo1), _fit_to_lattice(lattice, mpo2) 
+	return _fit_to_lattice(lattice, mpo1), _fit_to_lattice(lattice, mpo2)
 end
 
 
 """
-	differentialinfluencefunctional(lattice, corr, dt, hyb, alg, algmult; algexpan=OverDeterminedProny())
+	influenceoperatorstepper(lattice, corr, dt, hyb, alg, algmult; algexpan=OverDeterminedProny())
 
-Construct the differential influence functional, i.e. the full influence functional of a single time step, returned as an MPO/MPS. In real time, the branch MPOs obtained from `influenceoperatorexponential` are multiplied in order (with `algmult` controlling multiplication and compression); in imaginary time, the evolved operator is returned directly.
+Construct the differential influence functional, i.e. the full influence functional of a single time step, returned as an MPO/MPS. In real time, the branch MPOs obtained from `influenceoperatorsteppers` are multiplied in order (with `algmult` controlling multiplication and compression); in imaginary time, the evolved operator is returned directly.
 
 # Arguments
 - `lattice`: contour lattice.
@@ -75,16 +75,16 @@ Construct the differential influence functional, i.e. the full influence functio
 # Returns
 The differential influence functional (`ADT` or `ProcessTensor`).
 """
-function differentialinfluencefunctional(lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper, 
-											algmult::DMRGAlgorithm; 
-											algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny()) 
-	mpo1, = influenceoperatorexponential(lattice, corr, dt, hyb, alg; algexpan=algexpan)
+function influenceoperatorstepper(lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper,
+											algmult::DMRGAlgorithm;
+											algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
+	mpo1, = influenceoperatorsteppers(lattice, corr, dt, hyb, alg; algexpan=algexpan)
 	return mpo1
 end
-function differentialinfluencefunctional(lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper, 
-											algmult::DMRGAlgorithm; 
-											algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny()) 
-	mpo1, mpo2 = influenceoperatorexponential(lattice, corr, dt, hyb, alg, algexpan=algexpan)
+function influenceoperatorstepper(lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper,
+											algmult::DMRGAlgorithm;
+											algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
+	mpo1, mpo2 = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=algexpan)
 	return mult(mpo1, mpo2, algmult)
 end
 

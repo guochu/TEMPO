@@ -165,7 +165,7 @@ The partial IF of each `(i, b1)` row is multiplied into the global `gmps` and co
 
 ## 6. Translationally invariant influence functional (XTRG-IF)
 
-This corresponds to the "translationally invariant + exponential expansion + MPO time evolution" scheme in the appendix of the paper; the entry points are `influenceoperator`/`influenceoperatorexponential`/`differentialinfluencefunctional` (`src/influencefunctional/ttiif/`).
+This corresponds to the "translationally invariant + exponential expansion + MPO time evolution" scheme in the appendix of the paper; the entry points are `influenceoperators`/`influenceoperatorsteppers`/`influenceoperatorstepper` (`src/influencefunctional/ttiif/`).
 
 ### 6.1 Exponential expansion and `SchurMPOTensor`
 
@@ -212,7 +212,7 @@ For the imaginary-time ADT, `_fit_to_lattice` (`src/influencefunctional/ttiif/ad
 
 ### 6.4 Real-time branch MPOs and differential influence functionals
 
-The PT real-time `influenceoperator` (`src/influencefunctional/ttiif/pt/real.jl`) returns the 4 branch MPOs `(η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻)`; `influenceoperatorexponential` first applies `timeevompo` to each branch and then fits it, with `FirstOrderStepper` returning 4 and `ComplexStepper` returning 8. `differentialinfluencefunctional` multiplies them successively (in the PT branch order `h2*h1`, `h3*…`, `h4*…`) to obtain the complete differential influence functional of a single time step.
+The PT real-time `influenceoperators` (`src/influencefunctional/ttiif/pt/real.jl`) returns the 4 branch MPOs `(η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻)`; `influenceoperatorsteppers` first applies `timeevompo` to each branch and then fits it, with `FirstOrderStepper` returning 4 and `ComplexStepper` returning 8. `influenceoperatorstepper` multiplies them successively (in the PT branch order `h2*h1`, `h3*…`, `h4*…`) to obtain the complete differential influence functional of a single time step.
 
 ## 7. The PT framework for off-diagonal coupling
 

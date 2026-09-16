@@ -77,7 +77,7 @@ Each flow step is one forward-backward TDVP sweep: the center tensor is evolved 
 - `verbosity::Int`: verbosity level of the output.
 - `callback::Function`: callback function invoked after the flow.
 
-On real-time lattices (`RealADTLattice1Order` with `AdditiveHyb`, `RealPTLattice1Order` with `GeneralHybStyle`) the influence operator driving the flow is the sum (direct sum) of the 4 branch MPOs returned by `influenceoperator`, since the site-wise product algebra satisfies e^a∘e^b = e^{a+b}.
+On real-time lattices (`RealADTLattice1Order` with `AdditiveHyb`, `RealPTLattice1Order` with `GeneralHybStyle`) the influence operator driving the flow is the sum (direct sum) of the 4 branch MPOs returned by `influenceoperators`, since the site-wise product algebra satisfies e^a∘e^b = e^{a+b}.
 """
 struct TDVPIF <: InfluenceFunctionalAlgorithm
 	algexpan::ExponentialExpansionAlgorithm

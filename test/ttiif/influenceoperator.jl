@@ -23,7 +23,7 @@ println("------------------------------------")
 	z2 = z .* z
 	zz = reshape(kron(z, z), d, d)
 
-	mpo1 = influenceoperator(lattice, corr, hyb, algexpan=algexpan)
+	mpo1 = only(influenceoperators(lattice, corr, hyb, algexpan=algexpan))
 
 	orth = Orthogonalize(SVD(), trunc)
 	local mpo2
@@ -56,16 +56,16 @@ println("------------------------------------")
 	dt = 0.01
 
 	mpo1 = dt * mpo1 + vacuumstate(lattice)
-	mps0, = influenceoperatorexponential(lattice, corr, dt, hyb, WII(), algexpan=algexpan)
+	mps0, = influenceoperatorsteppers(lattice, corr, dt, hyb, WII(), algexpan=algexpan)
 
 	@test distance(mpo1, mps0) / norm(mps0) < dt
 
 	for algmult in (SVDCompression(D=50), DMRG1(trunc=truncdimcutoff(D=50,ϵ=1.0e-6)))
-		mps1 = differentialinfluencefunctional(lattice, corr, dt, hyb, WII(), algmult, algexpan=algexpan)
+		mps1 = influenceoperatorstepper(lattice, corr, dt, hyb, WII(), algmult, algexpan=algexpan)
 		_n = norm(mps1)
-		mps2 = differentialinfluencefunctional(lattice, corr, dt, hyb, WI(), algmult, algexpan=algexpan)
-		mps3 = differentialinfluencefunctional(lattice, corr, dt, hyb, ComplexStepper(WI()), algmult, algexpan=algexpan)
-		mps4 = differentialinfluencefunctional(lattice, corr, dt, hyb, ComplexStepper(WII()), algmult, algexpan=algexpan)
+		mps2 = influenceoperatorstepper(lattice, corr, dt, hyb, WI(), algmult, algexpan=algexpan)
+		mps3 = influenceoperatorstepper(lattice, corr, dt, hyb, ComplexStepper(WI()), algmult, algexpan=algexpan)
+		mps4 = influenceoperatorstepper(lattice, corr, dt, hyb, ComplexStepper(WII()), algmult, algexpan=algexpan)
 		@test distance(mps1, mps0) / _n < dt
 		@test distance(mps1, mps0) / _n < dt
 		@test distance(mps1, mps0) / _n < dt
@@ -113,7 +113,7 @@ end
 	z2 = z .* z
 	zz = reshape(kron(z, z), d, d)
 
-	mps_pp, mps_pm, mps_mp, mps_mm = influenceoperator(lattice, corr, hyb, algexpan=algexpan)
+	mps_pp, mps_pm, mps_mp, mps_mm = influenceoperators(lattice, corr, hyb, algexpan=algexpan)
 
 	vc = vacuumstate(lattice)
 	mps2_pp = nothing
@@ -222,7 +222,7 @@ end
 	mps_mm = dt * mps_mm + vacuumstate(lattice)
 
 
-	mps2_pp, mps2_pm, mps2_mp, mps2_mm = influenceoperatorexponential(lattice, corr, dt, hyb, WII(), algexpan=algexpan)
+	mps2_pp, mps2_pm, mps2_mp, mps2_mm = influenceoperatorsteppers(lattice, corr, dt, hyb, WII(), algexpan=algexpan)
 
 	@test distance(mps_pp, mps2_pp) / norm(mps2_pp) < dt
 	@test distance(mps_pm, mps2_pm) / norm(mps2_pm) < dt
@@ -234,11 +234,11 @@ end
 	mps0 = mult!(mps0, mps2_mm, trunc=trunc)
 
 	for algmult in (SVDCompression(D=50), DMRG1(trunc=truncdimcutoff(D=50,ϵ=1.0e-6)))
-		mps1 = differentialinfluencefunctional(lattice, corr, dt, hyb, WII(), algmult, algexpan=algexpan)
+		mps1 = influenceoperatorstepper(lattice, corr, dt, hyb, WII(), algmult, algexpan=algexpan)
 		_n = norm(mps1)
-		mps2 = differentialinfluencefunctional(lattice, corr, dt, hyb, WI(), algmult, algexpan=algexpan)
-		mps3 = differentialinfluencefunctional(lattice, corr, dt, hyb, ComplexStepper(WI()), algmult, algexpan=algexpan)
-		mps4 = differentialinfluencefunctional(lattice, corr, dt, hyb, ComplexStepper(WII()), algmult, algexpan=algexpan)
+		mps2 = influenceoperatorstepper(lattice, corr, dt, hyb, WI(), algmult, algexpan=algexpan)
+		mps3 = influenceoperatorstepper(lattice, corr, dt, hyb, ComplexStepper(WI()), algmult, algexpan=algexpan)
+		mps4 = influenceoperatorstepper(lattice, corr, dt, hyb, ComplexStepper(WII()), algmult, algexpan=algexpan)
 		@test distance(mps1, mps0) / _n < dt
 		@test distance(mps2, mps0) / _n < dt
 		@test distance(mps3, mps0) / _n < dt
