@@ -313,13 +313,13 @@ $$\|mpsj_j\|^2 = \|w\|^2 - F^*,$$
 
 i.e. the residuals measure the "mass captured" from $w$; within a sweep they increase monotonically toward the constant $\sqrt{\|w\|^2 - F^*}$, and the loss $F = \|w\|^2 - \|mpsj_j\|^2$ decreases correspondingly.
 
-**Convergence criterion.** `iterative_compute!` stops when the residuals are sweep-stationary: with $r_j^{(t)}$ the residuals of sweep $t$,
+**Convergence criterion.** `sweep!` returns the vector of all per-site loss values of one sweep, and `iterative_compute!` returns the vector of per-sweep final loss values $r_{\mathrm{last}}^{(t)}$ (the last residual of each sweep). The iteration stops when the final loss is sweep-stationary:
 
-$$\delta^{(t)} = \max_j \frac{|r_j^{(t)} - r_j^{(t-1)}|}{\max(r_j^{(t)},\, r_j^{(t-1)})}, \qquad \text{converged when } \delta^{(t)} < \text{`tol`},$$
+$$\delta^{(t)} = \frac{|r_{\mathrm{last}}^{(t)} - r_{\mathrm{last}}^{(t-1)}|}{\max(r_{\mathrm{last}}^{(t)},\, r_{\mathrm{last}}^{(t-1)})}, \qquad \text{converged when } \delta^{(t)} < \text{`tol`},$$
 
-i.e. the maximal relative change of the residual vector between adjacent sweeps (the first sweep always runs; `delta` is initialized to `2*tol`). This follows the "adjacent-sweep difference" convention of ITensor/TeNPy/quimb/block2 (where the sweep energy is used instead). Note that criteria based on the difference of the *stored tensors* (e.g. MPSKit's $\|AC' - AC\|/\|AC'\|$) are not applicable to this storage scheme: the QR/LQ tails (the center) are dropped during the sweeps, so the stored tensors retain a gauge freedom within their isometry class and keep drifting there even after the loss has converged.
+i.e. the relative change of the final loss between adjacent sweeps (the first sweep always runs; `delta` is initialized to `2*tol`). This follows the "adjacent-sweep difference" convention of ITensor/TeNPy/quimb/block2 (where the sweep energy is used instead). Note that criteria based on the difference of the *stored tensors* (e.g. MPSKit's $\|AC' - AC\|/\|AC'\|$) are not applicable to this storage scheme: the QR/LQ tails (the center) are dropped during the sweeps, so the stored tensors retain a gauge freedom within their isometry class and keep drifting there even after the loss has converged.
 
-`iterative_error_2` (the relative fluctuation `std/mean` of the residuals within a sweep) is a legacy utility retained for diagnostics; it is no longer used by the criterion.
+The legacy `iterative_error_2` (the within-sweep residual fluctuation `std/mean`, the pre-rework criterion) has been removed.
 
 ### 10.4 Truncation schemes
 

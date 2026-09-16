@@ -52,20 +52,24 @@ compute!(env::ADTIterativeMultCache, alg::DMRGAlgorithm) = iterative_compute!(en
 
 
 function iterative_compute!(m, alg)
-    # Convergence criterion (cf. ITensor/TeNPy/quimb/block2 DMRG): the maximal
-    # relative change of the single-site residuals ‖mpsj_j‖ between two adjacent
-    # sweeps. At the fixed point every residual is sweep-stationary, so this
-    # difference vanishes. (The first sweep always runs, cf. `delta = 2*tol`.)
+    # `sweep!` returns the vector of all per-site loss values ‖mpsj_j‖ of one
+    # sweep; `iterative_compute!` returns the vector of per-sweep final loss
+    # values (the last residual of each sweep).
+    # Convergence criterion (cf. ITensor/TeNPy/quimb/block2 DMRG): the relative
+    # change of the final loss between two adjacent sweeps (the first sweep
+    # always runs, cf. `delta = 2*tol`). At the fixed point the final loss is
+    # sweep-stationary, so this difference vanishes.
     kvals = Float64[]
-    res_prev = Float64[]
+    last_prev = NaN
     iter = 0
     delta = 2 * alg.tol
     while (iter < alg.maxiter) && (delta >= alg.tol)
-        _kvals = sweep!(m, alg)
-        delta = isempty(res_prev) ? 2 * alg.tol :
-            maximum(abs(v - p) / max(v, p, eps(Float64)) for (v, p) in zip(_kvals, res_prev))
-        res_prev = _kvals
-        push!(kvals, delta)
+        kvals_sweep = sweep!(m, alg)
+        last_cur = kvals_sweep[end]
+        delta = (iter == 0) ? 2 * alg.tol :
+            abs(last_cur - last_prev) / max(last_cur, last_prev, eps(Float64))
+        last_prev = last_cur
+        push!(kvals, last_cur)
         iter += 1
         (alg.verbosity >= 2) && println("finish the $iter-th sweep with error $delta", "\n")
     end
@@ -78,18 +82,6 @@ function iterative_compute!(m, alg)
     finalize!(m ,alg)
     return kvals
 end
-"""
-	iterative_error_2(m)
-
-Relative fluctuation of the values in `m`, defined as `std(m) / abs(mean(m))`,
-where `std` is the (corrected) sample standard deviation.
-"""
-function iterative_error_2(m::AbstractVector)
-	μ = sum(m) / length(m)
-	σ = sqrt(sum(abs2(x - μ) for x in m) / (length(m) - 1))
-	return σ / abs(μ)
-end
-
 sweep!(m::ADTIterativeMultCache, alg::DMRGAlgorithm) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
 
 function finalize!(m::ADTIterativeMultCache, alg::DMRGAlgorithm) end

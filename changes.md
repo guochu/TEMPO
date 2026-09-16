@@ -1,3 +1,32 @@
+# 接口调整说明（2026-09-16）：迭代乘法（DMRG1）收敛判据与 sweep!/iterative_compute! 接口统一
+
+参考 MPSKit / ITensor / TeNPy / quimb / block2 的主流做法，统一迭代乘法（`mult(x, y, alg::DMRGAlgorithm)`，ADT 与 PT 共用）的 loss 度量与收敛判据接口。全套测试通过（1093/1093，0 Fail / 0 Error）。
+
+## loss 的定义与实现细节
+
+- 迭代乘法求解变分问题 `z ≈ w ≡ x·y`（未截断乘积网络），loss 为 `F(z) = ‖w − z‖²`；single-site ALS 逐站点最优更新保证 F 单调不增（数值验证至机器精度）。
+- 每个 sweep 中，站点 `j` 的局部最优张量 `mpsj_j = L·w_j·R`（Riesz 代表元），其范数 `‖mpsj_j‖` 即该站点的 loss 值；定点处满足 `‖mpsj_j‖² = ‖w‖² − F*`，故残差衡量“已捕获质量”：sweep 内严格单调上升至常数 `√(‖w‖²−F*)`，loss 相应单调下降。
+- 注意：`sweep` 过程中 QR/LQ 的尾巴（中心矩阵）被丢弃，存储张量存在等距类内的规范漂移；因此基于存储张量差的判据（如 MPSKit `approximate!` 的 `‖AC′−AC‖/‖AC′‖`）不适用于本实现，已验证其恒 ≈ 1 不收敛。
+
+## 接口变更
+
+| 函数 | 旧接口 | 新接口 |
+|---|---|---|
+| `sweep!(m, alg)` | 返回该 sweep 所有逐站点 loss 值 `‖mpsj_j‖` 的 vector（行为不变，此处明确为接口约定） | 不变 |
+| `iterative_compute!(m, alg)` | 返回逐 sweep 的判据值向量 | **返回逐 sweep 的末位 loss 值向量** `kvals[t] = 第 t 轮 sweep 的最后一个残差`（该序列单调上升至定点 `√(‖w‖²−F*)`） |
+| 收敛判据 | 旧：sweep 内残差的相对涨落 `std/mean`（本轮之前）→ 相邻 sweep 残差逐站点相对差 max（本轮中间版） | **相邻 sweep 的末位 loss 相对差** `δ = |r_last(t) − r_last(t−1)| / max(r_last(t), r_last(t−1)) < tol`；首轮强制运行（`delta = 2*tol`） |
+| `iterative_error_2` | 旧判据工具（sweep 内残差 `std/mean`） | **已删除**（无调用点） |
+
+## 文档
+
+- `docs/src/internals.md` 新增 §10.3（迭代乘法）：loss 泛函、残差含义与单调性、sweep 结构（QRpos/LQpos、finalize 截断、初始 guess）、收敛判据及与 MPSKit 判据不兼容的原因；原 §10.3/§10.4 顺延为 §10.4/§10.5。
+
+## 测试
+
+- 全套测试通过（1093/1093，0 Fail / 0 Error）；debug 脚本 `debug/mult/run_mult_debug.jl`（不入库）同步新判据并复验 72 算例：收敛轮数与原判据同量级、物理结果逐数一致。
+
+---
+
 # 接口调整说明（2026-09-09）：TTIIF 影响算子函数更名与虚时返回值统一为元组
 
 对齐 GTEMPO 的命名。全套测试通过（0 Fail / 0 Error）。
