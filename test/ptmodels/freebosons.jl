@@ -85,7 +85,9 @@ end
 
 	corrs = [v]
 	c2 = ContourIndex(1)
-	for i in 2:N
+	ids2N = [k for k in sampleidx(N) if k > 1]
+	idsallN = [1; ids2N]
+	for i in ids2N
 		c1 = ContourIndex(i)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
@@ -98,7 +100,7 @@ end
 	A = hoppingmatrix(b2, ϵ_d)
 
 	corrs2 = freebosons_Gτ(A, collect(0:δτ:β), 1, 1; β=β)
-	corrs2 = corrs2[1:length(corrs)]
+	corrs2 = corrs2[idsallN]
 
 	@test norm(corrs - corrs2) / norm(corrs2) < tol		
 end
@@ -160,7 +162,9 @@ end
 
 	gt_corrs = [v]
 	c2 = ContourIndex(1, :+)
-	for i in 2:N
+	ids2N = [k for k in sampleidx(N) if k > 1]
+	idsallN = [1; ids2N]
+	for i in ids2N
 		c1 = ContourIndex(i, :+)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
@@ -178,7 +182,7 @@ end
 	v = integrate(lattice, adt2) / Zval
 
 	lt_corrs = [v]	
-	for i in 2:N
+	for i in ids2N
 		c2 = ContourIndex(i, :+)
 		ct = ContourOperator([c1, c2], [op2, op1])
 
@@ -196,8 +200,8 @@ end
 	ρ₀ = Matrix(Diagonal([1.0; [boseeinstein(β, ωₖ) for ωₖ in ws2]]))
 
 	gt_corrs2, lt_corrs2 = freebosons_greater_lesser(A, ρ₀, collect(0:δt:t), 1, 1)
-	gt_corrs2 = gt_corrs2[1:length(gt_corrs)]
-	lt_corrs2 = lt_corrs2[1:length(lt_corrs)]
+	gt_corrs2 = gt_corrs2[idsallN]
+	lt_corrs2 = lt_corrs2[idsallN]
 
 	@test norm(gt_corrs - gt_corrs2) / norm(gt_corrs2) < tol	
 	@test norm(lt_corrs - lt_corrs2) / norm(lt_corrs2) < tol	

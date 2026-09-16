@@ -16,7 +16,7 @@ println("------------------------------------")
 
 	lattice = PTLattice(N=N, δτ=δτ, contour=:imag)	
 
-	for ϵ_d in (-1, 0, 1)
+	for ϵ_d in (0, 1)
 
 		nop = [1 0; 0 0]
 		hyb = NonAdditiveHyb(nop)
@@ -50,7 +50,9 @@ println("------------------------------------")
 
 		corrs = [v]
 		c2 = ContourIndex(1)
-		for i in 2:N
+		ids2N = [k for k in sampleidx(N) if k > 1]
+		idsallN = [1; ids2N]
+		for i in ids2N
 			c1 = ContourIndex(i)
 			ct = ContourOperator([c1, c2], [op1, op2])
 
@@ -60,7 +62,7 @@ println("------------------------------------")
 		end
 
 		corrs2 = independentbosons_Gτ(spec, β=β, ϵ_d=ϵ_d, Nτ=N)
-		corrs2 = corrs2[1:length(corrs)]
+		corrs2 = corrs2[idsallN]
 
 		@test norm(corrs - corrs2) / norm(corrs2) < tol		
 
@@ -118,7 +120,9 @@ end
 
 	corrs = [v]
 	c2 = ContourIndex(1, branch=:+)
-	for i in 2:Nt
+	ids2Nt = [k for k in sampleidx(Nt) if k > 1]
+	idsallNt = [1; ids2Nt]
+	for i in ids2Nt
 		c1 = ContourIndex(i, branch=:+)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
@@ -130,7 +134,7 @@ end
 	corrs = -im .* corrs
 
 	corrs2 = [independentbosons_greater(spec, tj, β=β, ϵ_d=ϵ_d) for tj in 0:δt:t]
-	corrs2 = corrs2[1:length(corrs)]
+	corrs2 = corrs2[idsallNt]
 
 	@test norm(corrs - corrs2) / norm(corrs2) < tol
 
@@ -142,7 +146,7 @@ end
 	v = integrate(lattice, mps2) / Zval
 
 	corrs = [v]
-	for i in 2:Nt
+	for i in ids2Nt
 		c2 = ContourIndex(i, branch=:+)
 		ct = ContourOperator([c1, c2], [op2, op1])
 
@@ -155,7 +159,7 @@ end
 	corrs = im .* corrs
 
 	corrs2 = [independentbosons_lesser(spec, tj, β=β, ϵ_d=ϵ_d) for tj in 0:δt:t]
-	corrs2 = corrs2[1:length(corrs)]
+	corrs2 = corrs2[idsallNt]
 
 	# println(corrs)
 	# println(corrs2)

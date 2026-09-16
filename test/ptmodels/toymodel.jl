@@ -62,7 +62,9 @@ println("------------------------------------")
 	v = integrate(lattice, mps2) / Zval
 
 	corrs = [v]
-	for i in 2:N
+	ids2N = [k for k in sampleidx(N) if k > 1]
+	idsallN = [1; ids2N]
+	for i in ids2N
 		ind2 = ContourIndex(i)
 		t = ContourOperator([ind2,ind1], [op, op])
 		# t = ADTTerm((i,1), reshape(kron(zdiag, zdiag), 2, 2))
@@ -75,7 +77,7 @@ println("------------------------------------")
 	A = kron(op, Ib, Ib)
 
 	corrs2 = correlation_2op_1τ(H, A, A, 0:δτ:β, β=β)
-	corrs2 = corrs2[1:length(corrs)]
+	corrs2 = corrs2[idsallN]
 
 	@test norm(corrs - corrs2) / norm(corrs2) < tol
 
@@ -92,7 +94,7 @@ println("------------------------------------")
 
 	corrs = [v]
 	c2 = ContourIndex(1)
-	for i in 2:N
+	for i in ids2N
 		c1 = ContourIndex(i)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
@@ -106,7 +108,7 @@ println("------------------------------------")
 	A2 = kron(op2, Ib, Ib)
 
 	corrs2 = correlation_2op_1τ(H, A1, A2, 0:δτ:β, β=β)
-	corrs2 = corrs2[1:length(corrs)]
+	corrs2 = corrs2[idsallN]
 
 	@test norm(corrs - corrs2) / norm(corrs2) < tol
 
@@ -178,7 +180,9 @@ end
 		v = integrate(lattice, mps2) / Zval
 
 		corrs = [v]
-		for i in 2:N
+		ids2N = [k for k in sampleidx(N) if k > 1]
+		idsallN = [1; ids2N]
+		for i in ids2N
 			ind2 = ContourIndex(i, branch=:+)
 			m = ContourOperator([ind2,ind1], [op, op])
 			mps2 = apply!(m, lattice, deepcopy(mps))
@@ -189,7 +193,7 @@ end
 		
 		A = kron(op, Ib, Ib)
 		corrs2 = correlation_2op_1t(H, A, A, ρ, 0:δt:t, reverse = false)
-		corrs2 = corrs2[1:length(corrs)]
+		corrs2 = corrs2[idsallN]
 		@test norm(corrs - corrs2) / norm(corrs2) < tol
 
 
@@ -211,7 +215,7 @@ end
 
 		corrs = [v]
 		c2 = ContourIndex(1, branch=:+)
-		for i in 2:N
+		for i in ids2N
 			c1 = ContourIndex(i, branch=:+)
 			ct = ContourOperator([c1, c2], [op1, op2])
 
@@ -223,7 +227,7 @@ end
 		end
 
 		corrs2 = correlation_2op_1t(H, A1, A2, ρ, 0:δt:t, reverse = false)
-		corrs2 = corrs2[1:length(corrs)]
+		corrs2 = corrs2[idsallN]
 
 		@test norm(corrs - corrs2) / norm(corrs2) < tol
 
@@ -242,7 +246,7 @@ end
 		v = integrate(lattice, mps2) / Zval
 
 		corrs = [v]
-		for i in 2:N
+		for i in ids2N
 			c2 = ContourIndex(i, branch=:+)
 			ct = ContourOperator([c1, c2], [op1, op2])
 
@@ -254,7 +258,7 @@ end
 		end
 
 		corrs2 = correlation_2op_1t(H, A1, A2, ρ, 0:δt:t, reverse = true)
-		corrs2 = corrs2[1:length(corrs)]
+		corrs2 = corrs2[idsallN]
 
 		@test norm(corrs - corrs2) / norm(corrs2) < tol
 
@@ -335,7 +339,9 @@ end
 
 	corrs = [v]
 	c2 = ContourIndex(1, branch=:+)
-	for i in 2:Nt
+	ids2Nt = [k for k in sampleidx(Nt) if k > 1]
+	idsallNt = [1; ids2Nt]
+	for i in ids2Nt
 		c1 = ContourIndex(i, branch=:+)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
@@ -348,7 +354,7 @@ end
 	end
 
 	corrs2 = correlation_2op_1t(H, A1, A2, ρ, 0:δt:t, reverse = false)
-	corrs2 = corrs2[1:length(corrs)]
+	corrs2 = corrs2[idsallNt]
 
 	@test norm(corrs - corrs2) / norm(corrs2) < tol
 
@@ -360,7 +366,7 @@ end
 	v = integrate(lattice, mps2) / Zval
 
 	corrs = [v]
-	for i in 2:Nt
+	for i in ids2Nt
 		c2 = ContourIndex(i, branch=:+)
 		ct = ContourOperator([c1, c2], [op2, op1])
 
@@ -373,7 +379,7 @@ end
 	end
 
 	corrs2 = correlation_2op_1t(H, A2, A1, ρ, 0:δt:t, reverse = true)
-	corrs2 = corrs2[1:length(corrs)]
+	corrs2 = corrs2[idsallNt]
 
 	@test norm(corrs - corrs2) / norm(corrs2) < tol
 
@@ -386,7 +392,9 @@ end
 	v = integrate(lattice, mps2) / Zval
 
 	corrs = [v]
-	for i in 2:Nτ
+	ids2Nτ = [k for k in sampleidx(Nτ) if k > 1]
+	idsallNτ = [1; ids2Nτ]
+	for i in ids2Nτ
 		c1 = ContourIndex(i, branch=:τ)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
@@ -397,7 +405,7 @@ end
 	end
 
 	corrs2 = correlation_2op_1τ(H, A1, A2, 0:δτ:β, β=β)
-	corrs2 = corrs2[1:length(corrs)]
+	corrs2 = corrs2[idsallNτ]
 
 	@test norm(corrs - corrs2) / norm(corrs2) < tol
 
@@ -411,7 +419,7 @@ end
 	op2ts = [evU * Diagonal(exp.(im .* tj .* evλ)) * evU' * A2 * evU * Diagonal(exp.(-im .* tj .* evλ)) * evU' for tj in 0:δt:t]
 
 	for br in (:+, :-)
-		for i in 1:Nτ
+		for i in (1, div(Nτ, 2), Nτ)  # sampled τ points (regression)
 			τv = (i - 1) * δτ
 			op1τ = evU * Diagonal(exp.(τv .* evλ)) * evU' * A1 * evU * Diagonal(exp.(-τv .* evλ)) * evU'
 			corrs2 = [tr(op1τ * Bt * ρed) / zed for Bt in op2ts]

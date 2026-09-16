@@ -1,36 +1,26 @@
-# include("../src/includes.jl")
+# Test suite organized in three parts (following the GTEMPO layout):
+#   (i)   api/       : API unit tests of all exported functions (no physical references)
+#   (ii)  adtmodels/ : functional tests of ADT-lattice models against ED / analytic references
+#   (iii) ptmodels/  : functional tests of PT-lattice models against ED / analytic references
 
 using Test, LinearAlgebra, TensorOperations, ImpurityModelBase, QuAPI
+using Random
 
-# push!(LOAD_PATH, "../src")
 using TEMPO
-using TEMPO: QR, QRpos, LQ, LQpos, SVD, SDD, Polar
+using TEMPO: QR, QRpos, LQ, LQpos, SVD, SDD, Polar, TimeAscending, TimeDscending, Zvalue2
 
+Random.seed!(20260916)
 
 include("util.jl")
 
-include("auxiliary.jl")
-include("mpohamiltonian.jl")
-
-include("adtlattice.jl")
-include("adt.jl")
-
-include("ptlattice.jl")
-include("pt.jl")
-include("ptzipup.jl")
-
-include("adtpartialif.jl")
-include("ptpartialif.jl")
-
-include("ttiif/ttiif.jl")
-include("ptttiif/ptttiif.jl")
-include("tdvpif.jl")
-
-
-include("models/models.jl")
-include("ptmodels/ptmodels.jl")
-
-include("dissipativemodels/dissipativemodels.jl")
-include("dissipativeptmodels/dissipativeptmodels.jl")
-
-include("observables/observables.jl")
+@testset "TEMPO" begin
+	@testset "api" begin
+		include("api/api.jl")
+	end
+	@testset "adtmodels" begin
+		include("adtmodels/adtmodels.jl")
+	end
+	@testset "ptmodels" begin
+		include("ptmodels/ptmodels.jl")
+	end
+end

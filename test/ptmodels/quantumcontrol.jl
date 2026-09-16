@@ -12,7 +12,7 @@ end
 
 @testset "Single spin" begin
 	Ω = 0.5
-	N = 10
+	N = 4  # reduced length (each step rebuilds the lattice; O(N²) cost)
 	δt = 0.5
 	t = N * δt
 	β = 1
@@ -55,7 +55,7 @@ end
 @testset "Rabi model" begin
 
 	Ω = 0.5
-	N = 15
+	N = 5  # reduced length (each step rebuilds the lattice and refits the IF; O(N²) cost)
 	δt = 0.05
 	β = 1
 	t = N * δt

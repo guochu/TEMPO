@@ -1,11 +1,9 @@
 println("------------------------------------")
 println("|             PT Models            |")
 println("------------------------------------")
-println()
 
 include("singlespin.jl")
 include("rabimodel.jl")
-include("rabimodel2.jl")
 include("independentbosons.jl")
 include("freebosons.jl")
 
@@ -13,5 +11,4 @@ include("quantumcontrol.jl")
 
 include("toymodel.jl")
 include("toymodel2.jl")
-
-include("meanforcestate.jl")
+include("jcmodel.jl")

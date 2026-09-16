@@ -65,7 +65,9 @@ println("------------------------------------")
 	@test abs(v2 - v) / abs(v) < tol
 
 	corrs = [v]
-	for i in 2:N
+	ids2N = [k for k in sampleidx(N) if k > 1]
+	idsallN = [1; ids2N]
+	for i in ids2N
 		ind2 = ContourIndex(i)
 		t = ContourOperator([ind2,ind1], [op, op])
 		# t = ADTTerm((i,1), reshape(kron(zdiag, zdiag), 2, 2))
@@ -83,7 +85,7 @@ println("------------------------------------")
 	A = kron(op, Ib)
 
 	corrs2 = correlation_2op_1τ(H, A, A, 0:δτ:β, β=β)
-	corrs2 = corrs2[1:length(corrs)]
+	corrs2 = corrs2[idsallN]
 
 	@test norm(corrs - corrs2) / norm(corrs2) < tol
 
@@ -104,7 +106,7 @@ println("------------------------------------")
 
 	corrs = [v]
 	c2 = ContourIndex(1)
-	for i in 2:N
+	for i in ids2N
 		c1 = ContourIndex(i)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
@@ -124,7 +126,7 @@ println("------------------------------------")
 	A2 = kron(op2, Ib)
 
 	corrs2 = correlation_2op_1τ(H, A1, A2, 0:δτ:β, β=β)
-	corrs2 = corrs2[1:length(corrs)]
+	corrs2 = corrs2[idsallN]
 
 	@test norm(corrs - corrs2) / norm(corrs2) < tol
 
@@ -202,7 +204,9 @@ end
 
 
 		corrs = [v]
-		for i in 2:N
+		ids2N = [k for k in sampleidx(N) if k > 1]
+		idsallN = [1; ids2N]
+		for i in ids2N
 			ind2 = ContourIndex(i, branch=:+)
 			m = ContourOperator([ind2,ind1], [op, op])
 			mps2 = apply!(m, lattice, deepcopy(mps))
@@ -219,7 +223,7 @@ end
 		
 		A = kron(op, Ib)
 		corrs2 = correlation_2op_1t(H, A, A, ρ, 0:δt:t, reverse = false)
-		corrs2 = corrs2[1:length(corrs)]
+		corrs2 = corrs2[idsallN]
 		@test norm(corrs - corrs2) / norm(corrs2) < tol
 
 
@@ -246,7 +250,7 @@ end
 
 		corrs = [v]
 		c2 = ContourIndex(1, branch=:+)
-		for i in 2:N
+		for i in ids2N
 			c1 = ContourIndex(i, branch=:+)
 			ct = ContourOperator([c1, c2], [op1, op2])
 
@@ -263,7 +267,7 @@ end
 		end
 
 		corrs2 = correlation_2op_1t(H, A1, A2, ρ, 0:δt:t, reverse = false)
-		corrs2 = corrs2[1:length(corrs)]
+		corrs2 = corrs2[idsallN]
 
 		@test norm(corrs - corrs2) / norm(corrs2) < tol
 
@@ -287,7 +291,7 @@ end
 		@test abs(v2 - v) / abs(v) < tol
 
 		corrs = [v]
-		for i in 2:N
+		for i in ids2N
 			c2 = ContourIndex(i, branch=:+)
 			ct = ContourOperator([c1, c2], [op1, op2])
 
@@ -304,7 +308,7 @@ end
 		end
 
 		corrs2 = correlation_2op_1t(H, A1, A2, ρ, 0:δt:t, reverse = true)
-		corrs2 = corrs2[1:length(corrs)]
+		corrs2 = corrs2[idsallN]
 
 		@test norm(corrs - corrs2) / norm(corrs2) < tol
 

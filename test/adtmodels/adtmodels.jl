@@ -1,8 +1,8 @@
 println("------------------------------------")
-println("|      Dissipative PT Models       |")
+println("|            ADT Models            |")
 println("------------------------------------")
-println()
 
 include("singlespin.jl")
 include("rabimodel.jl")
-include("jcmodel.jl")
+include("independentbosons.jl")
+include("toymodel.jl")

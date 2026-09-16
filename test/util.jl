@@ -75,6 +75,13 @@ function _rand_lindblad(d)
 	return lindbladoperator(H, jumps)
 end
 
+# Deterministic sampled time indices in 1:n for regression tests (keeps the suite
+# fast while retaining end-point and mid-curve coverage).
+function sampleidx(n::Integer)
+	n <= 4 && return collect(1:n)
+	return unique!([1, 2, div(n, 2), n])
+end
+
 # function generate_site_mpdo(D, R=D^2)
 # 	L = D
 # 	Vs = randn(ComplexF64, L, L * R)

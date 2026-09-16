@@ -64,25 +64,23 @@ TimeOrderingStyle(x::FockOrdering) = TimeOrderingStyle(typeof(x))
 	struct M2M1 <: ImagFockOrdering
 
 First-order Fock ordering on the imaginary-time contour: each imaginary-time step contains two orders (M2, M1),
-with descending time ordering (`TimeDscending`) on the imaginary-time branch. Alias `MM`.
+with descending time ordering (`TimeDscending`) on the imaginary-time branch.
 """
 struct M2M1 <: ImagFockOrdering end
 LayoutStyle(::Type{M2M1}) = TimeLocalLayout()
 ImaginaryTimeOrderingStyle(::Type{<:ImagFockOrdering}) = TimeDscending()
 TimeOrderingStyle(::Type{O}) where {O<:ImagFockOrdering} = ImaginaryTimeOrderingStyle(O)
-const MM = M2M1
 
 """
-	struct M2m2M1m1 <: RealFockOrdering 
+	struct M2m2M1m1 <: RealFockOrdering
 
 First-order Fock ordering on the real-time contour: each real-time step contains two orders (M2, M1) and their conjugates (m2, m1),
-with descending time ordering (`TimeDscending`) on the real-time branch. Alias `MmMm`.
+with descending time ordering (`TimeDscending`) on the real-time branch.
 """
 struct M2m2M1m1 <: RealFockOrdering end
 LayoutStyle(::Type{M2m2M1m1}) = TimeLocalLayout()
 RealTimeOrderingStyle(::Type{<:RealFockOrdering}) = TimeDscending()
 TimeOrderingStyle(::Type{O}) where {O<:RealFockOrdering} = RealTimeOrderingStyle(O)
-const MmMm = M2m2M1m1
 
 """
 	struct M2M1_m1M1m2M2 <: MixedFockOrdering

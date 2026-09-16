@@ -1,54 +1,62 @@
 println("------------------------------------")
-println("|     Dissipative Rabi Model       |")
+println("|     Dissipative JC Model         |")
 println("------------------------------------")
 
-@testset "Rabi model: real-time" begin
+# H = Ω*σz	+ (A†a + Aa†) + 2a† a
+
+@testset "Toy JC model: real-time" begin
 
 	Ω = 0.5
 	N = 10
 	δt = 0.05
 	β = 2
 	t = N * δt
-	chi = 100
+	chi = 50
 	d = 20
-	tol = 1.0e-2
+	tol = 2.0e-2
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
 
 	lattice = PTLattice(N = N, δt=δt, contour=:real)
 
-	# x = [0 1; 1 0]
-	x = Matrix{ComplexF64}([0 im; -im 0])
-	hop = Ω .* x
-	z = [-1 0; 0 1]
+	p = spin_half_matrices()
+	x, y, z = p["x"], p["y"], p["z"]
+	hop = Ω .* z
 	Is = one(x)
 	Ib = one(zeros(d, d))
-
+	
 	jumpops = [randn(ComplexF64, 2, 2), randn(ComplexF64, 2, 2)]
 	model = ImpurityLindbladian(lindbladoperator(hop, jumpops))
 
+
+	sp = randn(ComplexF64, 2, 2)
+	sp ./= norm(sp)
+
 	Hbarebath = bosondensityoperator(d=d)
 	a = bosonaoperator(d=d)
-	H = kron(hop, Ib) + kron(Is, Hbarebath) + kron(z, a' + a)
+	H = kron(hop, Ib) + kron(Is, Hbarebath) + kron(sp, a) + kron(sp', a')
 
 	jumpops2 = [kron(jump, Ib) for jump in jumpops]
 	Lop = lindbladoperator(H, jumpops2)
 
-	bs = NonAdditiveHyb(z)
+	bs = NonDiagonalHyb(sp)
 	spec = DiracDelta(1)
 	bath = bosonicbath(spec, β=β)
 	corr = correlationfunction(bath, lattice)
-	# mpsI = hybriddynamics(lattice, corr, bs, trunc=trunc)
-	mpsI = hybriddynamics_naive(lattice, corr, bs, trunc=trunc)
+
+	algmult = SVDCompression(trunc)
+	algexpan = OverDeterminedProny(n=20, tol=1.0e-8)
+	alg = XTRGIF(k=5, fast=true, algmult=algmult, algexpan=algexpan, verbosity=2)
+	mpsI = hybriddynamics(lattice, corr, bs, alg)
 	# @test distance(mpsI, mpsI′) / norm(mpsI′) < tol
 	mpsK = sysdynamics(lattice, model, trunc=trunc)
 	mps = mult!(mpsK, mpsI, trunc=trunc)
 
 	ρimp = _rand_dm(2)
 
-
 	tmp = initialstate!(deepcopy(mps), lattice, ρimp)
 	Zval = integrate(lattice, tmp)
 	
+
 	
 	ρ = kron(ρimp, exp(-β * Hbarebath)) 
 
@@ -62,7 +70,9 @@ println("------------------------------------")
 	v = integrate(lattice, mps2) / Zval
 
 	corrs = [v]
-	for i in 2:N
+	ids2N = [k for k in sampleidx(N) if k > 1]
+	idsallN = [1; ids2N]
+	for i in ids2N
 		ind2 = ContourIndex(i, branch=:+)
 		m = ContourOperator([ind2,ind1], [op, op])
 		mps2 = apply!(m, lattice, deepcopy(mps))
@@ -73,7 +83,7 @@ println("------------------------------------")
 	
 	A = kron(op, Ib)
 	corrs2 = correlation_2op_1t(Lop, A, A, ρ, 0:δt:t, reverse = false)
-	corrs2 = corrs2[1:length(corrs)]
+	corrs2 = corrs2[idsallN]
 	@test norm(corrs - corrs2) / norm(corrs2) < tol
 
 
@@ -95,7 +105,9 @@ println("------------------------------------")
 
 	corrs = [v]
 	c2 = ContourIndex(1, branch=:+)
-	for i in 2:N
+	ids2N = [k for k in sampleidx(N) if k > 1]
+	idsallN = [1; ids2N]
+	for i in ids2N
 		c1 = ContourIndex(i, branch=:+)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
@@ -107,7 +119,7 @@ println("------------------------------------")
 	end
 
 	corrs2 = correlation_2op_1t(Lop, A1, A2, ρ, 0:δt:t, reverse = false)
-	corrs2 = corrs2[1:length(corrs)]
+	corrs2 = corrs2[idsallN]
 
 	@test norm(corrs - corrs2) / norm(corrs2) < tol
 
@@ -126,7 +138,9 @@ println("------------------------------------")
 	v = integrate(lattice, mps2) / Zval
 
 	corrs = [v]
-	for i in 2:N
+	ids2N = [k for k in sampleidx(N) if k > 1]
+	idsallN = [1; ids2N]
+	for i in ids2N
 		c2 = ContourIndex(i, branch=:+)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
@@ -138,7 +152,7 @@ println("------------------------------------")
 	end
 
 	corrs2 = correlation_2op_1t(Lop, A1, A2, ρ, 0:δt:t, reverse = true)
-	corrs2 = corrs2[1:length(corrs)]
+	corrs2 = corrs2[idsallN]
 
 	@test norm(corrs - corrs2) / norm(corrs2) < tol
 

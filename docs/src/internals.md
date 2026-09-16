@@ -79,8 +79,8 @@ Fock orderings define the arrangement conventions of the Grassmann operators on 
 
 | Type | Contour | Meaning |
 |---|---|---|
-| `M2M1` (alias `MM`) | Imaginary time | Each imaginary-time step contains the two orderings M2, M1; the imaginary branch is in descending time order |
-| `M2m2M1m1` (alias `MmMm`) | Real time | Each real-time step contains the two orderings and their conjugates m2, m1; the real branch is in descending time order |
+| `M2M1` | Imaginary time | Each imaginary-time step contains the two orderings M2, M1; the imaginary branch is in descending time order |
+| `M2m2M1m1` | Real time | Each real-time step contains the two orderings and their conjugates m2, m1; the real branch is in descending time order |
 | `M2M1_m1M1m2M2` | Mixed | Real branch in ascending time order, imaginary branch in descending time order |
 
 ### 3.3 Lattice types and index mappings
