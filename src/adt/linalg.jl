@@ -72,10 +72,13 @@ function _permute!(x::ADT, perm::Vector{Int}; trunc::TruncationScheme=DefaultInt
     if svectors_uninitialized(x)
         canonicalize!(x, alg=Orthogonalize(trunc=trunc, normalize=false))
     end
-    p = CoxeterDecomposition(Permutation(perm))
-    for i in p.terms
+    p = permutation2swaps(perm)
+    for i in p
         easy_swap!(x, i, trunc=trunc)
     end
+    # the swaps reshuffle the entanglement across bonds: re-establish the
+    # mixed-canonical form (and the bond Schmidt records) at the end
+    canonicalize!(x, alg=Orthogonalize(trunc=trunc, normalize=false))
     return x
 end
 permute!(x::ADT, perm::Vector; kwargs...) = _permute!(x, perm; kwargs...)
@@ -83,8 +86,8 @@ permute(x::ADT, perm::Vector{Int}; kwargs...) = permute!(deepcopy(x), perm; kwar
 
 function naive_permute!(x::ADT, perm::Vector{Int}; trunc::TruncationScheme=DefaultIntegrationTruncation)
     @assert length(x) == length(perm)
-    p = CoxeterDecomposition(Permutation(perm))
-    for i in p.terms
+    p = permutation2swaps(perm)
+    for i in p
         naive_swap!(x, i, trunc=trunc)
     end
     return x

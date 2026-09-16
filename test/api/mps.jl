@@ -142,3 +142,31 @@ end
 	@test abs(integrate(m) - integrate(mps, mps2)) / abs(integrate(mps, mps2)) < 1.0e-4
 	@test scaling(TransferMatrix(mps, mps2)) ≈ scaling(mps) * scaling(mps2)
 end
+
+@testset "permute                     " begin
+	# two sweeps of QR/SVD re-gauging introduce ~1e-8 numerical noise
+	rtol = 1.0e-6
+	# generous bond cutoff: the permutation itself is lossless
+	trunc = truncdimcutoff(D=512, ϵ=1.0e-14, add_back=0)
+	for (name, randmps) in MPSConstructors
+		@testset "$name" begin
+			for T in (Float64, ComplexF64), L in (4, 8)
+				# mixed-canonical initial state
+				psi = randmps(T, L, D=6)
+				canonicalize!(psi, alg=Orthogonalize(trunc=trunc, normalize=false))
+				@test iscanonical(psi)
+
+				perm = randperm(L)
+				psi1 = TEMPO.permute!(copy(psi), perm; trunc=trunc)
+				# a) a permuted mixed-canonical state is still mixed-canonical
+				@test iscanonical(psi1)
+				# b) permuting again with the inverse permutation restores the original state
+				@test distance(TEMPO.permute!(psi1, invperm(perm); trunc=trunc), psi) / norm(psi) < rtol
+
+				# the identity permutation returns the state unchanged
+				psi1 = TEMPO.permute(psi, collect(1:L); trunc=trunc)
+				@test distance(psi1, psi) / norm(psi) < rtol
+			end
+		end
+	end
+end

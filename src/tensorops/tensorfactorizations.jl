@@ -241,3 +241,27 @@ function _check_and_filter(v::AbstractVector{<:Real}; tol::Real=1.0e-12)
 	# return [(abs(item) <= tol) ? oo : item for item in v]
 	return [item for item in v if abs(item) > tol] 
 end
+
+"""
+    permutation2swaps(perm)
+
+Decompose the permutation `perm` into a sequence of adjacent transpositions: applying
+`swap(x, b)` (exchanging the sites `b` and `b+1` of an MPS/MPO `x`) for each `b` in the
+returned list, in order, transforms a tensor network into the permuted one.
+"""
+function permutation2swaps(perm)
+	p = collect(perm)
+	@assert isperm(p)
+	swaps = Vector{Int}()
+	N = length(p)
+	for k in 1:(N - 1)
+		append!(swaps, (p[k] - 1):-1:k)
+		for l in (k + 1):N
+			if p[l] < p[k]
+				p[l] += 1
+			end
+		end
+		p[k] = k
+	end
+	return swaps
+end
