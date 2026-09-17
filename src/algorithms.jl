@@ -18,7 +18,7 @@ end
 """
     SVDCompression(trunc::TruncationScheme; verbosity=0)
 
-Construct an `SVDCompression` from a `TruncationScheme` (e.g., `truncdimcutoff(D, ϵ)`, `truncdim(D)`, `trunccutoff(ϵ)` or `NoTruncation()`).
+Construct an `SVDCompression` from a `TruncationScheme` (e.g., `truncdimcutoff(D, ϵ)`, `truncdim(D)`, `truncrelerr(ϵ)` or `NoTruncation()`).
 """
 SVDCompression(trunc::TruncationScheme; verbosity::Int=0) = SVDCompression(trunc, verbosity)
 
@@ -92,7 +92,7 @@ end
 Construct a `DMRG1` algorithm configuration.
 
 # Arguments
-- `trunc::TruncationWithD`: truncation scheme carrying a maximum bond dimension `D` (constructed with `truncdimcutoff(D, ϵ)` or `truncdim(D)`); schemes without a dimension cap (`trunccutoff`, `NoTruncation`) are not allowed
+- `trunc::TruncationWithD`: truncation scheme carrying a maximum bond dimension `D` (constructed with `truncdimcutoff(D, ϵ)` or `truncdim(D)`); schemes without a dimension cap (`truncrelerr`, `NoTruncation`) are not allowed
 - `maxiter::Int`: maximum number of iterations
 - `tol::Float64`: convergence tolerance
 - `initguess::Symbol`: initial guess, must be one of `:svd`, `:pre`, `:rand`, otherwise an `ArgumentError` is thrown

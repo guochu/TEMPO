@@ -1,3 +1,18 @@
+# 接口调整说明（2026-09-17）：`TruncateCutoff` / `trunccutoff` 更名
+
+类型与构造函数更名，语义不变（按相对截断误差 ϵ 截断奇异值）。全套测试通过（0 Fail / 0 Error）。
+
+| 旧名（已删除） | 新名 | 说明 |
+|---|---|---|
+| `TruncateCutoff` | `TruncateRelError` | 截断方案类型（含关键字构造 `TruncateRelError(; ϵ)`） |
+| `trunccutoff` | `truncrelerr` | 便利构造函数（位置 `truncrelerr(ϵ)` 与关键字 `truncrelerr(; ϵ)` 等价） |
+
+- 更名原因：与 `TruncateDim` / `TruncateDimCutoff` 命名对齐，明确 ϵ 的含义是**相对截断误差**而非绝对阈值。
+- 迁移：`trunccutoff(ϵ)` → `truncrelerr(ϵ)`；类型注解 `::TruncateCutoff` → `::TruncateRelError`。
+- `DefaultKTruncation = truncrelerr(Defaults.tolgauge)` 不变（仅名称）。
+
+---
+
 # 接口调整说明（2026-09-17）：截断方案与 MPS 算法接口统一（SVDCompression/DMRG1 参数化、默认截断收敛）
 
 对齐主流库（MPSKit / ITensor / TeNPy）的做法，把压缩算法的截断参数统一为 `TruncationScheme` 对象，并收敛默认截断常量。全套测试通过（0 Fail / 0 Error）。

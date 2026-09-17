@@ -30,18 +30,18 @@ Keyword form of the dimension-truncation scheme constructor, equivalent to `trun
 """
 truncdim(; D::Int) = truncdim(D)
 
-struct TruncateCutoff <: TruncationScheme
+struct TruncateRelError <: TruncationScheme
 	ϵ::Float64
 end
-TruncateCutoff(;ϵ::Real) = TruncateCutoff(convert(Float64, ϵ))
+TruncateRelError(;ϵ::Real) = TruncateRelError(convert(Float64, ϵ))
 """
-    trunccutoff(ϵ::Real)
-    trunccutoff(; ϵ::Real)
+    truncrelerr(ϵ::Real)
+    truncrelerr(; ϵ::Real)
 
-Construct a cutoff-truncated scheme `TruncateCutoff(ϵ)` that discards singular values with relative norm below `ϵ`.
+Construct a `TruncateRelError` scheme that discards singular values with relative norm below `ϵ`.
 """
-trunccutoff(ϵ::Real) = TruncateCutoff(ϵ)
-trunccutoff(; ϵ::Real) = TruncateCutoff(ϵ)
+truncrelerr(ϵ::Real) = TruncateRelError(ϵ)
+truncrelerr(; ϵ::Real) = TruncateRelError(ϵ)
 
 # reserve at least add_back singular values
 """
@@ -80,7 +80,7 @@ function _truncate!(v::AbstractVector{<:Real}, trunc::TruncateDim, p::Real=2)
 	return v, truncerr
 end
 
-function _truncate!(v::AbstractVector{<:Real}, trunc::TruncateCutoff, p::Real=2)
+function _truncate!(v::AbstractVector{<:Real}, trunc::TruncateRelError, p::Real=2)
 	sca = norm(v, p)
 	dtrunc = findlast(Base.Fix2(>, sca * trunc.ϵ), v)
 	if isnothing(dtrunc)

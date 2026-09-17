@@ -8,7 +8,7 @@ Algorithm: accumulate left-to-right QR decompositions, then orthogonalize right-
 # Arguments
 - `x::ADT`: first MPS, also used as the output storage
 - `y::ADT`: second MPS, must have the same length as `x`
-- `trunc`: SVD truncation scheme (e.g., `truncdim(D)`, `trunccutoff(ε)`)
+- `trunc`: SVD truncation scheme (e.g., `truncdim(D)`, `truncrelerr(ε)`)
 - `verbosity::Int`: verbosity level
 
 # Returns

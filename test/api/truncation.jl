@@ -4,14 +4,14 @@
 	@test truncdim(3) isa TruncateDim
 	@test truncdim(D=4) isa TruncateDim
 	@test truncdim(D=4).D == 4
-	@test trunccutoff(ϵ=1.0e-3) isa TruncateCutoff
-	@test trunccutoff(ϵ=1.0e-3).ϵ == 1.0e-3
+	@test truncrelerr(ϵ=1.0e-3) isa TruncateRelError
+	@test truncrelerr(ϵ=1.0e-3).ϵ == 1.0e-3
 	@test truncdimcutoff(D=5, ϵ=1.0e-3) isa TruncateDimCutoff
 	@test truncdimcutoff(5, 1.0e-3) isa TruncateDimCutoff
 	@test NoTruncation() isa TruncationScheme
-	@test trunccutoff(1.0e-8) isa TruncateCutoff
-	@test trunccutoff(1.0e-8).ϵ == 1.0e-8
-	@test TEMPO.DefaultKTruncation isa TruncateCutoff
+	@test truncrelerr(1.0e-8) isa TruncateRelError
+	@test truncrelerr(1.0e-8).ϵ == 1.0e-8
+	@test TEMPO.DefaultKTruncation isa TruncateRelError
 	@test TEMPO.DefaultKTruncation.ϵ == TEMPO.Defaults.tolgauge
 
 	a = randn(6, 5)
@@ -19,7 +19,7 @@
 	u, s, v, err = tsvd(a, trunc=truncdim(3))
 	@test length(s) == 3
 	@test err ≈ norm(svdvals(a)[4:end])
-	u2, s2, v2, err2 = tsvd(a, trunc=trunccutoff(ϵ=1.0e-10))
+	u2, s2, v2, err2 = tsvd(a, trunc=truncrelerr(ϵ=1.0e-10))
 	@test length(s2) == 5
 	@test err2 < 1.0e-8
 	u3, s3, v3, err3 = tsvd(a, trunc=truncdimcutoff(D=2, ϵ=1.0e-10))
@@ -49,7 +49,7 @@ end
 
 @testset "SVDCompression / DMRG1       " begin
 	# `trunc` of `SVDCompression` accepts any TruncationScheme
-	schemes = (truncdimcutoff(D=10, ϵ=1.0e-8), truncdim(10), trunccutoff(ϵ=1.0e-8), trunccutoff(1.0e-8), NoTruncation())
+	schemes = (truncdimcutoff(D=10, ϵ=1.0e-8), truncdim(10), truncrelerr(ϵ=1.0e-8), truncrelerr(1.0e-8), NoTruncation())
 	for trunc in schemes
 		@test SVDCompression(trunc) isa SVDCompression
 		@test SVDCompression(trunc).trunc == trunc
@@ -59,8 +59,8 @@ end
 		@test DMRG1(trunc) isa DMRG1
 		@test DMRG1(trunc).trunc == trunc
 	end
-	@test_throws MethodError DMRG1(trunccutoff(ϵ=1.0e-8))
-	@test_throws MethodError DMRG1(trunccutoff(1.0e-8))
+	@test_throws MethodError DMRG1(truncrelerr(ϵ=1.0e-8))
+	@test_throws MethodError DMRG1(truncrelerr(1.0e-8))
 	@test_throws MethodError DMRG1(NoTruncation())
 	# keyword constructors and defaults
 	@test SVDCompression() isa SVDCompression
@@ -71,7 +71,7 @@ end
 	alg = SVDCompression(truncdim(4), verbosity=2)
 	alg1 = similar(alg)
 	@test alg1.trunc == truncdim(4) && alg1.verbosity == 2
-	@test similar(alg; trunc=trunccutoff(ϵ=1.0e-8)).trunc isa TruncateCutoff
+	@test similar(alg; trunc=truncrelerr(ϵ=1.0e-8)).trunc isa TruncateRelError
 	alg = DMRG1(truncdim(4), maxiter=7, initguess=:rand)
 	alg1 = similar(alg)
 	@test alg1.trunc == truncdim(4) && alg1.maxiter == 7 && alg1.initguess == :rand

@@ -11,7 +11,7 @@ module Defaults
 end
 
 const DefaultITruncation = truncdimcutoff(D=Defaults.D, ϵ=Defaults.tolgauge, add_back=0) # for IF construction and general MPS/MPO compression
-const DefaultKTruncation = trunccutoff(Defaults.tolgauge) # system dynamics, initial-state absorption and MPO compression
+const DefaultKTruncation = truncrelerr(Defaults.tolgauge) # system dynamics, initial-state absorption and MPO compression
 
 const DefaultMultAlg = DMRG1(DefaultITruncation) # default compression algorithm for MPS/MPO multiplication
 # const DefaultMultAlg = SVDCompression(DefaultITruncation)

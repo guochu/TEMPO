@@ -171,5 +171,5 @@ expansion_error(f, p) / expansion_error(f, coeffs, alphas)
 | Constant | Value | Purpose |
 |---|---|---|
 | `DefaultITruncation` | `truncdimcutoff(D=100, ϵ=1e-14)` | Default for IF construction and general MPS/MPO compression (`mult`/`canonicalize`/`swap`) |
-| `DefaultKTruncation` | `trunccutoff(Defaults.tolgauge)` | Default for system dynamics, initial-state absorption and MPO compression |
+| `DefaultKTruncation` | `truncrelerr(Defaults.tolgauge)` | Default for system dynamics, initial-state absorption and MPO compression |
 | `DefaultMultAlg` | `DMRG1(DefaultITruncation)` | Default algorithm for `mult` |

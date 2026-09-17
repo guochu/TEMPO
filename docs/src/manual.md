@@ -23,14 +23,14 @@ Truncation schemes for compressing the bond dimension in tensor network computat
 |---|---|---|
 | `TruncateDimCutoff` | `truncdimcutoff(D=χ, ϵ=ε, add_back=0)` | Limits both the maximum bond dimension `D` and the truncation threshold `ϵ` (recommended) |
 | `TruncateDim` | `truncdim(D)` | Limits only the bond dimension |
-| `TruncateCutoff` | `trunccutoff(ϵ=ε)` | Truncates only by the singular-value threshold |
+| `TruncateRelError` | `truncrelerr(ϵ=ε)` | Truncates only by the singular-value threshold |
 | `NoTruncation` | `NoTruncation()` | No truncation |
 
 Predefined defaults (`src/defaults.jl`):
 
 ```julia
 DefaultITruncation       # D=100, ϵ=1e-14   (default for building the IF and mult/canonicalize!/swap!)
-DefaultKTruncation       # trunccutoff(1e-14) (ϵ = Defaults.tolgauge; system dynamics / initial states / MPO compression)
+DefaultKTruncation       # truncrelerr(1e-14) (ϵ = Defaults.tolgauge; system dynamics / initial states / MPO compression)
 ```
 
 ## Lattices `ADTLattice` / `PTLattice`
