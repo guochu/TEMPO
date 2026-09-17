@@ -34,6 +34,61 @@
 	@test s5 ≈ s
 end
 
+# Fix the truncation semantics (cf. Z2Tensors/test/tensors.jl): ϵ of `truncrelerr`
+# and `truncdimcutoff` is measured on the *normalized* vector of singular values,
+# i.e. a singular value σᵢ (sorted decreasingly) is kept iff σᵢ > ϵ·‖σ‖₂.
+@testset "truncation semantics        " begin
+	a = randn(8, 6)
+	s = svdvals(a)                # decreasing
+	n = norm(s)                   # ‖σ‖₂
+
+	# relerr keeps exactly the singular values with σᵢ > ϵ·‖σ‖₂ ...
+	ϵ = 0.2
+	d = count(>(ϵ * n), s)
+	u1, s1, v1, err1 = tsvd(a, trunc=truncrelerr(ϵ))
+	@test length(s1) == d
+	@test all(>(ϵ * n), s1)
+	# ... which is the same as keeping the largest `d` singular values
+	u2, s2, v2, err2 = tsvd(a, trunc=truncdim(d))
+	@test s1 == s2 && err1 ≈ err2
+	# on a pre-normalized matrix, relerr(ϵ) is an absolute cutoff at ϵ
+	an = a ./ n
+	sn = svdvals(an)
+	_, s3, _, _ = tsvd(an, trunc=truncrelerr(ϵ))
+	@test s3 ≈ sn[sn .> ϵ]
+	# strict, stable boundary: ϵ → nextfloat(ϵ) drops exactly the marginal values
+	_, s4, _, _ = tsvd(a, trunc=truncrelerr(nextfloat(ϵ)))
+	@test length(s4) == count(>(nextfloat(ϵ) * n), s)
+
+	# dimcutoff with a non-binding D is exactly relerr; its error is *relative*
+	u5, s5, v5, err5 = tsvd(a, trunc=truncdimcutoff(D=20, ϵ=ϵ))
+	_, s6, _, err6 = tsvd(a, trunc=truncrelerr(ϵ))
+	@test s5 == s6
+	@test err5 ≈ norm(s[d+1:end]) / n      # relative truncation error
+	@test err6 ≈ norm(s[d+1:end])          # relerr reports the absolute tail norm
+
+	# add_back keeps at least that many singular values, but never more than D
+	_, s7, _, _ = tsvd(a, trunc=truncdimcutoff(D=10, ϵ=0.9, add_back=3))
+	@test length(s7) == max(3, count(>(0.9 * n), s))
+	_, s8, _, _ = tsvd(a, trunc=truncdimcutoff(D=2, ϵ=1.0e-16, add_back=5))
+	@test length(s8) == 2
+
+	# truncdim error: the 2-norm of the discarded tail; NoTruncation: nothing dropped
+	_, s9, _, err9 = tsvd(a, trunc=truncdim(4))
+	@test err9 ≈ norm(s[5:end])
+	_, st, _, errt = tsvd(a)
+	@test length(st) == 6 && errt == 0.0
+
+	# keyword constructors agree with the convenience functions
+	@test TruncateRelError(ϵ=0.1) == truncrelerr(0.1)
+	@test TruncateDimCutoff(D=5, ϵ=0.1) == truncdimcutoff(D=5, ϵ=0.1)
+
+	# tsvd! (in place) agrees with tsvd
+	ub, sb, vb, errb = tsvd!(copy(a), trunc=truncdimcutoff(D=4, ϵ=1.0e-3))
+	_, snb, _, errnb = tsvd(a, trunc=truncdimcutoff(D=4, ϵ=1.0e-3))
+	@test sb == snb && errb ≈ errnb
+end
+
 @testset "renyi_entropy             " begin
 	v = [0.25, 0.75]
 	@test renyi_entropy(v) ≈ -(0.25 * log(0.25) + 0.75 * log(0.75))
