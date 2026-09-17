@@ -136,6 +136,29 @@ Key points:
 
 ## [Observables](@id manual_observables)
 
+### Impurity partition function
+
+Integrating the whole contour — i.e., contracting the system dynamics $\hat K$ with the influence functional — yields the **impurity (reduced) partition function** directly:
+
+$$
+Z_{\mathrm{imp}} \;=\; \mathrm{tr}_{\mathrm{imp}}\!\left[\, e^{-\beta \hat{H}_{\mathrm{imp}}}\; \Big\langle \mathcal{T}_\tau\, e^{-\int_0^{\beta}\! d\tau\, \hat{V}(\tau)} \Big\rangle_{\mathrm{bath}} \right] \;=\; \frac{\mathrm{tr}\, e^{-\beta \hat{H}}}{\mathrm{tr}\, e^{-\beta \hat{H}_{\mathrm{bath}}}}\,,
+$$
+
+where $\hat{H} = \hat{H}_{\mathrm{imp}} + \hat{H}_{\mathrm{bath}} + \hat{V}$, $\hat{V} = \hat{B}^\dagger \hat{A} + \hat{B} \hat{A}^\dagger$ (or $\hat{B}\hat{X}$ for diagonal coupling), and $\langle\cdot\rangle_{\mathrm{bath}}$ is taken with respect to the bare bath. In code:
+
+```julia
+# ADT
+mpsK = boundarycondition!(sysdynamics(lattice, model, trunc=trunc), lattice)
+mpsI = hybriddynamics(lattice, corr, hyb, trunc=trunc)
+Z    = integrate(mpsK, mpsI)          # or: Z = integrate(mult!(mpsK, mpsI, trunc=trunc))
+
+# PT
+mps  = mult!(sysdynamics(lattice, model, trunc=trunc), mpsI, trunc=trunc)
+Z    = integrate(lattice, mps)
+```
+
+The ED reference $\mathrm{tr}\,e^{-\beta\hat{H}} / \mathrm{tr}\,e^{-\beta\hat{H}_{\mathrm{bath}}}$ (obtained by diagonalizing the full Hamiltonian $\hat H$) is checked in `test/adtmodels/rabimodel.jl` and `test/ptmodels/toymodel.jl`.
+
 There are two measurement paths, both applicable to ADT and PT:
 
 **Path A: operator insertion (arbitrary operators, including off-diagonal and two-point correlations)**

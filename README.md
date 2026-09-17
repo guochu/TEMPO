@@ -164,3 +164,17 @@ If this package is helpful to your research, please cite:
   doi     = {10.1103/PhysRevB.114.125413}
 }
 ```
+
+and
+
+```bibtex
+@article{GuoChen2024,
+  title   = {Efficient construction of the Feynman-Vernon influence functional as matrix product states},
+  author  = {Guo, C. and Chen, R.},
+  journal = {SciPost Physics Core},
+  volume  = {7},
+  pages   = {063},
+  year    = {2024},
+  doi     = {10.21468/SciPostPhysCore.7.3.063}
+}
+```

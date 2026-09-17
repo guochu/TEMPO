@@ -148,7 +148,7 @@ corr = correlationfunction(bath, lattice)
 mpsI  = hybriddynamics(lattice, corr, hyb, trunc=trunc)
 model = ImpurityHamiltonian(ϵ_d .* n)                # H_S
 mpsK  = sysdynamics(lattice, model, trunc=trunc)
-Zval  = integrate(mpsK, mpsI)                        # partition function Z
+Zval  = integrate(mpsK, mpsI)                        # impurity partition function Z_imp = Z_full / Z_bath
 
 # Two-point correlation function: insert operators into the system dynamics
 op1, op2 = [0 0; 1 0], [0 1; 0 0]
@@ -157,6 +157,8 @@ ct       = ContourOperator([c1, c2], [op1, op2])
 mpsK2    = sysdynamics(lattice, model, ct, trunc=trunc)
 v        = integrate(mpsK2, mpsI) / Zval
 ```
+
+Here `Zval` is the **impurity (reduced) partition function**: integrating the whole imaginary-time contour gives $Z_{\mathrm{imp}} = \mathrm{tr}_{\mathrm{imp}}\big[e^{-\beta \hat{H}_{\mathrm{imp}}}\langle \mathcal{T}_\tau e^{-\int_0^\beta d\tau\, \hat{V}(\tau)}\rangle_{\mathrm{bath}}\big] = \mathrm{tr}\,e^{-\beta\hat{H}} / \mathrm{tr}\,e^{-\beta\hat{H}_{\mathrm{bath}}}$ (see [Manual — Impurity partition function](@ref manual_observables)).
 
 For a bosonic impurity with **off-diagonal coupling** (e.g., `benchmark/bosonicimpurity.jl`):
 
