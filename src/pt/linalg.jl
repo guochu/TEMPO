@@ -34,7 +34,7 @@ Base.:-(hA::ProcessTensor, hB::ProcessTensor) = hA + (-1) * hB
 Base.:-(h::ProcessTensor) = -1 * h
 
 
-function swap!(x::ProcessTensor, bond::Int; trunc::TruncationScheme=DefaultTruncation)
+function swap!(x::ProcessTensor, bond::Int; trunc::TruncationScheme=DefaultITruncation)
 	x[bond], x.s[bond+1], x[bond+1] = _swap_gate(x.s[bond], x[bond], x.s[bond+1], x[bond+1], trunc=trunc)
 	return x
 end

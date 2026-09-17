@@ -102,7 +102,7 @@ end
 
 canonicalize(psi::ADT; kwargs...) = canonicalize!(deepcopy(psi); kwargs...)
 """
-	canonicalize!(psi::ADT; alg::Orthogonalize=Orthogonalize(trunc=DefaultTruncation, normalize=false))
+	canonicalize!(psi::ADT; alg::Orthogonalize=Orthogonalize(trunc=DefaultITruncation, normalize=false))
 
 Transform the MPS into canonical form, modifying `psi` in place and returning it.
 
@@ -115,7 +115,7 @@ Internally performs a left orthogonalization with `QR` (without truncation) firs
 # Returns
 `psi` itself.
 """
-function canonicalize!(psi::ADT; alg::Orthogonalize = Orthogonalize(trunc=DefaultTruncation, normalize=false))
+function canonicalize!(psi::ADT; alg::Orthogonalize = Orthogonalize(trunc=DefaultITruncation, normalize=false))
 	alg.normalize && @warn "canonicalize with renormalization not recommanded for ADT"
 	L = length(psi)
 	_leftorth!(psi, QR(), NoTruncation(), alg.normalize, alg.verbosity)

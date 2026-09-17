@@ -39,9 +39,11 @@
 | `DefaultKTruncation` | `truncdimcutoff(D=1000, ϵ=1e-10)` → **`trunccutoff(Defaults.tolgauge)`** |
 | `DefaultIntegrationTruncation` | **已删除**，原用点改用 `DefaultKTruncation` |
 | `DefaultMPOTruncation` | **已删除**，原用点改用 `DefaultKTruncation` |
-| `DefaultTruncation` / `DefaultITruncation` / `DefaultMultAlg` | 不变 |
+| `DefaultTruncation` | **已删除**（与 `DefaultITruncation` 合并；`mult!`/`canonicalize!`/`swap!` 的默认截断改用 `DefaultITruncation`） |
+| `DefaultITruncation` | `truncdimcutoff(D=200, ϵ=1e-10)` → **`truncdimcutoff(D=Defaults.D, ϵ=Defaults.tolgauge)`**；`DefaultMultAlg = DMRG1(DefaultITruncation)` 随之变化 |
+| `DefaultMultAlg` | 定义不变，取值跟随 `DefaultITruncation` |
 
-替换位置：`boundarycondition!`、`_permute!`（ADT/PT linalg）、TTIIF 的 `_fit_to_lattice_diag/_offdiag`（adt/pt real）、TDVPIF 的 H 压缩（`_tdvpif_hamiltonian`）。
+替换位置：`boundarycondition!`、`_permute!`（ADT/PT linalg）、TTIIF 的 `_fit_to_lattice_diag/_offdiag`（adt/pt real）、TDVPIF 的 H 压缩（`_tdvpif_hamiltonian`）；`mult!`（zip-up SVD 乘法，ADT/PT svdmult.jl）、`canonicalize!`（ADT/PT orth.jl）、`swap!`（adt/def.jl、pt/linalg.jl）的默认截断由 `DefaultTruncation` 改为 `DefaultITruncation`。
 
 ## 其他删除
 
@@ -53,7 +55,7 @@
 - `SVDCompression(D=χ, tol=ε)` → `SVDCompression(truncdimcutoff(D=χ, ϵ=ε))`。
 - `DMRG1(trunc)` / `DMRG1(trunc=...)`：`trunc` 需为 `truncdim(D)` 或 `truncdimcutoff(D, ϵ)`。
 - `alg.D` / `alg.ϵ` 访问改为 `alg.trunc.D` / `alg.trunc.ϵ`。
-- `DefaultIntegrationTruncation` / `DefaultMPOTruncation` → `DefaultKTruncation`。
+- `DefaultIntegrationTruncation` / `DefaultMPOTruncation` / `DefaultTruncation` → `DefaultKTruncation` / `DefaultITruncation`。
 - `TruncationDimCutoff` → `TruncateDimCutoff`。
 
 ## 测试

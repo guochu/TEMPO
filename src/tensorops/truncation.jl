@@ -98,6 +98,3 @@ function _truncate!(v::AbstractVector{<:Real}, trunc::TruncateDimCutoff, p::Real
 	v, err = _truncate!(v, TruncateDim(dtrunc), p)
 	return v, err / sca
 end
-
-
-# const DefaultTruncation = truncdimcutoff(D=200, ϵ=1.0e-6)

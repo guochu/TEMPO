@@ -29,8 +29,7 @@ Truncation schemes for compressing the bond dimension in tensor network computat
 Predefined defaults (`src/defaults.jl`):
 
 ```julia
-DefaultTruncation        # D=100, ϵ=1e-14
-DefaultITruncation       # D=200,  ϵ=1e-10   (default for building the IF)
+DefaultITruncation       # D=100, ϵ=1e-14   (default for building the IF and mult/canonicalize!/swap!)
 DefaultKTruncation       # trunccutoff(1e-14) (ϵ = Defaults.tolgauge; system dynamics / initial states / MPO compression)
 ```
 

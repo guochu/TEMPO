@@ -1,5 +1,5 @@
 """
-	mult!(x::ProcessTensor, y::ProcessTensor; trunc::TruncationScheme=DefaultTruncation, verbosity::Int=0)
+	mult!(x::ProcessTensor, y::ProcessTensor; trunc::TruncationScheme=DefaultITruncation, verbosity::Int=0)
 
 Compute the product (tensor contraction) of two MPO in place on `x`, compress the result, and return `x`.
 
@@ -14,7 +14,7 @@ Algorithm: accumulate left-to-right QR decompositions, then orthogonalize right-
 # Returns
 `x` itself (its content is overwritten by the product).
 """
-function mult!(x::ProcessTensor, y::ProcessTensor; trunc::TruncationScheme=DefaultTruncation, verbosity::Int=0)
+function mult!(x::ProcessTensor, y::ProcessTensor; trunc::TruncationScheme=DefaultITruncation, verbosity::Int=0)
     (length(x) == length(y)) || throw(DimensionMismatch())
     T = promote_type(scalartype(x), scalartype(y))
     L = length(x)

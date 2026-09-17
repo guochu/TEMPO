@@ -362,7 +362,7 @@ The five error sources of the paper and their counterparts in the code:
 | Translationally invariant refinement | `k` (default 5), `fast` | With `fast=true`: first build the differential IF of width `dt/2^k`, then square it k times by tree bisection to obtain the full-length influence functional |
 | System propagator | `algevo` (`WII()`), `algmult` (`DefaultMultAlg`) | Accuracy of the MPO time evolution and of the multiplication compression |
 
-The defaults are given in `src/defaults.jl`: `DefaultTruncation = truncdimcutoff(D=100, ϵ=1e-14)`, `DefaultITruncation = truncdimcutoff(D=200, ϵ=1e-10)`, `DefaultKTruncation = trunccutoff(Defaults.tolgauge)` (system dynamics, initial-state absorption and MPO compression); `XTRGIF(; algexpan=OverDeterminedProny(n=15, tol=1e-4), algevo=WII(), algmult=DefaultMultAlg, k=5, fast=true)`.
+The defaults are given in `src/defaults.jl`: `DefaultITruncation = truncdimcutoff(D=Defaults.D, ϵ=Defaults.tolgauge)` (IF construction and general MPS/MPO compression), `DefaultKTruncation = trunccutoff(Defaults.tolgauge)` (system dynamics, initial-state absorption and MPO compression); `XTRGIF(; algexpan=OverDeterminedProny(n=15, tol=1e-4), algevo=WII(), algmult=DefaultMultAlg, k=5, fast=true)`.
 
 ## 13. Overview of the data flow
 

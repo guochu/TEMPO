@@ -95,7 +95,7 @@ end
 
 canonicalize(psi::ProcessTensor; kwargs...) = canonicalize!(deepcopy(psi); kwargs...)
 """
-	canonicalize!(psi::ProcessTensor; alg::Orthogonalize=Orthogonalize(trunc=DefaultTruncation, normalize=false))
+	canonicalize!(psi::ProcessTensor; alg::Orthogonalize=Orthogonalize(trunc=DefaultITruncation, normalize=false))
 
 Transform the MPO into canonical form, modifying `psi` in place and returning it.
 
@@ -104,7 +104,7 @@ Internally performs a left orthogonalization with `QR` (without truncation) firs
 # Returns
 `psi` itself.
 """
-function canonicalize!(psi::ProcessTensor; alg::Orthogonalize = Orthogonalize(trunc=DefaultTruncation, normalize=false))
+function canonicalize!(psi::ProcessTensor; alg::Orthogonalize = Orthogonalize(trunc=DefaultITruncation, normalize=false))
 	alg.normalize && @warn "canonicalize with renormalization not recommanded for ProcessTensor"
 	L = length(psi)
 	_leftorth!(psi, QR(), NoTruncation(), alg.normalize, alg.verbosity)
