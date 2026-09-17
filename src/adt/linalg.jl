@@ -76,23 +76,10 @@ function _permute!(x::ADT, perm::Vector{Int}; trunc::TruncationScheme=DefaultInt
     for i in p
         easy_swap!(x, i, trunc=trunc)
     end
-    # the swaps reshuffle the entanglement across bonds: re-establish the
-    # mixed-canonical form (and the bond Schmidt records) at the end
-    canonicalize!(x, alg=Orthogonalize(trunc=trunc, normalize=false))
     return x
 end
 permute!(x::ADT, perm::Vector; kwargs...) = _permute!(x, perm; kwargs...)
 permute(x::ADT, perm::Vector{Int}; kwargs...) = permute!(deepcopy(x), perm; kwargs...)
-
-function naive_permute!(x::ADT, perm::Vector{Int}; trunc::TruncationScheme=DefaultIntegrationTruncation)
-    @assert length(x) == length(perm)
-    p = permutation2swaps(perm)
-    for i in p
-        naive_swap!(x, i, trunc=trunc)
-    end
-    return x
-end
-naive_permute(x::ADT, perm::Vector{Int}; kwargs...) = naive_permute!(copy(x), perm; kwargs...)
 
 function _mult_site_n(xj::DenseMPSTensor, yj::DenseMPSTensor)
     @tensor r[1,4,2,5;3,6] := xj[1,2,3] * yj[4,5,6]

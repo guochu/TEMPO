@@ -234,23 +234,22 @@ function iscanonical(psi::ADT; kwargs...)
 end
 
 function easy_swap!(x::ADT, bond::Int; trunc::TruncationScheme=DefaultTruncation)
+	x[bond], x.s[bond+1], x[bond+1] = _swap_gate(x.s[bond], x[bond], x.s[bond+1], x[bond+1], trunc=trunc)
+	return x
+end
+
+# Hastings-style swap gate (following GTEMPO): the bond Schmidt values `svectorj1`
+# stored on the left of the swapped pair are contracted into the two-site block,
+# which is then re-decomposed; the renewed bond spectrum and the right-canonical
+# factor are written back to `svectorj2` and the second site tensor.
+function _swap_gate(svectorj1::Vector, m1::DenseMPSTensor, svectorj2::Vector, m2::DenseMPSTensor; trunc::TruncationScheme)
+	sv1 = Diagonal(svectorj1)
 	local twositemps
-	@tensor twositemps[a, b, c, d] := x[bond][a, b, 2] * x[bond+1][2, c, d]
-	u, s, v = tsvd!(twositemps, (1, 2), (3, 4); trunc=trunc)
-	x[bond] = u .* reshape(s, 1, 1, :)
-	x[bond+1] = v
-	x.s[bond+1] = s
-	return x
-end
-
-function naive_swap!(x::ADT, bond::Int; trunc::TruncationScheme=DefaultTruncation)
-	x[bond], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
-	return x
-end
-
-# swap gate of two adjacent site tensors, absorbing the Schmidt spectrum into the left factor
-function _swap_gate(m1::DenseMPSTensor, m2::DenseMPSTensor; trunc::TruncationScheme)
-	@tensor twositemps[1, 4, 2, 5] := m1[1, 2, 3] * m2[3, 4, 5]
-	u, s, v = tsvd!(twositemps, (1, 2), (3, 4); trunc=trunc)
-	return u .* reshape(s, 1, 1, :), v
+	@tensor twositemps[a, b, c, d] := m1[a, b, 2] * m2[2, c, d]
+	local twositemps1
+	@tensor twositemps1[a, b, c, d] := sv1[a, 1] * twositemps[1, b, c, d]
+	u, s, v = tsvd!(twositemps1, (1, 2), (3, 4); trunc=trunc)
+	local u2
+	@tensor u2[a, b, c] := twositemps[a, b, 1, 2] * conj(v[c, 1, 2])
+	return u2, s, v
 end
