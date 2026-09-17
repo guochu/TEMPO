@@ -233,7 +233,7 @@ function iscanonical(psi::ADT; kwargs...)
 	return true
 end
 
-function easy_swap!(x::ADT, bond::Int; trunc::TruncationScheme=DefaultTruncation)
+function swap!(x::ADT, bond::Int; trunc::TruncationScheme=DefaultTruncation)
 	x[bond], x.s[bond+1], x[bond+1] = _swap_gate(x.s[bond], x[bond], x.s[bond+1], x[bond+1], trunc=trunc)
 	return x
 end
@@ -244,12 +244,9 @@ end
 # factor are written back to `svectorj2` and the second site tensor.
 function _swap_gate(svectorj1::Vector, m1::DenseMPSTensor, svectorj2::Vector, m2::DenseMPSTensor; trunc::TruncationScheme)
 	sv1 = Diagonal(svectorj1)
-	local twositemps
 	@tensor twositemps[a, b, c, d] := m1[a, b, 2] * m2[2, c, d]
-	local twositemps1
 	@tensor twositemps1[a, b, c, d] := sv1[a, 1] * twositemps[1, b, c, d]
 	u, s, v = tsvd!(twositemps1, (1, 2), (3, 4); trunc=trunc)
-	local u2
 	@tensor u2[a, b, c] := twositemps[a, b, 1, 2] * conj(v[c, 1, 2])
 	return u2, s, v
 end

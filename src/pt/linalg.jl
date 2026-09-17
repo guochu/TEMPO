@@ -34,7 +34,7 @@ Base.:-(hA::ProcessTensor, hB::ProcessTensor) = hA + (-1) * hB
 Base.:-(h::ProcessTensor) = -1 * h
 
 
-function easy_swap!(x::ProcessTensor, bond::Int; trunc::TruncationScheme=DefaultTruncation)
+function swap!(x::ProcessTensor, bond::Int; trunc::TruncationScheme=DefaultTruncation)
 	x[bond], x.s[bond+1], x[bond+1] = _swap_gate(x.s[bond], x[bond], x.s[bond+1], x[bond+1], trunc=trunc)
 	return x
 end
@@ -46,12 +46,9 @@ end
 # Site tensor layout: (aL, pout, aR, pin).
 function _swap_gate(svectorj1::Vector, m1::DenseMPOTensor, svectorj2::Vector, m2::DenseMPOTensor; trunc::TruncationScheme)
 	sv1 = Diagonal(svectorj1)
-	local twositemps
 	@tensor twositemps[a, b, c, d, e, f] := m1[a, b, 2, c] * m2[2, d, f, e]
-	local twositemps1
 	@tensor twositemps1[a, b, c, d, e, f] := sv1[a, 1] * twositemps[1, b, c, d, e, f]
 	u, s, v = tsvd!(twositemps1, (1, 2, 3), (4, 5, 6); trunc=trunc)
-	local u2
 	@tensor u2[a, b, c, d] := twositemps[a, b, c, 1, 2, 3] * conj(v[d, 1, 2, 3])
 	return permute(u2, (1, 2, 4, 3)), s, permute(v, (1, 2, 4, 3))
 end
@@ -64,7 +61,7 @@ function _permute!(x::ProcessTensor, perm::Vector{Int}; trunc::TruncationScheme=
 	end
 	p = permutation2swaps(perm)
 	for i in p
-		easy_swap!(x, i, trunc=trunc)
+		swap!(x, i, trunc=trunc)
 	end
 	return x
 end

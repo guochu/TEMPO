@@ -74,7 +74,7 @@ function _permute!(x::ADT, perm::Vector{Int}; trunc::TruncationScheme=DefaultInt
     end
     p = permutation2swaps(perm)
     for i in p
-        easy_swap!(x, i, trunc=trunc)
+        swap!(x, i, trunc=trunc)
     end
     return x
 end
