@@ -6,10 +6,13 @@
 	@test truncdim(D=4).D == 4
 	@test trunccutoff(ϵ=1.0e-3) isa TruncateCutoff
 	@test trunccutoff(ϵ=1.0e-3).ϵ == 1.0e-3
-	@test truncdimcutoff(D=5, ϵ=1.0e-3) isa TruncationDimCutoff
-	@test truncdimcutoff(5, 1.0e-3) isa TruncationDimCutoff
+	@test truncdimcutoff(D=5, ϵ=1.0e-3) isa TruncateDimCutoff
+	@test truncdimcutoff(5, 1.0e-3) isa TruncateDimCutoff
 	@test NoTruncation() isa TruncationScheme
-	@test SVDCompression(truncdimcutoff(D=10, ϵ=1.0e-8)) isa SVDCompression
+	@test trunccutoff(1.0e-8) isa TruncateCutoff
+	@test trunccutoff(1.0e-8).ϵ == 1.0e-8
+	@test TEMPO.DefaultKTruncation isa TruncateCutoff
+	@test TEMPO.DefaultKTruncation.ϵ == TEMPO.Defaults.tolgauge
 
 	a = randn(6, 5)
 	# tsvd! destroys its input, use the non-mutating tsvd since a is reused below
@@ -42,4 +45,37 @@ end
 	u, s, v2, _ = tsvd!(randn(5, 5))
 	p = s.^2 ./ sum(s.^2)
 	@test renyi_entropy(p) > 0
+end
+
+@testset "SVDCompression / DMRG1       " begin
+	# `trunc` of `SVDCompression` accepts any TruncationScheme
+	schemes = (truncdimcutoff(D=10, ϵ=1.0e-8), truncdim(10), trunccutoff(ϵ=1.0e-8), trunccutoff(1.0e-8), NoTruncation())
+	for trunc in schemes
+		@test SVDCompression(trunc) isa SVDCompression
+		@test SVDCompression(trunc).trunc == trunc
+	end
+	# `trunc` of `DMRG1` must carry a maximum bond dimension `D`, which seeds the initial guess
+	for trunc in (truncdimcutoff(D=10, ϵ=1.0e-8), truncdim(10))
+		@test DMRG1(trunc) isa DMRG1
+		@test DMRG1(trunc).trunc == trunc
+	end
+	@test_throws MethodError DMRG1(trunccutoff(ϵ=1.0e-8))
+	@test_throws MethodError DMRG1(trunccutoff(1.0e-8))
+	@test_throws MethodError DMRG1(NoTruncation())
+	# keyword constructors and defaults
+	@test SVDCompression() isa SVDCompression
+	@test DMRG1() isa DMRG1
+	@test SVDCompression(trunc=truncdim(4), verbosity=2).trunc == truncdim(4)
+	@test DMRG1(trunc=truncdim(4), initguess=:rand).trunc == truncdim(4)
+	# similar preserves the configuration and overrides single fields
+	alg = SVDCompression(truncdim(4), verbosity=2)
+	alg1 = similar(alg)
+	@test alg1.trunc == truncdim(4) && alg1.verbosity == 2
+	@test similar(alg; trunc=trunccutoff(ϵ=1.0e-8)).trunc isa TruncateCutoff
+	alg = DMRG1(truncdim(4), maxiter=7, initguess=:rand)
+	alg1 = similar(alg)
+	@test alg1.trunc == truncdim(4) && alg1.maxiter == 7 && alg1.initguess == :rand
+	@test similar(alg; trunc=truncdimcutoff(D=6, ϵ=1.0e-8)).trunc isa TruncateDimCutoff
+	# initguess validation
+	@test_throws ArgumentError DMRG1(truncdim(4), initguess=:bad)
 end

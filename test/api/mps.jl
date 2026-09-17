@@ -52,7 +52,12 @@ end
 	alg2 = DMRG1(trunc, initguess=:svd)
 	alg3 = DMRG1(trunc, initguess=:rand, maxiter=10)
 	alg4 = DMRG1(trunc, initguess=:pre, maxiter=10)
-	algs = [alg1, alg2, alg3, alg4]
+	# trunc is parameterized: `SVDCompression` accepts any TruncationScheme,
+	# while `DMRG1` requires a scheme carrying the bond dimension `D`
+	alg5 = SVDCompression(truncdim(chi))
+	alg6 = DMRG1(truncdim(chi), initguess=:svd)
+	alg7 = SVDCompression(trunccutoff(ϵ=1.0e-10))
+	algs = [alg1, alg2, alg3, alg4, alg5, alg6, alg7]
 	tol = 1.0e-7
 	for (name, randmps) in MPSConstructors
 		@testset "$name" begin

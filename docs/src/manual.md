@@ -21,7 +21,7 @@ Truncation schemes for compressing the bond dimension in tensor network computat
 
 | Type | Construction | Description |
 |---|---|---|
-| `TruncationDimCutoff` | `truncdimcutoff(D=χ, ϵ=ε, add_back=0)` | Limits both the maximum bond dimension `D` and the truncation threshold `ϵ` (recommended) |
+| `TruncateDimCutoff` | `truncdimcutoff(D=χ, ϵ=ε, add_back=0)` | Limits both the maximum bond dimension `D` and the truncation threshold `ϵ` (recommended) |
 | `TruncateDim` | `truncdim(D)` | Limits only the bond dimension |
 | `TruncateCutoff` | `trunccutoff(ϵ=ε)` | Truncates only by the singular-value threshold |
 | `NoTruncation` | `NoTruncation()` | No truncation |
@@ -31,9 +31,7 @@ Predefined defaults (`src/defaults.jl`):
 ```julia
 DefaultTruncation        # D=100, ϵ=1e-14
 DefaultITruncation       # D=200,  ϵ=1e-10   (default for building the IF)
-DefaultKTruncation       # D=1000, ϵ=1e-10   (default for system dynamics)
-DefaultIntegrationTruncation  # D=10000, ϵ=1e-12
-DefaultMPOTruncation     # D=10000, ϵ=1e-12
+DefaultKTruncation       # trunccutoff(1e-14) (ϵ = Defaults.tolgauge; system dynamics / initial states / MPO compression)
 ```
 
 ## Lattices `ADTLattice` / `PTLattice`
@@ -175,8 +173,7 @@ v = expectationvalue(ADTTerm(index(lattice, i, branch=:+), zdiag), cache)
 
 Imaginary time / mixed contours are supported as well (PT uses `environments(lattice, mps)`, ADT uses `environments(lattice, mpsK, mpsI)`). The multi-point ADT form `ADTTerm((pos2, pos1), (v2, v1))` can measure diagonal two-point correlations.
 
-Auxiliary functions: `Zvalue(cache)` (partition function), `Zvalue2(cache)`, `TransferMatrix` (transfer matrix),
-`correlation(lattice, model, op, mpsI[, ρ0])` (two-point correlation function), `heatcurrents`.
+Auxiliary functions: `Zvalue(cache)` (partition function), `Zvalue2(cache)`, `TransferMatrix` (transfer matrix), `heatcurrents`.
 
 ## MPO Hamiltonians (long-range interaction tools)
 

@@ -31,12 +31,12 @@
 # NOTE: the direct-sum bond dimensions of the four branches add up, so the
 # branches are summed one by one, compressing with SVD canonicalization after
 # each addition to keep the bond dimension bounded. The compression uses the
-# tight `DefaultMPOTruncation` (not `alg.trunc`): the compression error of H
+# tight `DefaultKTruncation` (not `alg.trunc`): the compression error of H
 # is exponentially amplified by the flow (IF = e^H), so a loose tolerance
 # would degrade the accuracy of the influence functional.
 function _tdvpif_hamiltonian(lattice, corr, hyb, alg::TDVPIF)
 	h1, h2, h3, h4 = influenceoperators(lattice, corr, hyb, algexpan=alg.algexpan)
-	orth = Orthogonalize(SVD(), DefaultMPOTruncation; normalize=false)
+	orth = Orthogonalize(SVD(), DefaultKTruncation; normalize=false)
 	H = h1 + h2
 	canonicalize!(H, alg=orth)
 	H = H + h3
@@ -240,7 +240,7 @@ end
 """
 	hybriddynamics(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, hyb::AdditiveHyb, alg::TDVPIF)
 
-Construct the influence functional on a real-time ADT lattice with the `TDVPIF` algorithm: the 4 branch influence operators returned by `influenceoperators` ((+,+), (+,−), (−,+), (−,−)) are summed one by one into a single influence operator H (each partial sum compressed by SVD canonicalization with `DefaultMPOTruncation`), which then drives the same TDVP imaginary-time flow as in the imaginary-time case.
+Construct the influence functional on a real-time ADT lattice with the `TDVPIF` algorithm: the 4 branch influence operators returned by `influenceoperators` ((+,+), (+,−), (−,+), (−,−)) are summed one by one into a single influence operator H (each partial sum compressed by SVD canonicalization with `DefaultKTruncation`), which then drives the same TDVP imaginary-time flow as in the imaginary-time case.
 
 # Returns
 The influence functional, represented as an `ADT`.
@@ -403,7 +403,7 @@ end
 """
 	hybriddynamics(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::GeneralHybStyle, alg::TDVPIF)
 
-Construct the influence functional on a real-time PT lattice with the `TDVPIF` algorithm: the 4 branch influence operators returned by `influenceoperators` ((+,+), (+,−), (−,+), (−,−)) are summed one by one into a single influence operator H (each partial sum compressed by SVD canonicalization with `DefaultMPOTruncation`), which then drives the same TDVP imaginary-time flow as in the imaginary-time case.
+Construct the influence functional on a real-time PT lattice with the `TDVPIF` algorithm: the 4 branch influence operators returned by `influenceoperators` ((+,+), (+,−), (−,+), (−,−)) are summed one by one into a single influence operator H (each partial sum compressed by SVD canonicalization with `DefaultKTruncation`), which then drives the same TDVP imaginary-time flow as in the imaginary-time case.
 
 # Returns
 The influence functional, represented as a `ProcessTensor`.

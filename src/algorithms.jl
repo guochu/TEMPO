@@ -4,50 +4,32 @@ abstract type DMRGAlgorithm <: MPSAlgorithm end
 
 
 """
-    SVDCompression(D, tol, verbosity=0)
-    SVDCompression(; D=Defaults.D, tol=Defaults.tol, verbosity=0)
-    SVDCompression(trunc::TruncationDimCutoff; verbosity=0)
+    SVDCompression(trunc::TruncationScheme; verbosity=0)
+    SVDCompression(; trunc=truncdimcutoff(D=Defaults.D, ϵ=Defaults.tol, add_back=0), verbosity=0)
 
-Parameters for an SVD-based DMRG compression algorithm: singular values are truncated by the maximum dimension `D` and the truncation error `tol`,
-while `verbosity` controls the verbosity of the output. The equivalent `TruncationDimCutoff` is accessible through the `trunc` property.
+Parameters for an SVD-based DMRG compression algorithm: singular values are truncated according to the truncation scheme `trunc` (any `TruncationScheme`),
+while `verbosity` controls the verbosity of the output. The scheme is accessible through the `trunc` field.
 """
-struct SVDCompression <: DMRGAlgorithm
-	D::Int 
-	tol::Float64 
-	verbosity::Int 
+struct SVDCompression{T<:TruncationScheme} <: DMRGAlgorithm
+	trunc::T
+	verbosity::Int
 end
 
 """
-    SVDCompression(; D=Defaults.D, tol=Defaults.tol, verbosity=0)
+    SVDCompression(trunc::TruncationScheme; verbosity=0)
 
-Keyword constructor for `SVDCompression`; the default dimension and error are taken from `Defaults`.
+Construct an `SVDCompression` from a `TruncationScheme` (e.g., `truncdimcutoff(D, ϵ)`, `truncdim(D)`, `trunccutoff(ϵ)` or `NoTruncation()`).
 """
-SVDCompression(; D::Int=Defaults.D, tol::Real=Defaults.tol, verbosity::Int=0) = SVDCompression(D, convert(Float64, tol), verbosity)
+SVDCompression(trunc::TruncationScheme; verbosity::Int=0) = SVDCompression(trunc, verbosity)
 
 """
-    SVDCompression(trunc::TruncationDimCutoff; verbosity=0)
+    SVDCompression(; trunc=truncdimcutoff(D=Defaults.D, ϵ=Defaults.tol, add_back=0), verbosity=0)
 
-Construct an `SVDCompression` from a `TruncationDimCutoff`; the dimension and error are taken from `trunc`.
+Keyword constructor for `SVDCompression`; the default truncation scheme is `truncdimcutoff(D=Defaults.D, ϵ=Defaults.tol, add_back=0)`.
 """
-SVDCompression(trunc::TruncationDimCutoff; verbosity::Int=0) = SVDCompression(D=trunc.D, tol=trunc.ϵ, verbosity=verbosity)
-Base.similar(x::SVDCompression; D::Int=x.D, tol::Float64=x.tol, verbosity::Int=x.verbosity) = SVDCompression(D=D, tol=tol, verbosity=verbosity)
+SVDCompression(; trunc::TruncationScheme=truncdimcutoff(D=Defaults.D, ϵ=Defaults.tol, add_back=0), verbosity::Int=0) = SVDCompression(trunc, verbosity)
 
-function Base.getproperty(x::SVDCompression, s::Symbol)
-	if s == :trunc
-		return get_trunc(x)
-	elseif s == :ϵ
-		return x.tol
-	else
-		getfield(x, s)
-	end
-end
-
-get_trunc(alg::SVDCompression) = truncdimcutoff(D=alg.D, ϵ=alg.tol, add_back=0)
-
-# compress!(h::MPO, alg::SVDCompression) = canonicalize!(h, alg=Orthogonalize(SVD(), get_trunc(alg); normalize=false))
-# compress!(h::MPO, alg::Deparallelise) = deparallel!(h, tol=alg.tol, verbosity=alg.verbosity)
-# compress!(h::MPO; alg::DMRGAlgorithm = Deparallelise()) = compress!(h, alg)
-# compress!(psi::MPS, alg::SVDCompression) = canonicalize!(psi, alg=Orthogonalize(trunc=get_trunc(alg), normalize=false))
+Base.similar(x::SVDCompression; trunc::TruncationScheme=x.trunc, verbosity::Int=x.verbosity) = SVDCompression(trunc; verbosity=verbosity)
 
 # orthogonalize mps to be left-canonical or right-canonical
 abstract type MatrixProductOrthogonalAlgorithm end
@@ -77,13 +59,17 @@ Orthogonalize(; alg::Union{QR, SVD} = SVD(), trunc::TruncationScheme=NoTruncatio
 
 const AllowedInitGuesses = (:svd, :pre, :rand)
 
+# truncation schemes carrying an explicit maximum bond dimension `D`; `DMRG1`
+# requires one of these, since `D` seeds the initial guess of the sweeps
+const TruncationWithD = Union{TruncateDim, TruncateDimCutoff}
+
 """
 	DMRG1 <: DMRGAlgorithm
 
 Configuration of an MPS/MPO product compression algorithm based on DMRG iterative sweeping.
 
 # Fields
-- `trunc::TruncationDimCutoff`: truncation scheme (bond dimension and truncation error)
+- `trunc::TruncationWithD`: truncation scheme carrying a maximum bond dimension `D` (`truncdim(D)` or `truncdimcutoff(D, ϵ)`), used both to compress the result and to seed the initial guess
 - `maxiter::Int`: maximum number of iterations
 - `tol::Float64`: convergence tolerance
 - `initguess::Symbol`: initial guess, one of `:svd`, `:pre`, `:rand`
@@ -92,8 +78,8 @@ Configuration of an MPS/MPO product compression algorithm based on DMRG iterativ
 
 Main constructor: `DMRG1(trunc; maxiter=5, tol=1e-12, initguess=:svd, verbosity=0, callback=Returns(nothing))`.
 """
-struct DMRG1 <: DMRGAlgorithm
-	trunc::TruncationDimCutoff
+struct DMRG1{T<:TruncationWithD} <: DMRGAlgorithm
+	trunc::T
 	maxiter::Int
 	tol::Float64
 	initguess::Symbol
@@ -101,37 +87,27 @@ struct DMRG1 <: DMRGAlgorithm
 	callback::Function
 end
 """
-	DMRG1(trunc::TruncationDimCutoff; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0, callback::Function=Returns(nothing))
+	DMRG1(trunc::TruncationWithD; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0, callback::Function=Returns(nothing))
 
 Construct a `DMRG1` algorithm configuration.
 
 # Arguments
-- `trunc::TruncationDimCutoff`: truncation scheme (can be constructed with `truncdimcutoff(D, ϵ)`)
+- `trunc::TruncationWithD`: truncation scheme carrying a maximum bond dimension `D` (constructed with `truncdimcutoff(D, ϵ)` or `truncdim(D)`); schemes without a dimension cap (`trunccutoff`, `NoTruncation`) are not allowed
 - `maxiter::Int`: maximum number of iterations
 - `tol::Float64`: convergence tolerance
 - `initguess::Symbol`: initial guess, must be one of `:svd`, `:pre`, `:rand`, otherwise an `ArgumentError` is thrown
 - `verbosity::Int`: verbosity level
 - `callback::Function`: callback function
 """
-function DMRG1(trunc::TruncationDimCutoff; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0, callback::Function=Returns(nothing))
+function DMRG1(trunc::TruncationWithD; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0, callback::Function=Returns(nothing))
 	(initguess in AllowedInitGuesses) || throw(ArgumentError("initguess must be one of $(AllowedInitGuesses)"))
 	return DMRG1(trunc, maxiter, tol, initguess, verbosity, callback)
 end
 """
-	DMRG1(; trunc::TruncationDimCutoff=DefaultITruncation, kwargs...)
+	DMRG1(; trunc::TruncationWithD=DefaultITruncation, kwargs...)
 
 Construct a `DMRG1` from keyword arguments, with default truncation scheme `DefaultITruncation`.
 """
-DMRG1(; trunc::TruncationDimCutoff=DefaultITruncation, kwargs...) = DMRG1(trunc; kwargs...)
-Base.similar(x::DMRG1; trunc::TruncationDimCutoff=x.trunc, maxiter::Int=x.maxiter, tol::Float64=x.tol, initguess::Symbol=x.initguess, verbosity::Int=x.verbosity, callback=x.callback) = DMRG1(
+DMRG1(; trunc::TruncationWithD=DefaultITruncation, kwargs...) = DMRG1(trunc; kwargs...)
+Base.similar(x::DMRG1; trunc::TruncationWithD=x.trunc, maxiter::Int=x.maxiter, tol::Float64=x.tol, initguess::Symbol=x.initguess, verbosity::Int=x.verbosity, callback=x.callback) = DMRG1(
 			trunc=trunc, maxiter=maxiter, tol=tol, initguess=initguess, verbosity=verbosity, callback=callback)
-
-function Base.getproperty(x::DMRGAlgorithm, s::Symbol)
-	if s == :D
-		return x.trunc.D
-	elseif s == :ϵ
-		return x.trunc.ϵ
-	else
-		getfield(x, s)
-	end
-end

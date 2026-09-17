@@ -51,7 +51,7 @@
 	@test distance(mpo1, mps0) / norm(mps0) < dt
 
 	# single steppers for all four stepper types and two multiplication algorithms
-	for algmult in (SVDCompression(D=50), DMRG1(trunc=truncdimcutoff(D=50, ϵ=1.0e-6)))
+	for algmult in (SVDCompression(truncdimcutoff(D=50, ϵ=1.0e-12, add_back=0)), DMRG1(trunc=truncdimcutoff(D=50, ϵ=1.0e-6)))
 		mps1 = influenceoperatorstepper(lattice, corr, dt, hyb, WII(), algmult, algexpan=algexpan)
 		_n = norm(mps1)
 		mps2 = influenceoperatorstepper(lattice, corr, dt, hyb, WI(), algmult, algexpan=algexpan)
@@ -120,7 +120,7 @@
 	mps0 = mult!(mps_stp[1], mps_stp[2], trunc=trunc)
 	mps0 = mult!(mps0, mps_stp[3], trunc=trunc)
 	mps0 = mult!(mps0, mps_stp[4], trunc=trunc)
-	for algmult in (SVDCompression(D=50), DMRG1(trunc=truncdimcutoff(D=50, ϵ=1.0e-6)))
+	for algmult in (SVDCompression(truncdimcutoff(D=50, ϵ=1.0e-12, add_back=0)), DMRG1(trunc=truncdimcutoff(D=50, ϵ=1.0e-6)))
 		mps1 = influenceoperatorstepper(lattice, corr, dt, hyb, WII(), algmult, algexpan=algexpan)
 		_n = norm(mps1)
 		mps2 = influenceoperatorstepper(lattice, corr, dt, hyb, WI(), algmult, algexpan=algexpan)
@@ -180,7 +180,7 @@ end
 		mps0, = influenceoperatorsteppers(lattice, corr, dt, hyb, WII(), algexpan=algexpan)
 		@test distance(mpo1, mps0) / norm(mps0) < dt
 
-		for algmult in (SVDCompression(D=50), DMRG1(trunc=truncdimcutoff(D=50, ϵ=1.0e-6)))
+		for algmult in (SVDCompression(truncdimcutoff(D=50, ϵ=1.0e-12, add_back=0)), DMRG1(trunc=truncdimcutoff(D=50, ϵ=1.0e-6)))
 			mps1 = influenceoperatorstepper(lattice, corr, dt, hyb, WII(), algmult, algexpan=algexpan)
 			_n = norm(mps1)
 			mps2 = influenceoperatorstepper(lattice, corr, dt, hyb, WI(), algmult, algexpan=algexpan)
@@ -257,7 +257,7 @@ end
 		mps0 = mult!(mps_stp[1], mps_stp[2], trunc=trunc)
 		mps0 = mult!(mps0, mps_stp[3], trunc=trunc)
 		mps0 = mult!(mps0, mps_stp[4], trunc=trunc)
-		for algmult in (SVDCompression(D=50), DMRG1(trunc=truncdimcutoff(D=50, ϵ=1.0e-6)))
+		for algmult in (SVDCompression(truncdimcutoff(D=50, ϵ=1.0e-12, add_back=0)), DMRG1(trunc=truncdimcutoff(D=50, ϵ=1.0e-6)))
 			mps1 = influenceoperatorstepper(lattice, corr, dt, hyb, WII(), algmult, algexpan=algexpan)
 			_n = norm(mps1)
 			mps2 = influenceoperatorstepper(lattice, corr, dt, hyb, WI(), algmult, algexpan=algexpan)

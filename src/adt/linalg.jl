@@ -67,7 +67,7 @@ end
 Base.:-(x::ADT, y::ADT) = x + (-y)
 
 
-function _permute!(x::ADT, perm::Vector{Int}; trunc::TruncationScheme=DefaultIntegrationTruncation)
+function _permute!(x::ADT, perm::Vector{Int}; trunc::TruncationScheme=DefaultKTruncation)
     @assert length(x) == length(perm)
     if svectors_uninitialized(x)
         canonicalize!(x, alg=Orthogonalize(trunc=trunc, normalize=false))

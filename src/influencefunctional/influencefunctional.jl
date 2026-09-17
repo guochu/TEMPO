@@ -1,23 +1,23 @@
 abstract type InfluenceFunctionalAlgorithm end
 """
-	PartialIF(; trunc::TruncationDimCutoff=DefaultITruncation)
+	PartialIF(; trunc::TruncateDimCutoff=DefaultITruncation)
 
 Construct the full influence functional as a product of partial influence functionals (partial IFs), each with bond dimension D=2.
 
 See [SciPost Phys. Core 7, 063 (2024)].
 
 # Arguments
-- `trunc::TruncationDimCutoff=DefaultITruncation`: truncation scheme used when multiplying the partial IFs successively into the full IF.
+- `trunc::TruncateDimCutoff=DefaultITruncation`: truncation scheme used when multiplying the partial IFs successively into the full IF.
 """
-struct PartialIF <: InfluenceFunctionalAlgorithm 
-	trunc::TruncationDimCutoff
+struct PartialIF <: InfluenceFunctionalAlgorithm
+	trunc::TruncateDimCutoff
 end
 """
-	PartialIF(; trunc::TruncationDimCutoff=DefaultITruncation)
+	PartialIF(; trunc::TruncateDimCutoff=DefaultITruncation)
 
 Keyword constructor for `PartialIF`; the truncation scheme is specified by `trunc`.
 """
-PartialIF(; trunc::TruncationDimCutoff=DefaultITruncation) = PartialIF(trunc)
+PartialIF(; trunc::TruncateDimCutoff=DefaultITruncation) = PartialIF(trunc)
 
 """
 	XTRGIF(; algexpan, algevo, algmult, k, fast, verbosity)
@@ -38,7 +38,7 @@ struct XTRGIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm, M<:DMRGA
 	algexpan::T
 	algevo::E
 	algmult::M
-	# trunc::TruncationDimCutoff
+	# trunc::TruncateDimCutoff
 	k::Int
 	fast::Bool
 	verbosity::Int
@@ -72,7 +72,7 @@ Each flow step is one forward-backward TDVP sweep: the center tensor is evolved 
 
 # Fields
 - `algexpan::ExponentialExpansionAlgorithm`: exponential (Prony) expansion algorithm for the bath correlation function.
-- `trunc::TruncationDimCutoff`: bond dimension of the flow manifold / final influence functional.
+- `trunc::TruncateDimCutoff`: bond dimension of the flow manifold / final influence functional.
 - `δ::Float64`: imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer).
 - `verbosity::Int`: verbosity level of the output.
 - `callback::Function`: callback function invoked after the flow.
@@ -81,7 +81,7 @@ On real-time lattices (`RealADTLattice1Order` with `AdditiveHyb`, `RealPTLattice
 """
 struct TDVPIF <: InfluenceFunctionalAlgorithm
 	algexpan::ExponentialExpansionAlgorithm
-	trunc::TruncationDimCutoff      # bond dimension of the flow manifold / final IF
+	trunc::TruncateDimCutoff      # bond dimension of the flow manifold / final IF
 	δ::Float64                      # imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer)
 	verbosity::Int
 	callback::Function
@@ -92,7 +92,7 @@ end
 Keyword constructor for `TDVPIF`; all parameters have default values and usually need not be passed explicitly.
 """
 function TDVPIF(; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny(n=15, tol=1.0e-4, verbosity=0),
-				trunc::TruncationDimCutoff=DefaultITruncation,
+				trunc::TruncateDimCutoff=DefaultITruncation,
 				δ::Real=0.1,
 				verbosity::Int=0,
 				callback::Function=Returns(nothing))

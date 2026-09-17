@@ -9,7 +9,7 @@
 # similaradtlattice(lattice::MixedPTLattice1Order) = MixedADTLattice1Order(Nt=lattice.Nt, Nτ=lattice.Nτ, δt=lattice.δt, δτ=lattice.δτ, ordering=lattice.ordering)
 
 
-# function toadt(lattice::ImagADTLattice1Order, pt::ProcessTensor; trunc::TruncationScheme=DefaultIntegrationTruncation)
+# function toadt(lattice::ImagADTLattice1Order, pt::ProcessTensor; trunc::TruncationScheme=DefaultKTruncation)
 # 	lattice2 = similaradtlattice(lattice)
 	
 # end

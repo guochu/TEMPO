@@ -94,7 +94,7 @@ function influenceoperatorstepper(lattice::RealADTLattice1Order, corr::RealCorre
 	return mps
 end
 
-function _fit_to_lattice_diag(lattice::RealADTLattice1Order, mpotensors, f1::Symbol, f2::Symbol, trunc::TruncationScheme=DefaultMPOTruncation)
+function _fit_to_lattice_diag(lattice::RealADTLattice1Order, mpotensors, f1::Symbol, f2::Symbol, trunc::TruncationScheme=DefaultKTruncation)
 	@assert length(mpotensors) == 3
 	L = length(lattice)
 	data2 = similar(mpotensors, L)
@@ -159,7 +159,7 @@ function _fit_to_lattice_diag(lattice::RealADTLattice1Order, mpotensors, f1::Sym
 	return ADT(data2)
 end
 
-function _fit_to_lattice_offdiag(lattice::RealADTLattice1Order, mpotensors, f1::Symbol, f2::Symbol, trunc::TruncationScheme=DefaultMPOTruncation)
+function _fit_to_lattice_offdiag(lattice::RealADTLattice1Order, mpotensors, f1::Symbol, f2::Symbol, trunc::TruncationScheme=DefaultKTruncation)
 	@assert length(mpotensors) == 3
 	L = length(lattice)
 	data2 = similar(mpotensors, L)

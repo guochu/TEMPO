@@ -54,7 +54,7 @@ function _swap_gate(svectorj1::Vector, m1::DenseMPOTensor, svectorj2::Vector, m2
 end
 
 
-function _permute!(x::ProcessTensor, perm::Vector{Int}; trunc::TruncationScheme=DefaultIntegrationTruncation)
+function _permute!(x::ProcessTensor, perm::Vector{Int}; trunc::TruncationScheme=DefaultKTruncation)
 	@assert length(x) == length(perm)
 	if svectors_uninitialized(x)
 		canonicalize!(x, alg=Orthogonalize(trunc=trunc, normalize=false))

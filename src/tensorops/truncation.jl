@@ -35,38 +35,40 @@ struct TruncateCutoff <: TruncationScheme
 end
 TruncateCutoff(;ϵ::Real) = TruncateCutoff(convert(Float64, ϵ))
 """
+    trunccutoff(ϵ::Real)
     trunccutoff(; ϵ::Real)
 
 Construct a cutoff-truncated scheme `TruncateCutoff(ϵ)` that discards singular values with relative norm below `ϵ`.
 """
+trunccutoff(ϵ::Real) = TruncateCutoff(ϵ)
 trunccutoff(; ϵ::Real) = TruncateCutoff(ϵ)
 
 # reserve at least add_back singular values
 """
-    TruncationDimCutoff(D, ϵ, add_back=0)
-    TruncationDimCutoff(; D, ϵ, add_back=0)
+    TruncateDimCutoff(D, ϵ, add_back=0)
+    TruncateDimCutoff(; D, ϵ, add_back=0)
 
 A truncation scheme combining dimension and cutoff: the truncation point is first determined by the relative norm `ϵ`,
 then capped at `D` singular values while keeping at least `add_back` of them.
 """
-struct TruncationDimCutoff <: TruncationScheme
+struct TruncateDimCutoff <: TruncationScheme
     D::Int
     ϵ::Float64
     add_back::Int
 end
-TruncationDimCutoff(;D::Int, ϵ::Real, add_back::Int=0) = TruncationDimCutoff(D, float(ϵ), min(add_back, D))
+TruncateDimCutoff(;D::Int, ϵ::Real, add_back::Int=0) = TruncateDimCutoff(D, float(ϵ), min(add_back, D))
 """
     truncdimcutoff(D, ϵ, add_back=0)
 
-Positional-argument convenience constructor for `TruncationDimCutoff`, equivalent to `TruncationDimCutoff(D, ϵ, add_back)`.
+Positional-argument convenience constructor for `TruncateDimCutoff`, equivalent to `TruncateDimCutoff(D, ϵ, add_back)`.
 """
-truncdimcutoff(D::Int, epsilon::Real; add_back::Int=0) = TruncationDimCutoff(D, epsilon, min(add_back, D))
+truncdimcutoff(D::Int, epsilon::Real; add_back::Int=0) = TruncateDimCutoff(D, epsilon, min(add_back, D))
 """
     truncdimcutoff(; D, ϵ, add_back=0)
 
-Keyword convenience constructor for `TruncationDimCutoff`, equivalent to `TruncationDimCutoff(D, ϵ, add_back)`.
+Keyword convenience constructor for `TruncateDimCutoff`, equivalent to `TruncateDimCutoff(D, ϵ, add_back)`.
 """
-truncdimcutoff(; D::Int, ϵ::Real, add_back::Int=0) = TruncationDimCutoff(D, float(ϵ), min(add_back, D))
+truncdimcutoff(; D::Int, ϵ::Real, add_back::Int=0) = TruncateDimCutoff(D, float(ϵ), min(add_back, D))
 
 
 _truncate!(v::AbstractVector{<:Real}, trunc::NoTruncation, p::Real=2) = v, 0.
@@ -87,7 +89,7 @@ function _truncate!(v::AbstractVector{<:Real}, trunc::TruncateCutoff, p::Real=2)
 	return _truncate!(v, TruncateDim(dtrunc), p)
 end
 
-function _truncate!(v::AbstractVector{<:Real}, trunc::TruncationDimCutoff, p::Real=2)
+function _truncate!(v::AbstractVector{<:Real}, trunc::TruncateDimCutoff, p::Real=2)
 	sca = norm(v, p)
 	dtrunc = findlast(Base.Fix2(>, sca * trunc.ϵ), v)
 	dtrunc = isnothing(dtrunc) ? 0 : dtrunc

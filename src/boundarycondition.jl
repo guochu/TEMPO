@@ -76,7 +76,7 @@ function initialstate!(x::ProcessTensor, lattice::RealPTLattice1Order, ρ0::Abst
 	pos1, pos2 = index(lattice, 1, branch=:+), index(lattice, 1, branch=:-)
 	@assert pos1 + 1 == pos2
 	@tensor tmp[3,4,6,7] := ρ0[1,2] * x[pos1][3,4,5,1] * x[pos2][5,6,7,2] 
-	u, s, v = tsvd!(tmp, (1,2), (3,4), trunc=DefaultIntegrationTruncation)
+	u, s, v = tsvd!(tmp, (1,2), (3,4), trunc=DefaultKTruncation)
 
 	I2 = one(ρ0) ./ sqrt(size(ρ0, 1))   # each inserted identity contributes a factor tr(I₂)=d on contraction; √d on each site cancels it
 	s2 = Matrix(Diagonal(s))

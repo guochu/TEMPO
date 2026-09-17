@@ -13,12 +13,12 @@ function iterativemult(x::ProcessTensor, y::ProcessTensor, alg::DMRGAlgorithm)
     # mpsout = randommpo(T, ophysical_dimensions(mpo), iphysical_dimensions(mps), D=alg.D)
     # rightorth!(mpsout, alg=Orthogonalize(normalize=true))
     if alg.initguess == :svd
-        z = _svd_guess(x, y, alg.D)
+        z = _svd_guess(x, y, alg.trunc.D)
     elseif alg.initguess == :rand
-        z = randompt(promote_type(scalartype(x), scalartype(y)), phydims(x), D=alg.D)
+        z = randompt(promote_type(scalartype(x), scalartype(y)), phydims(x), D=alg.trunc.D)
         canonicalize!(z, alg=Orthogonalize(normalize=true))
     elseif alg.initguess == :pre
-        z = increase_bond!(copy(x), alg.D)
+        z = increase_bond!(copy(x), alg.trunc.D)
         setscaling!(z, 1)
     else
         error("unsupported initguess $(alg.initguess)")

@@ -289,11 +289,11 @@ On the QR path, truncation has no effect (a `@warn` is issued). The truncation e
 3. after finishing at the right end, `_rightorth!(x, SVD(), trunc)` performs the SVD truncation from right to left;
 4. `setscaling!(x, scaling(x)*scaling(y))`.
 
-`mult(x, y) = mult!(copy(x), y)` is the non-mutating version. `DMRG1` (a `DMRGAlgorithm`) provides a variant with an `initguess` (default `:svd`), combined with the `D`/`tol` truncation of `SVDCompression`.
+`mult(x, y) = mult!(copy(x), y)` is the non-mutating version. `SVDCompression` compresses a single SVD sweep according to its `trunc` (any `TruncationScheme`); `DMRG1` (a `DMRGAlgorithm`) provides a variational variant with an `initguess` (default `:svd`) and requires a truncation scheme carrying the bond dimension `D` (`TruncationWithD`), which seeds the initial guess of the sweeps.
 
 ### 10.3 Iterative multiplication (`iterativemult`, the `DMRG1` algorithm)
 
-(`src/adt/mult/iterativemult.jl` for the ADT, `src/pt/mult/iterativemult.jl` for the PT; both share `iterative_compute!`.) `mult(x, y, alg::DMRGAlgorithm)` computes a variational approximation $z \approx w \equiv x y$ (the untruncated product network) within the bond dimension `D` of `alg.trunc`, minimizing the loss functional
+(`src/adt/mult/iterativemult.jl` for the ADT, `src/pt/mult/iterativemult.jl` for the PT; both share `iterative_compute!`.) `mult(x, y, alg::DMRGAlgorithm)` computes a variational approximation $z \approx w \equiv x y$ (the untruncated product network) within the bond dimension of `alg.trunc`, minimizing the loss functional
 
 $$F(z) = \|w - z\|^2$$
 
@@ -362,7 +362,7 @@ The five error sources of the paper and their counterparts in the code:
 | Translationally invariant refinement | `k` (default 5), `fast` | With `fast=true`: first build the differential IF of width `dt/2^k`, then square it k times by tree bisection to obtain the full-length influence functional |
 | System propagator | `algevo` (`WII()`), `algmult` (`DefaultMultAlg`) | Accuracy of the MPO time evolution and of the multiplication compression |
 
-The defaults are given in `src/defaults.jl`: `DefaultTruncation = truncdimcutoff(D=100, ϵ=1e-14)`, `DefaultITruncation = truncdimcutoff(D=200, ϵ=1e-10)`, `DefaultKTruncation = truncdimcutoff(D=1000, ϵ=1e-10)`, `DefaultIntegrationTruncation = DefaultMPOTruncation = truncdimcutoff(D=10000, ϵ=1e-12)`; `XTRGIF(; algexpan=OverDeterminedProny(n=15, tol=1e-4), algevo=WII(), algmult=DefaultMultAlg, k=5, fast=true)`.
+The defaults are given in `src/defaults.jl`: `DefaultTruncation = truncdimcutoff(D=100, ϵ=1e-14)`, `DefaultITruncation = truncdimcutoff(D=200, ϵ=1e-10)`, `DefaultKTruncation = trunccutoff(Defaults.tolgauge)` (system dynamics, initial-state absorption and MPO compression); `XTRGIF(; algexpan=OverDeterminedProny(n=15, tol=1e-4), algevo=WII(), algmult=DefaultMultAlg, k=5, fast=true)`.
 
 ## 13. Overview of the data flow
 

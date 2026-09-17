@@ -1,3 +1,68 @@
+# 接口调整说明（2026-09-17）：截断方案与 MPS 算法接口统一（SVDCompression/DMRG1 参数化、默认截断收敛）
+
+对齐主流库（MPSKit / ITensor / TeNPy）的做法，把压缩算法的截断参数统一为 `TruncationScheme` 对象，并收敛默认截断常量。全套测试通过（0 Fail / 0 Error）。
+
+## 截断方案（`src/tensorops/truncation.jl`）
+
+| 旧名（已删除） | 新名 | 说明 |
+|---|---|---|
+| `TruncationDimCutoff` | `TruncateDimCutoff` | 类型更名，与其余 `Truncate*` 命名对齐；便利构造函数 `truncdimcutoff(D, ϵ[, add_back])` **不变** |
+
+- `trunccutoff` 新增位置参数构造 `trunccutoff(ϵ::Real)`（与关键字形式 `trunccutoff(; ϵ)` 等价）。
+
+## MPS 算法（`src/algorithms.jl`）
+
+### `SVDCompression`：`D`/`tol` 字段 → 参数化 `trunc` 字段
+
+| 旧接口 | 新接口 |
+|---|---|
+| `SVDCompression(; D=Defaults.D, tol=Defaults.tol, verbosity=0)` | `SVDCompression(; trunc=truncdimcutoff(D=Defaults.D, ϵ=Defaults.tol, add_back=0), verbosity=0)` |
+| `SVDCompression(trunc::TruncationDimCutoff; verbosity=0)` | `SVDCompression(trunc::TruncationScheme; verbosity=0)`（接受**任意** `TruncationScheme`） |
+| `alg.trunc`（getproperty 合成）/ `get_trunc(alg)` / `alg.ϵ` | `alg.trunc`（真实字段） |
+
+- 结构体变为 `SVDCompression{T<:TruncationScheme}`；`Base.similar(; trunc, verbosity)` 同步参数化。
+
+### `DMRG1`：`trunc` 参数化但必须携带键维 `D`
+
+| 旧接口 | 新接口 |
+|---|---|
+| `DMRG1(trunc::TruncationDimCutoff; ...)` | `DMRG1(trunc::TruncationWithD; ...)`，其中 **`TruncationWithD = Union{TruncateDim, TruncateDimCutoff}`** |
+| `DMRG1(; trunc::TruncationDimCutoff=DefaultITruncation, ...)` | `DMRG1(; trunc::TruncationWithD=DefaultITruncation, ...)` |
+
+- 原因：`iterativemult` 的初始猜测（`:svd`/`:rand`/`:pre`）需要 `D` 信息，实现改用 `alg.trunc.D`。
+- **删除** `Base.getproperty(::DMRGAlgorithm, :D/:ϵ)` 访问器（对无 `D`/无 `ϵ` 的方案无定义）；`Base.similar` 同步参数化。
+
+## 默认截断常量收敛（`src/defaults.jl`）
+
+| 常量 | 变更 |
+|---|---|
+| `DefaultKTruncation` | `truncdimcutoff(D=1000, ϵ=1e-10)` → **`trunccutoff(Defaults.tolgauge)`** |
+| `DefaultIntegrationTruncation` | **已删除**，原用点改用 `DefaultKTruncation` |
+| `DefaultMPOTruncation` | **已删除**，原用点改用 `DefaultKTruncation` |
+| `DefaultTruncation` / `DefaultITruncation` / `DefaultMultAlg` | 不变 |
+
+替换位置：`boundarycondition!`、`_permute!`（ADT/PT linalg）、TTIIF 的 `_fit_to_lattice_diag/_offdiag`（adt/pt real）、TDVPIF 的 H 压缩（`_tdvpif_hamiltonian`）。
+
+## 其他删除
+
+- `src/observables/correlations.jl`：整个文件删除（从未被 include 的死代码，`correlation` 函数无处分发使用；两点关联测量请用 `ADTTerm` 多点形式 + `apply!`/`integrate`，见 manual §Observables）。`docs/src/api.md`、`docs/src/manual.md` 同步清理。
+
+## 迁移指南
+
+- `SVDCompression(D=χ)` → `SVDCompression(truncdimcutoff(D=χ, ϵ=Defaults.tol))`（或按需写 `truncdimcutoff(D=χ, ϵ=...)`）。
+- `SVDCompression(D=χ, tol=ε)` → `SVDCompression(truncdimcutoff(D=χ, ϵ=ε))`。
+- `DMRG1(trunc)` / `DMRG1(trunc=...)`：`trunc` 需为 `truncdim(D)` 或 `truncdimcutoff(D, ϵ)`。
+- `alg.D` / `alg.ϵ` 访问改为 `alg.trunc.D` / `alg.trunc.ϵ`。
+- `DefaultIntegrationTruncation` / `DefaultMPOTruncation` → `DefaultKTruncation`。
+- `TruncationDimCutoff` → `TruncateDimCutoff`。
+
+## 测试
+
+- `test/api/truncation.jl` 新增 `SVDCompression / DMRG1` testset：参数化构造（全部 `TruncationScheme` / 仅含 `D` 方案）、`MethodError` 拒绝、`similar` 保持/覆盖、默认值；`test/api/mps.jl` 的 multiplications 增加 `truncdim`/`trunccutoff` 方案下的乘法正确性；`test/api/influenceoperator.jl` 的 `SVDCompression(D=50)` 调用点迁移。
+- 全套测试通过（0 Fail / 0 Error）。
+
+---
+
 # 接口调整说明（2026-09-16）：迭代乘法（DMRG1）收敛判据与 sweep!/iterative_compute! 接口统一
 
 参考 MPSKit / ITensor / TeNPy / quimb / block2 的主流做法，统一迭代乘法（`mult(x, y, alg::DMRGAlgorithm)`，ADT 与 PT 共用）的 loss 度量与收敛判据接口。全套测试通过（1093/1093，0 Fail / 0 Error）。

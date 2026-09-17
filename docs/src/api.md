@@ -144,8 +144,7 @@ Pages = ["observables/adt/adt.jl", "observables/adt/envs.jl", "observables/adt/t
          "observables/adt/gf.jl",
          "observables/pt/pt.jl", "observables/pt/envs.jl", "observables/pt/transfer.jl",
          "observables/pt/mixedtransfer.jl",
-         "observables/observables.jl",
-         "observables/correlations.jl", "observables/heatcurrents.jl"]
+         "observables/observables.jl", "observables/heatcurrents.jl"]
 ```
 
 ## Exponential expansion (`ExpExp`, reexported)
@@ -173,7 +172,5 @@ expansion_error(f, p) / expansion_error(f, coeffs, alphas)
 |---|---|---|
 | `DefaultTruncation` | `truncdimcutoff(D=100, ϵ=1e-14)` | General default |
 | `DefaultITruncation` | `truncdimcutoff(D=200, ϵ=1e-10)` | Default for IF construction / `mult` |
-| `DefaultKTruncation` | `truncdimcutoff(D=1000, ϵ=1e-10)` | Default for system dynamics |
-| `DefaultIntegrationTruncation` | `truncdimcutoff(D=10000, ϵ=1e-12)` | Initial-state absorption |
-| `DefaultMPOTruncation` | `truncdimcutoff(D=10000, ϵ=1e-12)` | MPO compression |
+| `DefaultKTruncation` | `trunccutoff(Defaults.tolgauge)` | Default for system dynamics, initial-state absorption and MPO compression |
 | `DefaultMultAlg` | `DMRG1(DefaultITruncation)` | Default algorithm for `mult` |

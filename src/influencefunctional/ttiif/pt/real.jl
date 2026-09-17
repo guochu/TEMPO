@@ -145,7 +145,7 @@ function fused_op(op1::AbstractMatrix, f1::Symbol)
 	return a
 end
 
-function _fit_to_lattice_diag(lattice::RealPTLattice1Order, mpotensors, f1::Symbol, f2::Symbol, trunc::TruncationScheme=DefaultMPOTruncation)
+function _fit_to_lattice_diag(lattice::RealPTLattice1Order, mpotensors, f1::Symbol, f2::Symbol, trunc::TruncationScheme=DefaultKTruncation)
 	@assert length(mpotensors) == 3
 	L = length(lattice)
 	data2 = similar(mpotensors, L)
@@ -204,7 +204,7 @@ function _fit_to_lattice_diag(lattice::RealPTLattice1Order, mpotensors, f1::Symb
 	return ProcessTensor(data2)
 end
 
-function _fit_to_lattice_offdiag(lattice::RealPTLattice1Order, mpotensors, f1::Symbol, f2::Symbol, trunc::TruncationScheme=DefaultMPOTruncation)
+function _fit_to_lattice_offdiag(lattice::RealPTLattice1Order, mpotensors, f1::Symbol, f2::Symbol, trunc::TruncationScheme=DefaultKTruncation)
 	@assert length(mpotensors) == 3
 	L = length(lattice)
 	data2 = similar(mpotensors, L)

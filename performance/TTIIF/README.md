@@ -3,7 +3,7 @@
 本目录包含影响泛函两种构建算法的对比基准：
 
 - `XTRGIF`（XTRG-IF）：树形二分乘法，`k=5, fast=true, algmult=SVDCompression(trunc)`
-- `TDVPIF`：TDVP 虚时间流，`δ=0.1`，H 由 4 分支影响算符逐步求和构成（每次求和后用 `DefaultMPOTruncation` 压缩）
+- `TDVPIF`：TDVP 虚时间流，`δ=0.1`，H 由 4 分支影响算符逐步求和构成（每次求和后用 `DefaultKTruncation` 压缩）
 
 两种算法使用相同的键维上限 `trunc = truncdimcutoff(D=50, ϵ=1e-10, add_back=0)`。
 
