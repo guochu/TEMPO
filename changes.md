@@ -1,3 +1,32 @@
+# Bug 修复（2026-09-17）：`swap!` 未交换物理指标
+
+`swap!` / `permute!`（ADT 与 PT）的 swap gate 存在实现错误：两站合并张量的 SVD 分组为
+`(l, p1) | (p2, r)`（物理指标留在各自一侧），重建出的链上物理指标顺序不变——swap 实际上是
+一次恒等的规范重分解，没有交换任何物理指标。由于此前的 `permute` 测试只验证了自洽性
+（`permute ∘ permute⁻¹ == id`、`iscanonical`），恒等实现同样能满足，因而未被检出。
+
+## 修复
+
+- 两站合并张量改为**先交换物理指标**再分解：ADT 按 `(l, p2, p1, r)`、PT（共轭对布局
+  `(aL, pout, aR, pin)`）按 `(aL, pout2, pin2, pout1, pin1, aR)` 合并；SVD 分组后左因子
+  携带 `bond+1` 站点的物理指标、右因子携带 `bond` 站点的物理指标，新键谱写回 `x.s[bond+1]`。
+- 数值验证：单次相邻交换后两站块等于原始块在交换物理顺序下的结果（且不同于原始顺序）；
+  相同相邻交换做两次完全还原；全链收缩（`integrate`）在交换前后保持不变。
+- `test/api/mps.jl` 新增 `permute! moves the physical labels` testset：用 D=1 的 one-hot
+  product 态（每个站点携带可区分的物理标签）直接验证置换后标签满足 `new[k] == old[perm[k]]`；
+  原 `permute` testset 中「置换后仍 iscanonical」的断言移除（交换会把键谱移到其它键上，
+  全键 Vidal 形式不再保持，物理正确性由「双交换还原 + 标签重排」两个断言保证）。
+
+## 关联修复：`x.s` 的未初始化槽
+
+排查中发现 `ADT{T,R}(data, scaling)` 与 `ProcessTensor{T,R}(data, scaling)` 内层构造器只初始化了
+`s[1]` 与 `s[end]`，中间键谱槽是 `Vector{Union{Missing,Vector{R}}}` 的 **`undef` 引用**（访问即抛
+`UndefRefError`），与「未定谱槽应为 `missing`」的设计（`unset_svectors!`、`svectors_uninitialized`
+的 `any(ismissing, ...)`）不符。已修复：构造器中将 `s[2:end-1]` 显式初始化为 `missing`；
+`svectors_uninitialized` 行为不变。
+
+---
+
 # 接口调整说明（2026-09-17）：`TruncateCutoff` / `trunccutoff` 更名
 
 类型与构造函数更名，语义不变（按相对截断误差 ϵ 截断奇异值）。全套测试通过（0 Fail / 0 Error）。

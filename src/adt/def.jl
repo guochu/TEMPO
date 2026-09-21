@@ -39,6 +39,7 @@ function ADT{T, R}(data::Vector, scaling::Ref{R}) where {T<:Number, R<:Number}
 	svectors = Vector{Union{Missing, Vector{R}}}(undef, length(data)+1)
 	svectors[1] = ones(space_l(data[1]))
 	svectors[end] = ones(space_r(data[end]))
+	svectors[2:end-1] .= missing   # interior bond spectra are undetermined until a canonicalize!/swap!
 	return ADT{T, R}(convert(Vector{Array{T, 3}}, data), svectors, scaling)
 end
 
@@ -234,19 +235,21 @@ function iscanonical(psi::ADT; kwargs...)
 end
 
 function swap!(x::ADT, bond::Int; trunc::TruncationScheme=DefaultITruncation)
-	x[bond], x.s[bond+1], x[bond+1] = _swap_gate(x.s[bond], x[bond], x.s[bond+1], x[bond+1], trunc=trunc)
+	x[bond], x.s[bond+1], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
 	return x
 end
 
-# Hastings-style swap gate (following GTEMPO): the bond Schmidt values `svectorj1`
-# stored on the left of the swapped pair are contracted into the two-site block,
-# which is then re-decomposed; the renewed bond spectrum and the right-canonical
-# factor are written back to `svectorj2` and the second site tensor.
-function _swap_gate(svectorj1::Vector, m1::DenseMPSTensor, svectorj2::Vector, m2::DenseMPSTensor; trunc::TruncationScheme)
-	sv1 = Diagonal(svectorj1)
-	@tensor twositemps[a, b, c, d] := m1[a, b, 2] * m2[2, c, d]
-	@tensor twositemps1[a, b, c, d] := sv1[a, 1] * twositemps[1, b, c, d]
-	u, s, v = tsvd!(twositemps1, (1, 2), (3, 4); trunc=trunc)
-	@tensor u2[a, b, c] := twositemps[a, b, 1, 2] * conj(v[c, 1, 2])
-	return u2, s, v
+# Swap gate: builds the two-site block `x[bond] · x[bond+1]` (the ADT contraction
+# convention carries the bond spectra inside the site tensors, so no explicit
+# spectrum is contracted here) with the physical indices already swapped, i.e. in
+# the order (l, p2, p1, r), and re-decomposes it such that the left factor carries
+# the physical index of site bond+1 and the right factor the one of site bond.
+# The renewed bond spectrum is absorbed into the left factor (its norm equals the
+# bond spectrum recorded in `x.s[bond+1]`), so the chain contraction is preserved
+# while the sites are exchanged.
+function _swap_gate(m1::DenseMPSTensor, m2::DenseMPSTensor; trunc::TruncationScheme)
+	@tensor block[l, p2, p1, r] := m1[l, p1, k] * m2[k, p2, r]
+	u, s, v = tsvd!(block, (1, 2), (3, 4); trunc=trunc)
+	u = u .* reshape(Vector(s), 1, 1, :)
+	return u, s, v
 end

@@ -35,22 +35,23 @@ Base.:-(h::ProcessTensor) = -1 * h
 
 
 function swap!(x::ProcessTensor, bond::Int; trunc::TruncationScheme=DefaultITruncation)
-	x[bond], x.s[bond+1], x[bond+1] = _swap_gate(x.s[bond], x[bond], x.s[bond+1], x[bond+1], trunc=trunc)
+	x[bond], x.s[bond+1], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
 	return x
 end
 
-# Hastings-style swap gate (following GTEMPO): the bond Schmidt values `svectorj1`
-# stored on the left of the swapped pair are contracted into the two-site block,
-# which is then re-decomposed; the renewed bond spectrum and the right-canonical
-# factor are written back to `svectorj2` and the second site tensor.
-# Site tensor layout: (aL, pout, aR, pin).
-function _swap_gate(svectorj1::Vector, m1::DenseMPOTensor, svectorj2::Vector, m2::DenseMPOTensor; trunc::TruncationScheme)
-	sv1 = Diagonal(svectorj1)
-	@tensor twositemps[a, b, c, d, e, f] := m1[a, b, 2, c] * m2[2, d, f, e]
-	@tensor twositemps1[a, b, c, d, e, f] := sv1[a, 1] * twositemps[1, b, c, d, e, f]
-	u, s, v = tsvd!(twositemps1, (1, 2, 3), (4, 5, 6); trunc=trunc)
-	@tensor u2[a, b, c, d] := twositemps[a, b, c, 1, 2, 3] * conj(v[d, 1, 2, 3])
-	return permute(u2, (1, 2, 4, 3)), s, permute(v, (1, 2, 4, 3))
+# Swap gate: builds the two-site block `x[bond] · x[bond+1]` (the PT contraction
+# convention carries the bond spectra inside the site tensors, so no explicit
+# spectrum is contracted here) with the conjugate pairs already swapped, i.e. in
+# the order (aL, pout2, pin2, pout1, pin1, aR), and re-decomposes it such that
+# the left factor carries the conjugate pair of site bond+1 and the right factor
+# the one of site bond. The renewed bond spectrum is absorbed into the left
+# factor (its norm equals the bond spectrum recorded in `x.s[bond+1]`), so the
+# chain contraction is preserved while the sites are exchanged.
+function _swap_gate(m1::DenseMPOTensor, m2::DenseMPOTensor; trunc::TruncationScheme)
+	@tensor block[a, e, f, b, c, d] := m1[a, b, k, c] * m2[k, e, d, f]
+	u, s, v = tsvd!(block, (1, 2, 3), (4, 5, 6); trunc=trunc)
+	u = u .* reshape(Vector(s), 1, 1, 1, :)
+	return permute(u, (1, 2, 4, 3)), s, permute(v, (1, 2, 4, 3))
 end
 
 

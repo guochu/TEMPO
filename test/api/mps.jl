@@ -162,16 +162,50 @@ end
 				@test iscanonical(psi)
 
 				perm = randperm(L)
-				psi1 = TEMPO.permute!(copy(psi), perm; trunc=trunc)
-				# a) a permuted mixed-canonical state is still mixed-canonical
-				@test iscanonical(psi1)
-				# b) permuting again with the inverse permutation restores the original state
-				@test distance(TEMPO.permute!(psi1, invperm(perm); trunc=trunc), psi) / norm(psi) < rtol
+			psi1 = TEMPO.permute!(copy(psi), perm; trunc=trunc)
+			# a) permuting again with the inverse permutation restores the original state
+			#    (a permutation moves the bond spectra to different bonds, so both states
+			#     are canonicalized into a common gauge before the comparison)
+			canonicalize!(psi1, alg=Orthogonalize(trunc=trunc, normalize=false))
+			psi2 = TEMPO.permute!(psi1, invperm(perm); trunc=trunc)
+			canonicalize!(psi2, alg=Orthogonalize(trunc=trunc, normalize=false))
+			@test distance(psi2, psi) / norm(psi) < rtol
 
-				# the identity permutation returns the state unchanged
-				psi1 = TEMPO.permute(psi, collect(1:L); trunc=trunc)
-				@test distance(psi1, psi) / norm(psi) < rtol
+			# the identity permutation returns the state unchanged
+			psi1 = TEMPO.permute(psi, collect(1:L); trunc=trunc)
+			@test distance(psi1, psi) / norm(psi) < rtol
 			end
 		end
+	end
+end
+
+@testset "permute! moves the physical labels" begin
+	# product states (D=1) carry one-hot physical labels: after `permute!` the label
+	# of output site k must be the label of input site perm[k], i.e. the swap gates
+	# really exchange the physical indices (a pure re-gauging would leave them in place)
+	labels = [2, 1, 3, 2]
+	perm = [3, 2, 1, 4]
+	d = 4
+	trunc = truncdimcutoff(D=8, ϵ=1.0e-14, add_back=0)
+	# ADT: site tensor (1, d, 1)
+	psi = randomadt(ComplexF64, length(labels), D=1, d=d)
+	for i in 1:length(labels)
+		fill!(psi[i], zero(ComplexF64))
+		psi[i][1, labels[i], 1] = 1.0
+	end
+	TEMPO.permute!(psi, perm; trunc=trunc)
+	for k in 1:length(labels)
+		@test findfirst(!iszero, psi[k][1, :, 1]) == labels[perm[k]]
+	end
+	# PT: site tensor (1, pout, 1, pin) with a one-hot conjugate pair
+	g = randompt(ComplexF64, length(labels), D=1, d=d)
+	for i in 1:length(labels)
+		fill!(g[i], zero(ComplexF64))
+		g[i][1, labels[i], 1, labels[i]] = 1.0
+	end
+	TEMPO.permute!(g, perm; trunc=trunc)
+	for k in 1:length(labels)
+		idx = findfirst(!iszero, g[k][1, :, 1, :])
+		@test idx[1] == labels[perm[k]] && idx[2] == labels[perm[k]]
 	end
 end

@@ -50,6 +50,7 @@ function ProcessTensor{T, R}(data::Vector, scaling::Ref{R}) where {T<:Number, R<
 	svectors = Vector{Union{Missing, Vector{R}}}(undef, length(data)+1)
 	svectors[1] = ones(space_l(data[1]))
 	svectors[end] = ones(space_r(data[end]))
+	svectors[2:end-1] .= missing   # interior bond spectra are undetermined until a canonicalize!/swap!
 	return ProcessTensor{T, R}(convert(Vector{Array{T, 4}}, data), svectors, scaling)
 end
 
