@@ -59,7 +59,6 @@ using KrylovKit: exponentiate, Arnoldi
 import QuAPI: branch, index
 using LinearAlgebra
 using Base: @boundscheck
-using Logging: @warn
 using TensorOperations,TupleTools
 const TO = TensorOperations
 
@@ -79,12 +78,12 @@ const TO = TensorOperations
 using FiniteMPSAlgorithms
 import FiniteMPSAlgorithms: mult, mult!, canonicalize!, canonicalize, leftorth!, rightorth!,
 	swap!, permute!, distance, distance2, scaling, setscaling!, _renormalize!,
-	_reduce_hadamard_site, _reduce_site, _env_updateright, _env_updateleft, _updateright, _contract_last,
+	_reduce_hadamard_site, _reduce_site, _env_updateright, _updateright, _contract_last,
 	svectors_uninitialized, unset_svectors!, changebond!, phydim,
 	MPSAlgorithm, SVDCompression,
 	SchurMPOTensor, SparseMPOTensor, MPOHamiltonian,
 	QR, QRpos, LQ, LQpos, SVD, SDD, Polar, permute,
-	OrthogonalFactorizationAlgorithm, FactorizationAlgorithm, AbstractSparseMPOTensor
+	OrthogonalFactorizationAlgorithm
 
 # mps algorithms（TEMPO 公共算法配置；DMRG1 兼容层等）
 include("algorithms.jl")
