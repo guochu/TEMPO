@@ -1,10 +1,10 @@
-# # # the convention here is different from DMRG!!!
-LinearAlgebra.dot(psiA::Dense1DTN, psiB::Dense1DTN) = _dot(psiA, psiB) * (scaling(psiA) * scaling(psiB))^length(psiA)
-function LinearAlgebra.norm(psi::Dense1DTN) 
-	a = real(_dot(psi, psi))
-    a = (abs(a) >= 1.0e-14) ? a : zero(a)
-	return sqrt(a) * scaling(psi)^(length(psi))
-end
+# 链级线性代数（后端：FiniteMPSAlgorithms；Dense1DTN 上的薄适配层）
+#
+# dot/norm/distance 的实现委托给 FiniteMPSAlgorithms 在 CanonicalMPS 视图上的
+# 同名函数（含 scaling^L 约定，见 fmabackend.jl）。
+LinearAlgebra.dot(psiA::Dense1DTN, psiB::Dense1DTN) = dot(psiA.parent, psiB.parent)
+LinearAlgebra.norm(psi::Dense1DTN) = norm(psi.parent)
+
 """
     distance(a::Dense1DTN, b::Dense1DTN)
     distance2(a::Dense1DTN, b::Dense1DTN)
@@ -12,8 +12,13 @@ end
 Distance between two tensor networks (`ADT` / `ProcessTensor`), based on the inner products of the site tensors and including the overall `scaling` factors.
 `distance = sqrt(distance2)`. Commonly used to verify the accuracy of multiplication/compression.
 """
-distance(a::Dense1DTN, b::Dense1DTN) = _distance(a, b)
-distance2(a::Dense1DTN, b::Dense1DTN) = _distance2(a, b)
+function distance2(a::Dense1DTN, b::Dense1DTN)
+	sA = real(dot(a, a))
+	sB = real(dot(b, b))
+	c = dot(a, b)
+	return abs(sA + sB - 2 * real(c))
+end
+distance(a::Dense1DTN, b::Dense1DTN) = sqrt(distance2(a, b))
 
 
 function LinearAlgebra.lmul!(f::Number, psi::Dense1DTN)
@@ -29,40 +34,21 @@ Base.:*(f::Number, psi::Dense1DTN) = psi * f
 Base.:/(psi::Dense1DTN, f::Number) = psi * (1/f)
 Base.:(-)(psi::Dense1DTN) = (-1) * psi
 
-function _dot(psiA::Dense1DTN, psiB::Dense1DTN) 
-    (length(psiA) == length(psiB)) || throw(ArgumentError("dimension mismatch"))
-    hold = l_LL(psiA, psiB)
-    for i in 1:length(psiA)
-        hold = updateleft(hold, psiA[i], psiB[i])
-    end
-    return tr(hold)
 
-end
-
-
-# the reuslt is also a GrassmannMPS
+# 精确（未压缩）乘积：物理指标共享的逐点（Hadamard）乘积，
+# 委托给 FiniteMPSAlgorithms 的 ⊙（作用在内层 CanonicalMPS 上）
 function Base.:*(x::ADT, y::ADT)
     (length(x) == length(y)) || throw(DimensionMismatch())
-    r = [n_fuse(_mult_site_n(x[i], y[i]), 3) for i in 1:length(x)]
-    return ADT([tie(rj, (2,1,2)) for rj in r], scaling=scaling(x)*scaling(y))
+    @assert !isempty(x)
+    return ADT(⊙(x.parent, y.parent))
 end
 
-function Base.:+(x::ADT, y::ADT) 
+function Base.:+(x::ADT, y::ADT)
     (length(x) == length(y)) || throw(DimensionMismatch())
     @assert !isempty(x)
-    scaling_x = scaling(x)
-    scaling_y = scaling(y)
-    (length(x) == 1) && return ADT([scaling_x * x[1] + scaling_y * y[1]])
-
-    L = length(x)
-    T = promote_type(scalartype(x), scalartype(y))
-    r = Vector{Array{T, 3}}(undef, L)
-    r[1] = cat(scaling_x*x[1], scaling_y*y[1], dims=3)
-    r[L] = cat(scaling_x*x[L], scaling_y*y[L], dims=1)
-    for i in 2:L-1
-        r[i] = cat(scaling_x*x[i], scaling_y*y[i], dims=(1,3))
-    end
-    return ADT(r)
+    (length(x) == 1) && return ADT([scaling(x) * x[1] + scaling(y) * y[1]])
+    # 块对角直和：FiniteMPSAlgorithms 的实现会把两边的 scaling 折入数据
+    return ADT(x.parent + y.parent)
 end
 Base.:-(x::ADT, y::ADT) = x + (-y)
 
@@ -85,4 +71,3 @@ function _mult_site_n(xj::DenseMPSTensor, yj::DenseMPSTensor)
     @tensor r[1,4,2,5;3,6] := xj[1,2,3] * yj[4,5,6]
     return r
 end
-

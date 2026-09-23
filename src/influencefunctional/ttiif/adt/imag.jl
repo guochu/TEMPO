@@ -69,20 +69,20 @@ Construct the differential influence functional, i.e. the full influence functio
 - `dt::Real`: width of a single time step.
 - `hyb`: system-bath coupling.
 - `alg`: time-evolution algorithm (`FirstOrderStepper` or `ComplexStepper`).
-- `algmult::DMRGAlgorithm`: MPO multiplication (compression) algorithm.
+- `algmult::MPSAlgorithm`: MPO multiplication (compression) algorithm.
 - `algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny()`: exponential expansion algorithm.
 
 # Returns
 The differential influence functional (`ADT` or `ProcessTensor`).
 """
 function influenceoperatorstepper(lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper,
-											algmult::DMRGAlgorithm;
+											algmult::MPSAlgorithm;
 											algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	mpo1, = influenceoperatorsteppers(lattice, corr, dt, hyb, alg; algexpan=algexpan)
 	return mpo1
 end
 function influenceoperatorstepper(lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper,
-											algmult::DMRGAlgorithm;
+											algmult::MPSAlgorithm;
 											algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	mpo1, mpo2 = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=algexpan)
 	return mult(mpo1, mpo2, algmult)

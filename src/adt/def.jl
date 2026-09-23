@@ -3,16 +3,13 @@
 
 One-dimensional dense tensor network (`Dense1DTN`) type representing a finite matrix product state (MPS).
 
-`ADT` stores a column of rank-3 site tensors and represents a one-dimensional quantum state with open boundary conditions (e.g., the discretized influence functional in the TEMPO algorithm). Site tensor conventions:
+`ADT` stores a column of rank-3 site tensors and represents a one-dimensional quantum state with open boundary conditions (e.g., the discretized influence functional in the TEMPO algorithm). The storage payload is a FiniteMPSAlgorithms `CanonicalMPS` (field `.parent`): site tensors, Schmidt values and the per-site scaling are all carried by the payload, on which the FiniteMPSAlgorithms algorithms operate in place; `ADT` itself provides TEMPO's constructors and contour-specific operations (`swap!`, `permute!`, ...). `.data` delegates to the payload's site-tensor vector (same meaning as in old versions); `.s` / `.scaling` delegate to the payload's Schmidt values / scaling.
+
+Site tensor conventions (payload `CanonicalMPS`):
 
 - Dimension 1: left auxiliary (bond) index, with dimension 1 at the leftmost site
 - Dimension 2: physical index, with entry 1 corresponding to state |0⟩ and entry 2 to state |1⟩
 - Dimension 3: right auxiliary (bond) index, with dimension 1 at the rightmost site
-
-# Fields
-- `data::Vector{Array{T,3}}`: list of site tensors
-- `s::Vector{Union{Missing, Vector{R}}}`: singular (Schmidt) vectors; `missing` when uninitialized
-- `scaling::Ref{Float64}`: overall scaling factor
 
 # Examples
 ```julia
@@ -21,43 +18,33 @@ julia> psi = randomadt(4, D=8)    # construct a random ADT with 4 sites and bond
 ```
 """
 struct ADT{T<:Number, R<:Real} <: Dense1DTN{T}
-	data::Vector{Array{T, 3}}
-	s::Vector{Union{Missing, Vector{R}}}
-	scaling::Ref{Float64}
-
-function ADT{T, R}(data::AbstractVector, svectors::Vector, scaling::Ref{R}) where {T<:Number, R<:Number}
-	(R == real(T)) || throw(ArgumentError("scalar type for singular vectors must be real"))
-	(length(data)+1 == length(svectors)) || throw(DimensionMismatch("length of singular vectors must be length of site tensors+1"))
-	_check_mps_space(data)
-	new{T, R}(convert(Vector{Array{T, 3}}, data), convert(Vector{Union{Missing, Vector{R}}}, svectors), scaling)
-end
+	parent::CanonicalMPS{T, R}
+	ADT{T, R}(parent::CanonicalMPS{T, R}) where {T<:Number, R<:Real} = new{T, R}(parent)
 end
 
-function ADT{T, R}(data::Vector, scaling::Ref{R}) where {T<:Number, R<:Number}
-	(R == real(T)) || throw(ArgumentError("scalar type for singular vectors must be real"))
-	_check_mps_space(data)
-	svectors = Vector{Union{Missing, Vector{R}}}(undef, length(data)+1)
-	svectors[1] = ones(space_l(data[1]))
-	svectors[end] = ones(space_r(data[end]))
-	svectors[2:end-1] .= missing   # interior bond spectra are undetermined until a canonicalize!/swap!
-	return ADT{T, R}(convert(Vector{Array{T, 3}}, data), svectors, scaling)
-end
+ADT(parent::CanonicalMPS{T, R}) where {T<:Number, R<:Real} = ADT{T, R}(parent)
 
-function ADT(data::AbstractVector{<:DenseMPSTensor{T}}, svectors::AbstractVector; scaling::Real=1) where {T <: Number}
+# `.parent` 即内层的 CanonicalMPS payload；`.data` 委托到 payload 的站点张量
+# 向量（与旧版本语义一致）；`.s` / `.scaling` 委托到 payload
+function Base.getproperty(psi::ADT, s::Symbol)
+	s === :parent && return getfield(psi, :parent)
+	s === :data && return getfield(psi, :parent).data
+	s === :s && return getfield(psi, :parent).s
+	s === :scaling && return getfield(psi, :parent).scaling
+	throw(ArgumentError("ADT has no property $s"))
+end
+Base.propertynames(::ADT) = (:parent, :data, :s, :scaling)
+
+function ADT(data::AbstractVector{<:DenseMPSTensor{T}}, svectors::AbstractVector; scaling::Real=1) where {T<:Number}
 	R = real(T)
-	return ADT{T, R}(data, svectors, Ref(convert(R, scaling)))
-end 
-function ADT(data::AbstractVector{<:DenseMPSTensor{T}}; scaling::Real=1) where {T <: Number}
-	R = real(T)
-	return ADT{T, R}(data, Ref(convert(R, scaling)))
+	mps = CanonicalMPS{T, R}(convert(Vector{Array{T, 3}}, data), svectors, convert(R, scaling))
+	return ADT(mps)
+end
+function ADT(data::AbstractVector{<:DenseMPSTensor{T}}; scaling::Real=1) where {T<:Number}
+	mps = CanonicalMPS{T, real(T)}(convert(Vector{Array{T, 3}}, data), convert(real(T), scaling))
+	return ADT(mps)
 end
 
-# function ADT(::Type{T}, L::Int) where {T <: Number}
-# 	v = zeros(T, 1, 2, 1)
-# 	v[1,1,1] = 1
-# 	data = [copy(v) for i in 1:L]
-# 	return ADT(data, scaling=1)
-# end
 """
 	ADT(::Type{T}, ds::AbstractVector{Int}) where {T<:Number}
 
@@ -70,9 +57,8 @@ Construct an `ADT` with bond dimension 1 and all entries equal to one, whose phy
 # Returns
 An `ADT` whose entries are all `one(T)`.
 """
-function ADT(::Type{T}, ds::AbstractVector{Int}) where {T <: Number}
-	data = [ones(T, 1, d, 1) for d in ds]
-	return ADT(data, scaling=1)
+function ADT(::Type{T}, ds::AbstractVector{Int}) where {T<:Number}
+	return ADT(CanonicalMPS(T, ds))
 end
 """
 	ADT(ds::AbstractVector{Int})
@@ -85,45 +71,26 @@ ADT(ds::AbstractVector{Int}) = ADT(Float64, ds)
 
 Construct an all-ones `ADT` with `L` sites, each of physical dimension `d`.
 """
-ADT(::Type{T}, L::Int; d::Int=2) where {T <: Number} = ADT(T, [d for i in 1:L])
+ADT(::Type{T}, L::Int; d::Int=2) where {T<:Number} = ADT(T, [d for _ in 1:L])
 """
 	ADT(L::Int; d::Int=2)
 
 Construct an all-ones `ADT` with `L` sites of physical dimension `d` and element type `Float64`.
 """
-ADT(L::Int; d::Int=2) = ADT(Float64, L, d=d)
+ADT(L::Int; d::Int=2) = ADT(Float64, L; d=d)
 
-Base.copy(psi::ADT) = ADT(copy(psi.data), copy(psi.s), scaling=scaling(psi))
-function Base.copy!(a::ADT, b::ADT)
-	a.data .= b.data
-	a.s .= b.s
-	setscaling!(a, scaling(b))
-	return a
-end
+Base.copy(psi::ADT) = ADT(copy(psi.parent))
+Base.copy!(a::ADT, b::ADT) = (copy!(a.parent, b.parent); a)
 function Base.complex(psi::ADT)
-	if scalartype(psi) <: Real
-		data = [complex(item) for item in psi.data]
-		return ADT(data, psi.s, scaling=scaling(psi))
-	end
-	return psi
+	scalartype(psi) <: Real || return psi
+	return ADT(complex(psi.parent))
 end
 
-svectors_uninitialized(psi::ADT) = any(ismissing, psi.s)
+svectors_uninitialized(psi::ADT) = svectors_uninitialized(psi.parent)
 function unset_svectors!(psi::ADT)
-	psi.s[2:end-1] .= missing
+	unset_svectors!(psi.parent)
 	return psi
 end
-
-function _check_mps_space(mpstensors::Vector)
-	L = length(mpstensors)
-	for i in 1:L-1
-		(space_r(mpstensors[i]) == space_l(mpstensors[i+1])) || throw(DimensionMismatch())
-	end
-	(space_l(mpstensors[1]) == 1) || throw(DimensionMismatch("left boundary should be size 1"))
-	(space_r(mpstensors[L]) == 1) || throw(DimensionMismatch("right boundary should be size 1"))
-	return true
-end
-
 
 # initializers
 """
@@ -144,7 +111,7 @@ An `ADT` with random tensor entries.
 julia> psi = randomadt(ComplexF64, [2, 2, 2], D=16)
 ```
 """
-function randomadt(::Type{T}, ds::AbstractVector{Int}; D::Int) where {T <: Number}
+function randomadt(::Type{T}, ds::AbstractVector{Int}; D::Int) where {T<:Number}
 	L = length(ds)
 	mpstensors = Vector{Array{T, 3}}(undef, L)
 	mpstensors[1] = randn(T, 1,ds[1],D)
@@ -165,7 +132,7 @@ randomadt(ds::AbstractVector{Int}; kwargs...) = randomadt(Float64, ds; kwargs...
 
 Generate a random `ADT` with `L` sites, physical dimension `d`, and bond dimension `D`.
 """
-randomadt(::Type{T}, L::Int; D::Int, d::Int=2) where {T<:Number} = randomadt(T, [d for i in 1:L], D=D)
+randomadt(::Type{T}, L::Int; D::Int, d::Int=2) where {T<:Number} = randomadt(T, [d for _ in 1:L], D=D)
 """
 	randomadt(L::Int; kwargs...)
 
@@ -173,19 +140,16 @@ Generate a random `ADT` with `L` sites and element type `Float64`.
 """
 randomadt(L::Int; kwargs...) = randomadt(Float64, L; kwargs...)
 
-function increase_bond!(psi::ADT, D::Int)
-	if bond_dimension(psi) < D
-		L = length(psi)
-		for i in 1:L
-			sl = (i == 1) ? 1 : max(D, size(psi[i], 1))
-			sr = (i == L) ? 1 : max(D, size(psi[i], 3))
-			m = zeros(scalartype(psi), sl, size(psi[i], 2), sr)
-			m[1:size(psi[i], 1), :, 1:size(psi[i], 3)] .= psi[i]
-			psi[i] = m
-		end
-	end
-	return psi
-end
+"""
+	changebond!(psi::ADT, D::Int)
+
+Bring the bond profile of the MPS to `min(D, feasible)`: bonds larger than the target
+are shrunk by slicing the leading bond indices, smaller bonds are grown by zero padding
+(the represented state is unchanged), followed by a no-truncation re-canonicalization.
+Delegates to FiniteMPSAlgorithms' `changebond!(::CanonicalMPS; D)`; replaces the old
+grow-only `increase_bond!`.
+"""
+changebond!(psi::ADT, D::Int) = (changebond!(psi.parent; D); psi)
 
 
 # check is canonical

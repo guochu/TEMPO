@@ -1,130 +1,59 @@
+# DMRG1 / DMRGAlgorithm 定义于 src/algorithms.jl。
+#
+# ALS 引擎（MultCache、iterative_compute!、leftsweep!/rightsweep!）来自
+# FiniteMPSAlgorithms：ProcessTensor×ProcessTensor 对应其 MPO×MPO 的 mult
+# 问题，三链环境 ⟨ompo| mpo |impo⟩ 与旧版 updateleft/updateright 完全一致。
+#
+# TEMPO 特有行为保留在本 wrapper 中：
+# * 初始猜测 `alg.initguess`（`:svd` 流式 SVD / `:pre` / `:rand`）；
+# * 收敛判据采用 FiniteMPSAlgorithms 的 `iterative_compute!`；
+# * finalize：一次 QR leftsweep + 末次 right sweep（旧版 `rightsweep_final!`；
+#   与 ADT 侧不同，PT 侧的末次 sweep 不带截断——保持旧行为——只重新规范
+#   化并把归一化键谱写入 `z.s`）。
 
-
-struct MPOMPOIterativeMultCache{_MPO, _IMPO, _OMPO, _H}
-    ompo::_OMPO
-	mpo::_MPO
-	impo::_IMPO
-	hstorage::_H
-end
-
-
-function iterativemult(x::ProcessTensor, y::ProcessTensor, alg::DMRGAlgorithm)
-    # T = promote_type(eltype(mpo), eltype(mps))
-    # mpsout = randommpo(T, ophysical_dimensions(mpo), iphysical_dimensions(mps), D=alg.D)
-    # rightorth!(mpsout, alg=Orthogonalize(normalize=true))
+function iterativemult(x::ProcessTensor, y::ProcessTensor, alg::DMRG1)
     if alg.initguess == :svd
         z = _svd_guess(x, y, alg.trunc.D)
     elseif alg.initguess == :rand
         z = randompt(promote_type(scalartype(x), scalartype(y)), phydims(x), D=alg.trunc.D)
         canonicalize!(z, alg=Orthogonalize(normalize=true))
     elseif alg.initguess == :pre
-        z = increase_bond!(copy(x), alg.trunc.D)
+        z = changebond!(copy(x), alg.trunc.D)
         setscaling!(z, 1)
     else
         error("unsupported initguess $(alg.initguess)")
     end
-    cache = mult_cache(z, x, y)
-    deltas = compute!(cache, alg)
-    z = cache.ompo
+    fmaalg = _fmadmrg1(alg)
+    vz = z.parent
+    # MultCache(H, ket, bra)：H = mpo（x），ket = impo（y），bra = ompo（z）
+    cache = MultCache(x.parent, y.parent, vz)
+    iterative_compute!(cache, fmaalg)
+    _finalize!(cache, fmaalg)
     setscaling!(z, scaling(x) * scaling(y))
     _rescaling!(z)
     return z
 end
 
-function mult_cache(z::ProcessTensor, x::ProcessTensor, y::ProcessTensor)
-    @assert length(z) == length(x) == length(y)
-    for i in 1:length(z)
-        (phydim(z, i) == phydim(x, i) == phydim(y, i)) || throw(DimensionMismatch("phydim mismatch"))
-    end
-    # initialize Hstorage
-    hstorage = init_hstorage_right(z, x, y)
-    return MPOMPOIterativeMultCache(z, x, y, hstorage)
-end
-
-function finalize!(m::MPOMPOIterativeMultCache, alg::DMRGAlgorithm) end
-function finalize!(m::MPOMPOIterativeMultCache, alg::DMRG1)
+# finalize sweep：与旧版 rightsweep_final! 一致——QR 左扫重建左环境后，
+# 从右到左做一次无截断的 SVD 重新规范化，并把归一化键谱写入 Schmidt 值。
+function _finalize!(m::MultCache, alg::FiniteMPSAlgorithms.DMRG1)
+    L = length(m.bra)
     leftsweep!(m, alg)
-    rightsweep_final!(m, alg)
-end
-
-compute!(env::MPOMPOIterativeMultCache, alg::DMRGAlgorithm) = iterative_compute!(env, alg)
-
-sweep!(m::MPOMPOIterativeMultCache, alg::DMRGAlgorithm) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
-
-
-
-function leftsweep!(m::MPOMPOIterativeMultCache, alg::DMRG1)
-    mpoA = m.impo
-    mpo = m.mpo
-    mpoB = m.ompo
-    Cstorage = m.hstorage
-    L = length(mpo)
-    kvals = Float64[]
-    for site in 1:L-1
-        (alg.verbosity > 3) && println("Sweeping from left to right at bond: $site")
-        mpsj = reduceH_single_site(mpoA[site], mpo[site], Cstorage[site], Cstorage[site+1])
-        push!(kvals, norm(mpsj))
-        (alg.verbosity > 1) && println("residual is $(kvals[end])...")
-		q, r = leftorth!(mpsj, (1,2,4), (3,))
-        mpoB[site] = permute(q, (1,2,4,3))
-        Cstorage[site+1] = updateleft(Cstorage[site], mpoB[site], mpo[site], mpoA[site])
-    end
-    return kvals	
-end
-
-function rightsweep!(m::MPOMPOIterativeMultCache, alg::DMRG1)
-    mpoA = m.impo
-    mpo = m.mpo
-    mpoB = m.ompo
-    Cstorage = m.hstorage
-    L = length(mpo)
-    kvals = Float64[]
-    r = zeros(scalartype(mpoB), 0, 0)
     for site in L:-1:2
-        (alg.verbosity > 3) && println("Sweeping from right to left at bond: $site.")
-        mpsj = reduceH_single_site(mpoA[site], mpo[site], Cstorage[site], Cstorage[site+1])
-        push!(kvals, norm(mpsj))
-        (alg.verbosity > 1) && println("residual is $(kvals[end])...")
-
-        r, mpoB[site] = rightorth!(mpsj, (1,), (2,3,4))
-
-        Cstorage[site] = updateright(Cstorage[site+1], mpoB[site], mpo[site], mpoA[site])
-    end
-    # println("norm of r is $(norm(r))")
-    mpoB[1] = @tensor tmp[1,2,5,4] := mpoB[1][1,2,3,4] * r[3,5]
-    return kvals	
-end
-
-function rightsweep_final!(m::MPOMPOIterativeMultCache, alg::DMRG1)
-    mpoA = m.impo
-    mpo = m.mpo
-    mpoB = m.ompo
-    Cstorage = m.hstorage
-    L = length(mpo)
-    kvals = Float64[]
-    r = zeros(scalartype(mpoB), 0, 0)
-    for site in L:-1:2
-        (alg.verbosity > 3) && println("Sweeping from right to left at bond: $site.")
-        mpsj = reduceH_single_site(mpoA[site], mpo[site], Cstorage[site], Cstorage[site+1])
-        push!(kvals, norm(mpsj))
-        (alg.verbosity > 1) && println("residual is $(kvals[end])...")
-
-        r, s, mpoB[site] = tsvd!(mpsj, (1,), (2,3,4))
-
+        mpsj = _reduce_site(m.ket[site], m.H[site], m.hstorage[site], m.hstorage[site+1])
+        u, s, v = tsvd!(mpsj, (1,), (2, 3, 4))
+        m.bra[site] = v
         if site == 2
-            r = r * Diagonal(s)
-            mpoB[1] = @tensor tmp[1,2,5,4] := mpoB[1][1,2,3,4] * r[3,5]
+            m.bra[1] = _contract_last(m.bra[1], u * Diagonal(s))
         end
-        mpoB.s[site] = normalize!(s)
-
-
-        Cstorage[site] = updateright(Cstorage[site+1], mpoB[site], mpo[site], mpoA[site])
+        m.bra.s[site] = normalize!(s)
+        m.hstorage[site] = _env_updateright(m.hstorage[site+1], m.bra[site], m.H[site], m.ket[site])
     end
-    # println("norm of r is $(norm(r))")
-    # mpoB[1] = @tensor tmp[1,2,5,4] := mpoB[1][1,2,3,4] * r[3,5]
-    return kvals    
+    return m
 end
 
+
+# provide the initial guess（流式 SVD：逐 site 张量积经 truncdim(D) 截断）
 _svd_guess(x::ProcessTensor, y::ProcessTensor, D::Int) = _svd_guess!(copy(x), y, D)
 function _svd_guess!(x::ProcessTensor, y::ProcessTensor, D::Int)
     (length(x) == length(y)) || throw(DimensionMismatch())
@@ -148,38 +77,3 @@ function _svd_guess!(x::ProcessTensor, y::ProcessTensor, D::Int)
     setscaling!(x, 1)
     return x
 end
-
-function reduceH_single_site(A::DenseMPOTensor, m::DenseMPOTensor, cleft::DenseMPSTensor, cright::DenseMPSTensor)
-	@tensor tmp[1,7,9,6] := ((cleft[1,2,3] * A[3,4,5,6]) * m[2,7,8,4]) * cright[9,8,5]
-    return tmp
-end
-
-
-function init_hstorage_right(B::ProcessTensor, mpo::ProcessTensor, A::ProcessTensor)
-    @assert length(B) == length(mpo) == length(A)
-    L = length(mpo)
-    T = scalartype(B)
-    hstorage = Vector{Array{T, 3}}(undef, L+1)
-    hstorage[1] = ones(1,1,1)
-    hstorage[L+1] = ones(1,1,1)
-    for i in L:-1:2
-        hstorage[i] = updateright(hstorage[i+1], B[i], mpo[i], A[i])
-    end
-    return hstorage
-end
-
-
-function updateleft(cleft::DenseMPSTensor, B::DenseMPOTensor, m::DenseMPOTensor, A::DenseMPOTensor)
-    @tensor tmp[9,8,5] := ((cleft[1,2,3] * A[3,4,5,6]) * m[2,7,8,4]) * conj(B[1,7,9,6])
-    return tmp
-end
-
-function updateright(cright::DenseMPSTensor, B::DenseMPOTensor, m::DenseMPOTensor, A::DenseMPOTensor)
-    @tensor tmp[1,7,9] := ((conj(B[1,2,3,4]) * cright[3,5,6]) * m[7,2,5,8] ) * A[9,8,6,4]
-    return tmp
-end
-
-# function _mult_site_n(xj::DenseMPOTensor, yj::DenseMPOTensor)
-#     @tensor r[1,5,2,3,6,7] := xj[1,2,3,4] * yj[5,4,6,7]
-#     return r
-# end

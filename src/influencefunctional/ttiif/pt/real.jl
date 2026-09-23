@@ -66,12 +66,12 @@ end
 
 
 """
-	influenceoperatorstepper(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm; algexpan=OverDeterminedProny())
+	influenceoperatorstepper(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algmult::MPSAlgorithm; algexpan=OverDeterminedProny())
 
 `influenceoperatorstepper` method on real-time PT lattices: multiply the branch differential IFs in successively to construct the full differential influence functional.
 """
 function influenceoperatorstepper(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper,
-											algmult::DMRGAlgorithm; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
+											algmult::MPSAlgorithm; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	h1, h2, h3, h4 = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=algexpan)
 	# trunc = algmult.trunc
 	# canonicalize!(h1, alg=Orthogonalize(trunc=trunc, normalize=false))
@@ -84,7 +84,7 @@ function influenceoperatorstepper(lattice::RealPTLattice1Order, corr::RealCorrel
 	return mps
 end
 function influenceoperatorstepper(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper,
-											algmult::DMRGAlgorithm; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
+											algmult::MPSAlgorithm; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	h1a, h1b, h2a, h2b, h3a, h3b, h4a, h4b = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=algexpan)
 	# trunc = algmult.trunc
 	# canonicalize!(h1a, alg=Orthogonalize(trunc=trunc, normalize=false))

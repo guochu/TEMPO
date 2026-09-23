@@ -1,3 +1,71 @@
+# 重构（2026-09-22）：MPS/MPO 运算后端切换为 FiniteMPSAlgorithms
+
+TEMPO 的张量层与 MPS/MPO 算法不再自行维护，统一委托给本地包
+**FiniteMPSAlgorithms**（`Pkg.develop` 依赖，`Project.toml` 已登记）；TEMPO 的
+公共接口（`ADT` / `ProcessTensor` / `mult` / `canonicalize!` / `DMRG1` /
+`MPOHamiltonian` / `timeevompo` …）全部保持不变，在其实现之上套轻量级 wrapper。
+全套测试通过（api + adtmodels + ptmodels，0 Fail / 0 Error）。
+
+## 后端对应关系
+
+| TEMPO 模块 | 原实现 | 现后端（FiniteMPSAlgorithms） |
+|---|---|---|
+| `src/tensorops/`（已删除） | 自维护（截断方案、tsvd!/leftorth!、tie/permute/isometry…） | 同名导出（`FiniteMPSAlgorithms` 的 tensorops 即 TEMPO 版 vendor），TEMPO re-export |
+| `src/algorithms.jl` | 自定义 `Orthogonalize` / `SVDCompression` 结构体 | 直接采用 FMA 的 `Orthogonalize` / `SVDCompression` 类型；`SVDCompression(trunc; verbosity)` positional 构造与 `similar` 由 TEMPO 补充 |
+| `src/mpohamiltonian/`（精简） | `AbstractSparseMPOTensor` / `SparseMPOTensor` / `SchurMPOTensor` / `MPOHamiltonian` / `tompotensors` / `w1w2.jl`（WI/WII/ComplexStepper/timeevompo） | 全部改用 FMA 的对应类型与函数；TEMPO 保留长程衰减项（`ExponentialDecayTerm` / `GenericDecayTerm` / `PowerlawDecayTerm`、`expand_decayterm`，其块矩阵构造 `SchurMPOTensor(cell)` 与 FMA 的 Schur 形式直接兼容）与 `compat.jl`（`TimeEvoMPOAlgorithm` 别名）。`phydim` 对稀疏 MPO 张量的方法直接由 FMA 提供（`import` 后共用同一泛型函数） |
+| `src/adt/`、`src/pt/` 的 orth/linalg/mult | 自维护 QR/SVD sweep、ALS 引擎 | `leftorth!` / `rightorth!` / `canonicalize!` 委托 FMA 在内层 `CanonicalMPS`/`CanonicalMPO` payload 上的 `_leftorth!` / `_rightorth!` / `_canonicalize!`；ALS 引擎改用 FMA 的 `HadamardCache`（ADT×ADT：物理指标共享的逐点乘积）与 `MultCache`（PT×PT：MPO×MPO 乘积）+ `iterative_compute!` |
+
+关键机制：
+
+- **存储直用 FMA 链**：`ADT` / `ProcessTensor` 的存储 payload（字段 `.parent`）直接内嵌
+  FiniteMPSAlgorithms 的 `CanonicalMPS` / `CanonicalMPO`（见 `adt/def.jl` / `pt/def.jl`）。
+  FMA 的算法直接作用在 payload 上并就地改写，无需转换与拷回。`.data` 经 `getproperty`
+  委托到 payload 的站点张量 `Vector`（与旧版语义一致）；`.s` / `.scaling` 委托到 payload
+  的 Schmidt 值 / scaling（`propertynames` 同步声明，保证 `hasproperty` 守卫的 FMA 原语
+  正常工作），全部消费方（`TransferMatrix`、`tdvpif`、`swap!` 等）无需改动。
+- **接口变更**：`increase_bond!` 删除，由 FMA 的 `changebond!` 代替（TEMPO 提供
+  `changebond!(psi::ADT, D::Int)` / `changebond!(g::ProcessTensor, D::Int)` 包装，委托
+  payload 上的 `changebond!`）。与旧版只增不减不同，`changebond!` 会把键型整备到
+  `min(D, feasible)`（超出部分按前导索引切片、不足部分补零），MPS 版随后无截断重新规范化。
+- **单一泛型函数**：`mult`、`canonicalize!`、`leftorth!`、`rightorth!`、`swap!`、
+  `distance`、`scaling`、`setscaling!`、`svectors_uninitialized`、`unset_svectors!`
+  等通过 `import` 扩展，TEMPO 方法与 FMA 方法共存于同一函数。
+- **DMRG1 翻译器**：TEMPO 的 `DMRG1(trunc; maxiter, tol, initguess, verbosity, callback)`
+  保留原字段；驱动 FMA 引擎时经 `_fmadmrg1` 映射为 FMA 的 `DMRG1(maxiter, tol, D, verbosity)`。
+- **finalize wrapper**：ALS 收敛后 TEMPO 特有的 finalize（QR 左扫 + 截断 SVD 右扫并把
+  归一化键谱写入 `z.s`）保留在 TEMPO 侧，作用于 FMA 的缓存对象。
+
+## 行为差异（有意保留 / 随之变化）
+
+- `ADT` / `ProcessTensor` 的内部存储改为内嵌 FMA 的 `CanonicalMPS` / `CanonicalMPO`
+  payload：对 `.data` / `.s` / `.scaling` 的字段访问经 `getproperty` 委托保持不变，
+  但**旧版 `Serialization.serialize` 存出的 `ADT`/`ProcessTensor` 文件反序列化后类型
+  不再匹配**（一次性影响，教程中缓存的 `.mps` 需重新生成）。
+- `mult` 的 ALS 收敛判据改为 FMA 的 `iterative_compute!`（相邻 sweep 末位损失的相对变化，
+  分母为 `|prev|`；旧实现分母为 `max(cur, prev)`），收敛结果等价，迭代数可能相差 1。
+- `mult(x, y, DMRG1)` 的初始猜测仍由 TEMPO 侧流式 SVD 提供（`truncdim(alg.trunc.D)` 上限）；
+  ALS 阶段不再截断，末次 finalize sweep 恢复 `alg.trunc` 截断（ADT）与键谱写入（ADT/PT，
+  与旧版一致）。
+- 无参 `SVDCompression()` 的默认截断为 FMA 的 `truncdimcutoff(D=64, ϵ=1e-12, add_back=0)`
+  （原 TEMPO 默认 `D=100`）；显式传 `trunc` 的用法不受影响。其余 `Defaults`（D=100、tolgauge、
+  DefaultMultAlg 等）不变。
+- `XTRGIF` 与 `influenceoperatorstepper(s)` 的 `algmult` 类型约束放宽为 `MPSAlgorithm`
+  （原 `DMRGAlgorithm`）：旧版 `SVDCompression` 是 `DMRGAlgorithm` 子类，切换到 FMA 类型后
+  二者为平级算法，行为不变、类型约束放宽。
+
+## 上游（FiniteMPSAlgorithms）同步修改
+
+- `timeevompo(h::MPOHamiltonian{<:SchurMPOTensor}, dt)` 的二参便捷方法不再以
+  `alg::MPSAlgorithm=WII()` 兜底（与 `ComplexStepper` 方法存在派发歧义），改为
+  `timeevompo(h, dt) = timeevompo(h, dt, WII())`。
+
+## 环境
+
+- `Project.toml`：新增 `FiniteMPSAlgorithms`（develop），`[extras]`/`test` target 补上
+  `Random`；移除不再直接使用的 `MatrixAlgebraKit`（现经 FMA 间接依赖）。
+
+---
+
 # Bug 修复（2026-09-17）：`swap!` 未交换物理指标
 
 `swap!` / `permute!`（ADT 与 PT）的 swap gate 存在实现错误：两站合并张量的 SVD 分组为

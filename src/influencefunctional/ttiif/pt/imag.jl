@@ -40,18 +40,18 @@ end
 
 
 """
-	influenceoperatorstepper(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm; algexpan=OverDeterminedProny())
+	influenceoperatorstepper(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algmult::MPSAlgorithm; algexpan=OverDeterminedProny())
 
 `influenceoperatorstepper` method on imaginary-time PT lattices.
 """
 function influenceoperatorstepper(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper,
-											algmult::DMRGAlgorithm;
+											algmult::MPSAlgorithm;
 											algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	mpo1, = influenceoperatorsteppers(lattice, corr, dt, hyb, alg; algexpan=algexpan)
 	return mpo1
 end
 function influenceoperatorstepper(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper,
-											algmult::DMRGAlgorithm;
+											algmult::MPSAlgorithm;
 											algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	mpo1, mpo2 = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=algexpan)
 	return mult(mpo1, mpo2, algmult)

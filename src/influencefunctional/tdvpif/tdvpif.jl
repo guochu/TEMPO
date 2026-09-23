@@ -69,7 +69,7 @@ function _tdvpif_hybriddynamics_adt!(z::ADT, H::ADT, alg::TDVPIF)
 	# return complex exponents, which makes the influence operator H complex. The
 	# flow must then run in complex arithmetic; promote the flow state accordingly.
 	z = _tdvpif_promote_flowstate(z, H)
-	increase_bond!(z, alg.trunc.D)
+	changebond!(z, alg.trunc.D)
 	canonicalize!(z, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
 	_tdvpif_flow_adt!(z, H, alg)
 	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
@@ -278,7 +278,7 @@ end
 function _tdvpif_hybriddynamics_pt!(z::ProcessTensor, H::ProcessTensor, alg::TDVPIF)
 	# same complex-promotion rationale as in `_tdvpif_hybriddynamics_adt!`
 	z = _tdvpif_promote_flowstate(z, H)
-	increase_bond!(z, alg.trunc.D)
+	changebond!(z, alg.trunc.D)
 	canonicalize!(z, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
 	_tdvpif_flow_pt!(z, H, alg)
 	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))

@@ -1,67 +1,24 @@
-abstract type MPSAlgorithm end
+# ---------------------------------------------------------------------------
+# 算法配置（后端：FiniteMPSAlgorithms）
+#
+# `Orthogonalize`、`SVDCompression` 与张量层原语（TruncationScheme、tsvd!、
+# leftorth!、QR/SVD…）直接采用 FiniteMPSAlgorithms 的类型与实现；
+# `MPSAlgorithm` 也来自 FiniteMPSAlgorithms。
+#
+# `DMRG1` 保留 TEMPO 的公共接口：它携带截断方案 `trunc`（`trunc.D` 既是
+# 初始猜测的键维上限，也用于 ALS 收敛后的 finalize 截断）、初始猜测方式
+# `initguess` 与 `callback` 字段。FiniteMPSAlgorithms 的 `DMRG1` 只有纯迭代
+# 参数（maxiter/tol/D/verbosity，ALS 本身不截断）；两者的翻译与 TEMPO 特有
+# 的 finalize（带截断的末次 sweep，见 adt/mult 与 pt/mult）在 wrapper 层完成。
+# ---------------------------------------------------------------------------
+
 abstract type DMRGAlgorithm <: MPSAlgorithm end
-
-
-
-"""
-    SVDCompression(trunc::TruncationScheme; verbosity=0)
-    SVDCompression(; trunc=truncdimcutoff(D=Defaults.D, ϵ=Defaults.tol, add_back=0), verbosity=0)
-
-Parameters for an SVD-based DMRG compression algorithm: singular values are truncated according to the truncation scheme `trunc` (any `TruncationScheme`),
-while `verbosity` controls the verbosity of the output. The scheme is accessible through the `trunc` field.
-"""
-struct SVDCompression{T<:TruncationScheme} <: DMRGAlgorithm
-	trunc::T
-	verbosity::Int
-end
-
-"""
-    SVDCompression(trunc::TruncationScheme; verbosity=0)
-
-Construct an `SVDCompression` from a `TruncationScheme` (e.g., `truncdimcutoff(D, ϵ)`, `truncdim(D)`, `truncrelerr(ϵ)` or `NoTruncation()`).
-"""
-SVDCompression(trunc::TruncationScheme; verbosity::Int=0) = SVDCompression(trunc, verbosity)
-
-"""
-    SVDCompression(; trunc=truncdimcutoff(D=Defaults.D, ϵ=Defaults.tol, add_back=0), verbosity=0)
-
-Keyword constructor for `SVDCompression`; the default truncation scheme is `truncdimcutoff(D=Defaults.D, ϵ=Defaults.tol, add_back=0)`.
-"""
-SVDCompression(; trunc::TruncationScheme=truncdimcutoff(D=Defaults.D, ϵ=Defaults.tol, add_back=0), verbosity::Int=0) = SVDCompression(trunc, verbosity)
-
-Base.similar(x::SVDCompression; trunc::TruncationScheme=x.trunc, verbosity::Int=x.verbosity) = SVDCompression(trunc; verbosity=verbosity)
-
-# orthogonalize mps to be left-canonical or right-canonical
-abstract type MatrixProductOrthogonalAlgorithm end
-
-"""
-	Orthogonalize{A<:Union{QR, SVD}, T<:TruncationScheme}
-
-Configuration of the orthogonalization scheme, used by orthogonalization algorithms such as `leftorth!`, `rightorth!`, and `canonicalize!`.
-
-# Fields
-- `orth::A`: underlying orthogonalization algorithm (`QR` or `SVD`)
-- `trunc::T`: truncation scheme (`TruncationScheme`); only effective with `SVD`, truncation has no effect with `QR`
-- `normalize::Bool`: whether to normalize
-- `verbosity::Int`: verbosity level
-
-Main constructor: `Orthogonalize(; alg=SVD(), trunc=NoTruncation(), normalize=false, verbosity=0)`.
-"""
-struct Orthogonalize{A<:Union{QR, SVD}, T<:TruncationScheme} <: MatrixProductOrthogonalAlgorithm
-	orth::A
-	trunc::T
-	normalize::Bool
-	verbosity::Int
-end
-Orthogonalize(a::Union{QR, SVD}, trunc::TruncationScheme; normalize::Bool=false, verbosity::Int=0) = Orthogonalize(a, trunc, normalize, verbosity)
-Orthogonalize(a::Union{QR, SVD}; trunc::TruncationScheme=NoTruncation(), normalize::Bool=false, verbosity::Int=0) = Orthogonalize(a, trunc, normalize, verbosity)
-Orthogonalize(; alg::Union{QR, SVD} = SVD(), trunc::TruncationScheme=NoTruncation(), normalize::Bool=false, verbosity::Int=0) = Orthogonalize(alg, trunc, normalize, verbosity)
-
-const AllowedInitGuesses = (:svd, :pre, :rand)
 
 # truncation schemes carrying an explicit maximum bond dimension `D`; `DMRG1`
 # requires one of these, since `D` seeds the initial guess of the sweeps
 const TruncationWithD = Union{TruncateDim, TruncateDimCutoff}
+
+const AllowedInitGuesses = (:svd, :pre, :rand)
 
 """
 	DMRG1 <: DMRGAlgorithm
@@ -111,3 +68,19 @@ Construct a `DMRG1` from keyword arguments, with default truncation scheme `Defa
 DMRG1(; trunc::TruncationWithD=DefaultITruncation, kwargs...) = DMRG1(trunc; kwargs...)
 Base.similar(x::DMRG1; trunc::TruncationWithD=x.trunc, maxiter::Int=x.maxiter, tol::Float64=x.tol, initguess::Symbol=x.initguess, verbosity::Int=x.verbosity, callback=x.callback) = DMRG1(
 			trunc=trunc, maxiter=maxiter, tol=tol, initguess=initguess, verbosity=verbosity, callback=callback)
+
+# ---------------------------------------------------------------------------
+# `SVDCompression`：FiniteMPSAlgorithms 的类型；这里补充 TEMPO 风格的
+# positional 构造器（`SVDCompression(trunc; verbosity)`），保持与旧版 TEMPO
+# 完全兼容。关键字构造（`SVDCompression(; trunc, verbosity)`）沿用
+# FiniteMPSAlgorithms 的 `@kwdef` 定义。
+# ---------------------------------------------------------------------------
+"""
+    SVDCompression(trunc::TruncationScheme; verbosity=0)
+    SVDCompression(; trunc=truncdimcutoff(D=Defaults.D, ϵ=Defaults.tol, add_back=0), verbosity=0)
+
+Parameters for an SVD-based DMRG compression algorithm: singular values are truncated according to the truncation scheme `trunc` (any `TruncationScheme`),
+while `verbosity` controls the verbosity of the output. The scheme is accessible through the `trunc` field.
+"""
+SVDCompression(trunc::TruncationScheme; verbosity::Int=0) = SVDCompression{typeof(trunc)}(trunc, verbosity)
+Base.similar(x::SVDCompression; trunc::TruncationScheme=x.trunc, verbosity::Int=x.verbosity) = SVDCompression(trunc; verbosity=verbosity)

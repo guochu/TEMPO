@@ -1,10 +1,13 @@
 
 
+
+# 精确（未压缩）算符链乘积：委托给 FiniteMPSAlgorithms 的 AbstractMPO 乘法
+# （作用在内层 CanonicalMPO payload 上；FMA 返回裸数据 MPO，scaling 由 ProcessTensor 携带）
 function Base.:*(x::ProcessTensor, y::ProcessTensor)
     @assert !isempty(x)
     (length(x) == length(y)) || throw(DimensionMismatch())
-    r = [@tensor tmp[1,5,2,3,6,7] := aj[1,2,3,4] * bj[5,4,6,7] for (aj, bj) in zip(x.data, y.data)]
-    return ProcessTensor([tie(item, (2,1,2,1)) for item in r], scaling=scaling(x)*scaling(y))
+    r = x.parent * y.parent
+    return ProcessTensor(r.data; scaling=scaling(x)*scaling(y))
 end
 
 
@@ -33,6 +36,19 @@ end
 Base.:-(hA::ProcessTensor, hB::ProcessTensor) = hA + (-1) * hB
 Base.:-(h::ProcessTensor) = -1 * h
 
+
+function init_hstorage_right(B::ProcessTensor, mpo::ProcessTensor, A::ProcessTensor)
+    @assert length(B) == length(mpo) == length(A)
+    L = length(mpo)
+    T = scalartype(B)
+    hstorage = Vector{Array{T, 3}}(undef, L+1)
+    hstorage[1] = ones(1,1,1)
+    hstorage[L+1] = ones(1,1,1)
+    for i in L:-1:2
+        hstorage[i] = updateright(hstorage[i+1], B[i], mpo[i], A[i])
+    end
+    return hstorage
+end
 
 function swap!(x::ProcessTensor, bond::Int; trunc::TruncationScheme=DefaultITruncation)
 	x[bond], x.s[bond+1], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
@@ -68,4 +84,3 @@ function _permute!(x::ProcessTensor, perm::Vector{Int}; trunc::TruncationScheme=
 end
 permute!(x::ProcessTensor, perm::Vector; kwargs...) = _permute!(x, perm; kwargs...)
 permute(x::ProcessTensor, perm::Vector{Int}; kwargs...) = permute!(deepcopy(x), perm; kwargs...)
-

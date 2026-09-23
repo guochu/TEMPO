@@ -4,10 +4,10 @@
 
 One-dimensional dense tensor network (`Dense1DTN`) type representing a finite matrix product operator (MPO), storing a column of rank-4 site tensors.
 
+The storage payload is a FiniteMPSAlgorithms `CanonicalMPO` (field `.parent`): site tensors, Schmidt values and the per-site scaling are all carried by the payload, on which the FiniteMPSAlgorithms algorithms operate in place; `ProcessTensor` itself provides TEMPO's constructors and contour-specific operations (`swap!`, `permute!`, ...). `.data` delegates to the payload's site-tensor vector (same meaning as in old versions); `.s` / `.scaling` delegate to the payload's Schmidt values / scaling.
+
 # Fields
-- `data::Vector{Array{T,4}}`: list of site tensors
-- `s::Vector{Union{Missing, Vector{R}}}`: singular (Schmidt) vectors; `missing` when uninitialized
-- `scaling::Ref{Float64}`: overall scaling factor
+- `parent::CanonicalMPO`: the payload chain (site tensors `Vector{Array{T,4}}`)
 
 # Examples
 ```julia
@@ -15,14 +15,12 @@ julia> h = ProcessTensor(4, d=2)   # construct a ProcessTensor with 4 sites and 
 julia> h = randompt(4, D=8)        # construct a random ProcessTensor with 4 sites and bond dimension 8
 ```
 """
-struct ProcessTensor{T<:Number,  R<:Real} <: Dense1DTN{T}
-	data::Vector{Array{T, 4}}
-	s::Vector{Union{Missing, Vector{R}}}
-	scaling::Ref{Float64}
+struct ProcessTensor{T<:Number, R<:Real} <: Dense1DTN{T}
+	parent::CanonicalMPO{T, R}
 """
-	ProcessTensor{T, R}(data::AbstractVector, svectors::Vector, scaling::Ref{R}) where {T<:Number, R<:Number}
+	ProcessTensor(parent::CanonicalMPO)
 
-Inner constructor of `ProcessTensor`; only supports operators with strictly conserved quantum numbers.
+Inner constructor wrapping a FiniteMPSAlgorithms `CanonicalMPO` payload.
 
 Site tensor index convention (i denotes the input arrow, o the output arrow):
 
@@ -36,93 +34,66 @@ Site tensor index convention (i denotes the input arrow, o the output arrow):
 
 Both left and right boundaries are vacuum (dimension 1). A non-vacuum right boundary corresponds to operators that do not conserve quantum numbers (e.g., a†); such operators must be represented in other MPO forms.
 """
-function ProcessTensor{T, R}(data::AbstractVector, svectors::Vector, scaling::Ref{R}) where {T<:Number, R<:Number}
-	(R == real(T)) || throw(ArgumentError("scalar type for singular vectors must be real"))
-	(length(data)+1 == length(svectors)) || throw(DimensionMismatch("length of singular vectors must be length of site tensors+1"))
-	_check_mpo_space(data)
-	new{T, R}(convert(Vector{Array{T, 4}}, data), convert(Vector{Union{Missing, Vector{R}}}, svectors), scaling)
-end
+	function ProcessTensor{T, R}(parent::CanonicalMPO{T, R}) where {T<:Number, R<:Real}
+		new{T, R}(parent)
+	end
 end
 
-function ProcessTensor{T, R}(data::Vector, scaling::Ref{R}) where {T<:Number, R<:Number}
-	(R == real(T)) || throw(ArgumentError("scalar type for singular vectors must be real"))
-	_check_mpo_space(data)
-	svectors = Vector{Union{Missing, Vector{R}}}(undef, length(data)+1)
-	svectors[1] = ones(space_l(data[1]))
-	svectors[end] = ones(space_r(data[end]))
-	svectors[2:end-1] .= missing   # interior bond spectra are undetermined until a canonicalize!/swap!
-	return ProcessTensor{T, R}(convert(Vector{Array{T, 4}}, data), svectors, scaling)
-end
+ProcessTensor(parent::CanonicalMPO{T, R}) where {T<:Number, R<:Real} = ProcessTensor{T, R}(parent)
 
-function ProcessTensor(data::AbstractVector{<:DenseMPOTensor{T}}, svectors::AbstractVector; scaling::Real=1) where {T <: Number}
+# `.parent` 即内层的 CanonicalMPO payload；`.data` 委托到 payload 的站点张量
+# 向量（与旧版本语义一致）；`.s` / `.scaling` 委托到 payload
+function Base.getproperty(psi::ProcessTensor, s::Symbol)
+	s === :parent && return getfield(psi, :parent)
+	s === :data && return getfield(psi, :parent).data
+	s === :s && return getfield(psi, :parent).s
+	s === :scaling && return getfield(psi, :parent).scaling
+	throw(ArgumentError("ProcessTensor has no property $s"))
+end
+Base.propertynames(::ProcessTensor) = (:parent, :data, :s, :scaling)
+
+function ProcessTensor(data::AbstractVector{<:DenseMPOTensor{T}}, svectors::AbstractVector; scaling::Real=1) where {T<:Number}
 	R = real(T)
-	return ProcessTensor{T, R}(data, svectors, Ref(convert(R, scaling)))
-end 
-function ProcessTensor(data::AbstractVector{<:DenseMPOTensor{T}}; scaling::Real=1) where {T <: Number}
-	R = real(T)
-	return ProcessTensor{T, R}(data, Ref(convert(R, scaling)))
+	mps = CanonicalMPO{T, R}(convert(Vector{Array{T, 4}}, data), svectors, convert(R, scaling))
+	return ProcessTensor(mps)
+end
+function ProcessTensor(data::AbstractVector{<:DenseMPOTensor{T}}; scaling::Real=1) where {T<:Number}
+	mps = CanonicalMPO{T, real(T)}(convert(Vector{Array{T, 4}}, data), convert(real(T), scaling))
+	return ProcessTensor(mps)
 end
 
 
-function ProcessTensor(::Type{T}, ds::AbstractVector{Int}) where {T <: Number}
-	data = [reshape(isometry(T, d), 1, d, 1, d) for d in ds]
-	return ProcessTensor(data, scaling=1)
+function ProcessTensor(::Type{T}, ds::AbstractVector{Int}) where {T<:Number}
+	return ProcessTensor(CanonicalMPO(T, ds))
 end
 ProcessTensor(ds::AbstractVector{Int}) = ProcessTensor(Float64, ds)
-ProcessTensor(::Type{T}, L::Int; d::Int=2) where {T <: Number} = ProcessTensor(T, [d for i in 1:L])
-ProcessTensor(L::Int; d::Int=2) = ProcessTensor(Float64, L, d=d)
+ProcessTensor(::Type{T}, L::Int; d::Int=2) where {T<:Number} = ProcessTensor(T, [d for _ in 1:L])
+ProcessTensor(L::Int; d::Int=2) = ProcessTensor(Float64, L; d=d)
 
-Base.copy(psi::ProcessTensor) = ProcessTensor(copy(psi.data), copy(psi.s), scaling=scaling(psi))
-function Base.copy!(a::ProcessTensor, b::ProcessTensor)
-	a.data .= b.data
-	a.s .= b.s
-	setscaling!(a, scaling(b))
-	return a
-end
+Base.copy(psi::ProcessTensor) = ProcessTensor(copy(psi.parent))
+Base.copy!(a::ProcessTensor, b::ProcessTensor) = (copy!(a.parent, b.parent); a)
 function Base.complex(psi::ProcessTensor)
-	if scalartype(psi) <: Real
-		data = [complex(item) for item in psi.data]
-		return ProcessTensor(data, psi.s, scaling=scaling(psi))
-	end
-	return psi
+	scalartype(psi) <: Real || return psi
+	return ProcessTensor(complex(psi.parent))
 end
 
-svectors_uninitialized(psi::ProcessTensor) = any(ismissing, psi.s)
+svectors_uninitialized(psi::ProcessTensor) = svectors_uninitialized(psi.parent)
 function unset_svectors!(psi::ProcessTensor)
-	psi.s[2:end-1] .= missing
+	unset_svectors!(psi.parent)
 	return psi
 end
 
 
-function increase_bond!(psi::ProcessTensor, D::Int)
-	if bond_dimension(psi) < D
-		L = length(psi)
-		for i in 1:L
-			sl = (i == 1) ? 1 : max(D, size(psi[i], 1))
-			sr = (i == L) ? 1 : max(D, size(psi[i], 3))
-			m = zeros(scalartype(psi), sl, size(psi[i], 2), sr, size(psi[i], 4))
-			m[1:size(psi[i], 1), :, 1:size(psi[i], 3), :] .= psi[i]
-			psi[i] = m
-		end
-	end
-	return psi
-end
+"""
+	changebond!(g::ProcessTensor, D::Int)
 
-# attributes
-
-function _check_mpo_space(mpotensors::Vector)
-	L = length(mpotensors)
-	for i in 1:L-1
-		(space_r(mpotensors[i]) == space_l(mpotensors[i+1])) || throw(DimensionMismatch())
-	end
-	# for m in mpotensors
-	# 	(size(m, 2) == size(m, 4)) || throw(ArgumentError("physical dimension mismatch"))
-	# end
-	# boundaries should be dimension 
-	(space_l(mpotensors[1]) == 1) || throw(DimensionMismatch())
-	(space_r(mpotensors[L]) == 1) || throw(DimensionMismatch())
-	return true
-end
+Bring the bond profile of the MPO to `min(D, feasible)`: bonds larger than the target
+are shrunk by slicing the leading bond indices, smaller bonds are grown by zero padding
+(the represented operator is unchanged; the chain is never re-gauged in place).
+Delegates to FiniteMPSAlgorithms' `changebond!(::AbstractMPO; D)`; replaces the old
+grow-only `increase_bond!`.
+"""
+changebond!(g::ProcessTensor, D::Int) = (changebond!(g.parent; D); g)
 
 """
 	isleftcanonical(a::ProcessTensor; kwargs...)
@@ -198,9 +169,6 @@ function randompt(::Type{T}, ds::Vector{Int}; D::Int) where {T<:Number}
 		r[i] = randn(T, D, ds[i], D, ds[i])
 	end
 	return ProcessTensor(r)
-end 
-randompt(::Type{T}, L::Int; d::Int=2, D::Int) where {T<:Number} = randompt(T, [d for i in 1:L], D=D)
+end
+randompt(::Type{T}, L::Int; d::Int=2, D::Int) where {T<:Number} = randompt(T, [d for _ in 1:L], D=D)
 randompt(L::Int; kwargs...) = randompt(Float64, L; kwargs...)
-
-
-

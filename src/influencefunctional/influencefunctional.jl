@@ -29,12 +29,12 @@ See [SciPost Phys. Core 7, 063 (2024)].
 # Fields
 - `algexpan::ExponentialExpansionAlgorithm`: exponential (Prony) expansion algorithm for the bath correlation function.
 - `algevo::TimeEvoMPOAlgorithm`: time-evolution algorithm for the differential influence functional (`FirstOrderStepper` or `ComplexStepper`).
-- `algmult::DMRGAlgorithm`: MPO multiplication (compression) algorithm.
+- `algmult::MPSAlgorithm`: MPO multiplication (compression) algorithm (`DMRG1` or `SVDCompression`).
 - `k::Int`: number of tree bipartition iterations, corresponding to 2^k time steps.
 - `fast::Bool`: if `true`, use the fast tree bipartition scheme (k multiplications); otherwise use the sequential scheme (2^k-1 multiplications).
 - `verbosity::Int`: verbosity level of the output.
 """
-struct XTRGIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm, M<:DMRGAlgorithm} <: InfluenceFunctionalAlgorithm 
+struct XTRGIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm, M<:MPSAlgorithm} <: InfluenceFunctionalAlgorithm 
 	algexpan::T
 	algevo::E
 	algmult::M
@@ -50,7 +50,7 @@ Keyword constructor for `XTRGIF`; all parameters have default values and usually
 """
 XTRGIF(; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny(n=15, tol=1.0e-4, verbosity=0), 
 						 algevo::TimeEvoMPOAlgorithm=WII(), 
-						 algmult::DMRGAlgorithm=DefaultMultAlg,
+						 algmult::MPSAlgorithm=DefaultMultAlg,
 						 k::Int=5, 
 						 fast::Bool=true,
 						 verbosity::Int=0) = XTRGIF(algexpan, algevo, algmult, k, fast, verbosity)

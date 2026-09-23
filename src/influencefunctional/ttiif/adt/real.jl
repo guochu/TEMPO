@@ -65,12 +65,12 @@ function influenceoperatorsteppers(lattice::RealADTLattice1Order, corr::RealCorr
 end
 
 """
-	influenceoperatorstepper(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm; algexpan=OverDeterminedProny())
+	influenceoperatorstepper(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::TimeEvoMPOAlgorithm, algmult::MPSAlgorithm; algexpan=OverDeterminedProny())
 
 `influenceoperatorstepper` method on real-time ADT lattices: multiply the branch differential IFs in successively to construct the full differential influence functional.
 """
 function influenceoperatorstepper(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper,
-											algmult::DMRGAlgorithm; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
+											algmult::MPSAlgorithm; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	h1, h2, h3, h4 = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=algexpan)
 	mps = mult(h2, h1, algmult)
 	mps = mult(h3, mps, algmult)
@@ -78,7 +78,7 @@ function influenceoperatorstepper(lattice::RealADTLattice1Order, corr::RealCorre
 	return mps
 end
 function influenceoperatorstepper(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper,
-											algmult::DMRGAlgorithm; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
+											algmult::MPSAlgorithm; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	h1a, h1b, h2a, h2b, h3a, h3b, h4a, h4b = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=algexpan)
 	mps = mult(h1b, h1a, algmult)
 
