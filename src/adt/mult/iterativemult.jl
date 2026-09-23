@@ -8,8 +8,8 @@
 # * 初始猜测 `alg.initguess`（`:svd` 经 FMA 的 `svdguess_hadamard` 流式 SVD /
 #   `:pre` / `:rand`）；
 # * 收敛判据采用 FiniteMPSAlgorithms 的 `iterative_compute!`；
-# * finalize：QR 左扫 + 以 `alg.trunc` 截断的 SVD 右扫（旧版
-#   `rightsweep_final!`，同时把归一化键谱写入 `z.s`），见 fmabackend.jl。
+# * finalize：对输出链做 FMA 的 `canonicalize!`（QR 左扫 + 以 `alg.trunc`
+#   截断的 SVD 右扫，见 fmabackend.jl），键谱写入 `z.s`。
 
 function iterativemult(x::ADT, y::ADT, alg::DMRG1)
     (length(x) == length(y)) || throw(DimensionMismatch())
@@ -31,7 +31,10 @@ function iterativemult(x::ADT, y::ADT, alg::DMRG1)
     cache = HadamardCache(x.parent, y.parent, z.parent)
     iterative_compute!(cache, fmaalg)
     _finalize!(cache, fmaalg, alg.trunc)
-    setscaling!(z, scaling(x) * scaling(y))
+    # `_finalize!`（canonicalize!）把链的范数因子折叠进 `scaling(z)`，与
+    # svdmult 的 `setscaling!(x, scaling(x) * scaling(y))` 同构：输出的绝对
+    # 幅值 = (scaling(z)·scaling(x)·scaling(y))^L × 单位规范链。
+    setscaling!(z, scaling(z) * scaling(x) * scaling(y))
     _rescaling!(z)
     return z
 end

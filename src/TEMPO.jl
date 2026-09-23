@@ -81,8 +81,7 @@ import FiniteMPSAlgorithms: mult, mult!, canonicalize!, canonicalize, leftorth!,
 	swap!, permute!, permute, distance, distance2, scaling, setscaling!,
 	svectors_uninitialized, unset_svectors!, changebond!, phydim, SVDCompression
 # 仅调用（无 TEMPO 方法）的内部原语与类型：纯引入
-using FiniteMPSAlgorithms: _renormalize!, _reduce_hadamard_site, _reduce_site, _env_updateright,
-	_updateright, _contract_last,
+using FiniteMPSAlgorithms: _renormalize!,
 	MPSAlgorithm, SchurMPOTensor, SparseMPOTensor, MPOHamiltonian,
 	QR, QRpos, LQ, LQpos, SVD, SDD, Polar,
 	OrthogonalFactorizationAlgorithm

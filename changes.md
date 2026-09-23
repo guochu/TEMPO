@@ -1,3 +1,43 @@
+# Bug 修复（2026-09-23）：`mult`（DMRG1 路线）finalize 的 Schmidt 谱不正确
+
+## 问题
+
+`_finalize!`（`fmabackend.jl`，ALS 收敛后的收尾 sweep）的旧实现是在**环境规范系**下
+对 ALS 局部目标 `mpsj = L·W·R` 做逐站点 tsvd，把局部目标的谱写入 `z.s`，且 `u·s`
+只在 site==2 折回（其余站点直接丢弃）。这样得到的 `z.s` 不是最终输出态各键的
+Schmidt 值：它只在 ALS 精确不动点、双侧规范等距、**且无截断**时才与真谱一致
+（此时实测偏差 ~1e-16）；一旦 finalize 发生截断（如 `truncdim(D)` 且 D 小于精确
+键维），存谱与输出态的偏差可达截断误差量级（实测 ~1e-3），`iscanonical` 检验
+（`Diagonal(s²) ≈` 左环境）失败。此前测试未检出是因为 mult 只检验 `distance`。
+
+## 修复
+
+- **`_finalize!` 重写**（ADT/PT 共用一个方法）：ALS 收敛后输出链本身就是最终
+  乘积态，规范与谱不再依赖环境——直接调用 FMA 的 `canonicalize!`（QR 左扫精确、
+  不改变状态；SVD 右扫按 `trunc` 截断、每步把 `u·s` 折回左侧并把谱写入该键）。
+  两步扫后链右正交，`z.s` 是（截断后）输出态各键的**精确** Schmidt 值，不依赖
+  ALS 是否到达不动点；这与 FMA 自身 `_svd_mult` 的收尾方式一致。
+  不再使用的 FMA 内部原语（`_reduce_hadamard_site` / `_reduce_site` /
+  `_env_updateright` / `_updateright` / `_contract_last`）从绑定清单移除。
+- **幅值记账修正**（`adt` / `pt` 的 `iterativemult.jl`）：`canonicalize!` 把链的
+  范数因子折叠进 `scaling(z)`，wrapper 原来对 `scaling` 的绝对值赋值会丢掉该
+  因子（输出幅值偏差实测达 7.6 倍）。改为与 svdmult 同构的乘法模式
+  `setscaling!(z, scaling(z) * scaling(x) * scaling(y))`。
+
+## 验证与测试
+
+- 数值验证（6 站随机态，d=2，输入 D=4）：无截断（D=64）时与精确乘积的
+  `distance ≈ 2.7e-8`、逐键谱偏差 ~1e-16、`iscanonical = true`；有截断（D=6）
+  时 `iscanonical = true`（旧实现为 false）、谱为截断态的精确谱。
+- `test/api/mps.jl`：multiplications 全部算法组合的输出新增 `@test iscanonical`；
+  新增 `mult output: canonical form and spectra` testset——DMRG1 各 initguess
+  路径的输出须 `iscanonical` 且无截断时逐键谱与精确乘积一致（允许近零 padding
+  方向）；强截断（D=6）下输出须 `iscanonical`（其变分误差与 finalize 无关，
+  新旧实现同量级）。
+- 全套测试通过。
+
+---
+
 # 跟进（2026-09-22）：适配 FiniteMPSAlgorithms 接口变更
 
 FMA 更新（scaling-safe 的 MPO 算术、链级 `swap!`/`permute!`/`permute`、

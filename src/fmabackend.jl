@@ -17,39 +17,13 @@ _fmadmrg1(alg::DMRG1) = FiniteMPSAlgorithms.DMRG1(maxiter=alg.maxiter, tol=alg.t
 # ---------------------------------------------------------------------------
 # finalize sweep（ADT/PT 的 `mult`（DMRG1 路线）共用）
 #
-# 与旧版 `rightsweep_final!` 一致：QR 左扫重建左环境后，从右到左以 `trunc`
-# 做（可截断的）SVD 重新规范化，并把归一化键谱写入 Schmidt 值。
-# PT 侧以 `NoTruncation()` 调用（保持旧行为：只重新规范化 + 写谱）。
+# ALS 收敛后 bra 链本身就是最终输出态，规范与 Schmidt 谱不再依赖环境：直接用
+# FiniteMPSAlgorithms 的 `canonicalize!`——先 QR 左扫（精确、不截断、不改变
+# 状态），再以 `trunc` 做 SVD 右扫（每步把 u·s 折回左侧并把谱写入该键的
+# Schmidt 值）。两步扫之后 bra 右正交，`z.s` 是（截断后）状态在各键的精确
+# Schmidt 值；这一保证不依赖 ALS 是否到达不动点。
 # ---------------------------------------------------------------------------
-function _finalize!(m::MultCache, alg::FiniteMPSAlgorithms.DMRG1, trunc::TruncationScheme=NoTruncation())
-	L = length(m.bra)
-	leftsweep!(m, alg)
-	for site in L:-1:2
-		mpsj = _reduce_site(m.ket[site], m.H[site], m.hstorage[site], m.hstorage[site+1])
-		u, s, v = tsvd!(mpsj, (1,), (2, 3, 4), trunc=trunc)
-		m.bra[site] = v
-		if site == 2
-			m.bra[1] = _contract_last(m.bra[1], u * Diagonal(s))
-		end
-		m.bra.s[site] = normalize!(s)
-		m.hstorage[site] = _env_updateright(m.hstorage[site+1], m.bra[site], m.H[site], m.ket[site])
-	end
-	return m
-end
-
-# HadamardCache 版本（ADT×ADT 的 mult）：rank-3 site 张量、物理指标共享
-function _finalize!(m::HadamardCache, alg::FiniteMPSAlgorithms.DMRG1, trunc::TruncationScheme=NoTruncation())
-	L = length(m.bra)
-	leftsweep!(m, alg)
-	for site in L:-1:2
-		mpsj = _reduce_hadamard_site(m.ketx[site], m.kety[site], m.hstorage[site], m.hstorage[site+1])
-		u, s, v = tsvd!(mpsj, (1,), (2, 3), trunc=trunc)
-		m.bra[site] = permute(v, (1, 2), (3,))
-		if site == 2
-			m.bra[1] = _contract_last(m.bra[1], u * Diagonal(s))
-		end
-		m.bra.s[site] = normalize!(s)
-		m.hstorage[site] = _updateright(m.hstorage[site+1], m.bra[site], m.ketx[site], m.kety[site])
-	end
+function _finalize!(m::Union{MultCache,HadamardCache}, alg::FiniteMPSAlgorithms.DMRG1, trunc::TruncationScheme=NoTruncation())
+	canonicalize!(m.bra; alg=Orthogonalize(SVD(), trunc))
 	return m
 end

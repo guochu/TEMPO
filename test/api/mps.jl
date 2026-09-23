@@ -81,7 +81,54 @@ end
 				for alg in algs
 					psi4 = mult(psi1, psi2, alg)
 					@test distance(psi3, psi4) / _n < tol
+					@test iscanonical(psi4)
 				end
+			end
+		end
+	end
+end
+
+@testset "mult output: canonical form and spectra" begin
+	# mult 输出必须是规范链：`z.s[b]` 是输出态在键 b 的精确 Schmidt 值
+	# （无截断时与精确乘积逐键一致；有截断时是截断态的精确谱，由
+	# `iscanonical` 检验 `Diagonal(s^2) ≈` 左环境来保证）
+	L = 6
+	chi = 20
+	trunc_exact = truncdimcutoff(D=512, ϵ=1.0e-14, add_back=0)
+	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
+	algs_dmrg = (DMRG1(trunc, initguess=:svd),
+	             DMRG1(trunc, initguess=:rand, maxiter=10),
+	             DMRG1(trunc, initguess=:pre, maxiter=10),
+	             DMRG1(truncdim(chi), initguess=:svd))
+	tol = 1.0e-6
+	for (name, randmps) in MPSConstructors
+		@testset "$name" begin
+			for T in (Float64, ComplexF64)
+				psi1 = randmps(T, L, D=4)
+				psi2 = randmps(T, L, D=4)
+				canonicalize!(psi1, alg=Orthogonalize(trunc=NoTruncation(), normalize=false))
+				canonicalize!(psi2, alg=Orthogonalize(trunc=NoTruncation(), normalize=false))
+				exact = mult(psi1, psi2, trunc=trunc_exact)
+				canonicalize!(exact, alg=Orthogonalize(trunc=NoTruncation(), normalize=false))
+				@test iscanonical(exact)
+
+				for alg in algs_dmrg           # DMRG1（finalize sweep）路径
+					z = mult(psi1, psi2, alg)
+					@test iscanonical(z)
+					for b in 2:L-1
+						n = min(length(z.s[b]), length(exact.s[b]))
+						@test z.s[b][1:n] ≈ exact.s[b][1:n] atol=tol rtol=tol
+						# 若输出带有多余的键方向（padding），其谱必须近零
+						@test all(v -> abs(v) ≤ 1.0e-5, z.s[b][n+1:end])
+					end
+				end
+
+				# 有截断：谱是截断态的精确 Schmidt 值（iscanonical 检验自洽性）；
+				# distance 只做方向一致性 sanity 检查——强截断下 ALS 的变分误差
+				# 本身可以很大（新旧实现一致，见 changes.md）
+				z6 = mult(psi1, psi2, DMRG1(truncdim(6), initguess=:svd))
+				@test iscanonical(z6)
+				@test distance(z6, exact) / norm(exact) < 1.0
 			end
 		end
 	end
