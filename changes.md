@@ -1,3 +1,33 @@
+# 跟进（2026-09-22）：适配 FiniteMPSAlgorithms 接口变更
+
+FMA 更新（scaling-safe 的 MPO 算术、链级 `swap!`/`permute!`/`permute`、
+`Base.sum(::CanonicalMPS)`、`copyphydims` 等）后，TEMPO 侧相应简化，全部测试
+继续通过（1181/1181）：
+
+- **MPO 算术（scaling-safe）**：PT 的 `Base.:*` 直接用 FMA 的 CanonicalMPO 乘积
+  （结果自带 `scaling(x)·scaling(y)`，删除手动挂 scaling）；PT / ADT 的
+  `Base.:+` / `-` 直接委托 FMA（scaling 折入数据的块对角直和），删除本地实现与
+  `L == 1` 特例。
+- **链级置换**：ADT / PT 的 `swap!` / `permute!` / `permute` 改为对 payload 的
+  委托包装（FMA 新增 CanonicalMPO 版 Hastings 式 `swap!` 与链级 `permute!`，
+  未初始化 Schmidt 谱时自动规范化），删除本地 `_swap_gate` / `_permute!`；TEMPO
+  侧的默认截断（`DefaultITruncation` / `DefaultKTruncation`）由包装保留。
+- **integrate**：`integrate(x)` 委托 FMA 的 `sum(::CanonicalMPS)`（所有振幅之和，
+  含 `scaling^L`）。`integrate(x, y)` **保持原 lazy 实现**——它是"x ⊙ y 的振幅
+  之和"（物理指标共享求和、无共轭），与 FMA `dot`（内积）语义不同，不采用。
+- **ADT×ADT 的 mult（DMRG1 路线）**：仍走 FMA 的 `HadamardCache`（物理指标共享
+  的逐点乘积，比 `copyphydims` + `MultCache` 便宜且含义相同）；初始猜测
+  `:svd` 改用 FMA 的 `svdguess_hadamard`（替代本地流式 SVD 猜测，仅猜测方向
+  右到左的差异，ALS 收敛后结果一致）。finalize（QR 左扫 + 截断 SVD 右扫 + 键谱
+  写入）共享化到 `fmabackend.jl` 的 `_finalize!`（`HadamardCache` / `MultCache`
+  两个方法；PT 侧以 `NoTruncation()` 调用，保持旧行为）。PT×PT 的 mult（DMRG1
+  路线）的 `:svd` 初始猜测同样改用 FMA 的 `svdguess_mult`（MPO×MPO 版流式
+  SVD），删除本地的 `_svd_guess`。
+- **import 修复**：`permute!` 此前不在 import 清单，TEMPO wrapper 成了独立新
+  函数、委托调用无法命中 FMA 方法（落进 `Base.permute!` 兜底）——已加入 import。
+  同时清理不再使用的导入（`permutation2swaps` / `_fused_pair` /
+  `_contract_first`），新增 `svdguess_hadamard`。
+
 # 重构（2026-09-22）：MPS/MPO 运算后端切换为 FiniteMPSAlgorithms
 
 TEMPO 的张量层与 MPS/MPO 算法不再自行维护，统一委托给本地包

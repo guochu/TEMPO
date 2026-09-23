@@ -43,29 +43,13 @@ function Base.:*(x::ADT, y::ADT)
     return ADT(⊙(x.parent, y.parent))
 end
 
-function Base.:+(x::ADT, y::ADT)
-    (length(x) == length(y)) || throw(DimensionMismatch())
-    @assert !isempty(x)
-    (length(x) == 1) && return ADT([scaling(x) * x[1] + scaling(y) * y[1]])
-    # 块对角直和：FiniteMPSAlgorithms 的实现会把两边的 scaling 折入数据
-    return ADT(x.parent + y.parent)
-end
+# 块对角直和：FiniteMPSAlgorithms 的实现会把两边的 scaling 折入数据
+Base.:+(x::ADT, y::ADT) = ADT(x.parent + y.parent)
 Base.:-(x::ADT, y::ADT) = x + (-y)
 
 
-function _permute!(x::ADT, perm::Vector{Int}; trunc::TruncationScheme=DefaultKTruncation)
-    @assert length(x) == length(perm)
-    if svectors_uninitialized(x)
-        canonicalize!(x, alg=Orthogonalize(trunc=trunc, normalize=false))
-    end
-    p = permutation2swaps(perm)
-    for i in p
-        swap!(x, i, trunc=trunc)
-    end
-    return x
-end
-permute!(x::ADT, perm::Vector; kwargs...) = _permute!(x, perm; kwargs...)
-permute(x::ADT, perm::Vector{Int}; kwargs...) = permute!(deepcopy(x), perm; kwargs...)
+permute!(x::ADT, perm::AbstractVector{Int}; kwargs...) = (permute!(x.parent, perm; kwargs...); x)
+permute(x::ADT, perm::AbstractVector{Int}; kwargs...) = ADT(permute(x.parent, perm; kwargs...))
 
 function _mult_site_n(xj::DenseMPSTensor, yj::DenseMPSTensor)
     @tensor r[1,4,2,5;3,6] := xj[1,2,3] * yj[4,5,6]

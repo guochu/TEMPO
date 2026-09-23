@@ -78,9 +78,8 @@ const TO = TensorOperations
 # ---------------------------------------------------------------------------
 using FiniteMPSAlgorithms
 import FiniteMPSAlgorithms: mult, mult!, canonicalize!, canonicalize, leftorth!, rightorth!,
-	swap!, distance, distance2, scaling, setscaling!, _renormalize!,
-	permutation2swaps, _fused_pair, _contract_first, _contract_last,
-	_reduce_hadamard_site, _reduce_site, _env_updateright, _env_updateleft, _updateright,
+	swap!, permute!, distance, distance2, scaling, setscaling!, _renormalize!,
+	_reduce_hadamard_site, _reduce_site, _env_updateright, _env_updateleft, _updateright, _contract_last,
 	svectors_uninitialized, unset_svectors!, changebond!, phydim,
 	MPSAlgorithm, SVDCompression,
 	SchurMPOTensor, SparseMPOTensor, MPOHamiltonian,

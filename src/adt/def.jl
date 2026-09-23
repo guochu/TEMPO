@@ -198,22 +198,9 @@ function iscanonical(psi::ADT; kwargs...)
 	return true
 end
 
+# swap gate：委托给 FiniteMPSAlgorithms 的 CanonicalMPS `swap!`（Hastings
+# 更新，需要时自动完成规范化；右规范形式与键谱在截断误差内保持）
 function swap!(x::ADT, bond::Int; trunc::TruncationScheme=DefaultITruncation)
-	x[bond], x.s[bond+1], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
+	swap!(x.parent, bond; trunc)
 	return x
-end
-
-# Swap gate: builds the two-site block `x[bond] · x[bond+1]` (the ADT contraction
-# convention carries the bond spectra inside the site tensors, so no explicit
-# spectrum is contracted here) with the physical indices already swapped, i.e. in
-# the order (l, p2, p1, r), and re-decomposes it such that the left factor carries
-# the physical index of site bond+1 and the right factor the one of site bond.
-# The renewed bond spectrum is absorbed into the left factor (its norm equals the
-# bond spectrum recorded in `x.s[bond+1]`), so the chain contraction is preserved
-# while the sites are exchanged.
-function _swap_gate(m1::DenseMPSTensor, m2::DenseMPSTensor; trunc::TruncationScheme)
-	@tensor block[l, p2, p1, r] := m1[l, p1, k] * m2[k, p2, r]
-	u, s, v = tsvd!(block, (1, 2), (3, 4); trunc=trunc)
-	u = u .* reshape(Vector(s), 1, 1, :)
-	return u, s, v
 end

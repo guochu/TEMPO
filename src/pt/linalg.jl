@@ -1,13 +1,12 @@
 
 
 
-# 精确（未压缩）算符链乘积：委托给 FiniteMPSAlgorithms 的 AbstractMPO 乘法
-# （作用在内层 CanonicalMPO payload 上；FMA 返回裸数据 MPO，scaling 由 ProcessTensor 携带）
+# 精确（未压缩）算符链乘积：委托给 FiniteMPSAlgorithms 的 scaling-safe 乘法
+# （CanonicalMPO × CanonicalMPO 的结果自带 scaling(x)·scaling(y)）
 function Base.:*(x::ProcessTensor, y::ProcessTensor)
     @assert !isempty(x)
     (length(x) == length(y)) || throw(DimensionMismatch())
-    r = x.parent * y.parent
-    return ProcessTensor(r.data; scaling=scaling(x)*scaling(y))
+    return ProcessTensor(x.parent * y.parent)
 end
 
 
@@ -15,26 +14,11 @@ end
 """
     addition of two MPOs
 """
-function Base.:+(hA::ProcessTensor, hB::ProcessTensor)
-    @assert !isempty(hA)
-    (length(hA) == length(hB)) || throw(DimensionMismatch())
-    T = promote_type(scalartype(hA), scalartype(hB))
-    L = length(hA)
-    scaling_x = scaling(hA)
-    scaling_y = scaling(hB)
-    (L == 1) && return ProcessTensor([scaling_x * hA[1] + scaling_y * hB[1]])
-
-    r = Vector{Array{T, 4}}(undef, L)
-    r[1] = cat(scaling_x * hA[1], scaling_y * hB[1], dims=3)
-    r[L] = cat(scaling_x * hA[L], scaling_y * hB[L], dims=1)
-    for i in 2:L-1
-        r[i] = cat(scaling_x * hA[i], scaling_y * hB[i], dims=(1,3))
-    end
-    return ProcessTensor(r)
-end
+# 块对角直和：FiniteMPSAlgorithms 的实现会把两边的 scaling 折入数据
+Base.:+(x::ProcessTensor, y::ProcessTensor) = ProcessTensor(x.parent + y.parent)
 # adding mpo with adjoint mpo will return an normal mpo
-Base.:-(hA::ProcessTensor, hB::ProcessTensor) = hA + (-1) * hB
-Base.:-(h::ProcessTensor) = -1 * h
+Base.:-(x::ProcessTensor, y::ProcessTensor) = x + (-y)
+Base.:-(x::ProcessTensor) = -1 * x
 
 
 function init_hstorage_right(B::ProcessTensor, mpo::ProcessTensor, A::ProcessTensor)
@@ -50,37 +34,10 @@ function init_hstorage_right(B::ProcessTensor, mpo::ProcessTensor, A::ProcessTen
     return hstorage
 end
 
-function swap!(x::ProcessTensor, bond::Int; trunc::TruncationScheme=DefaultITruncation)
-	x[bond], x.s[bond+1], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
-	return x
-end
+# swap gate：委托给 FiniteMPSAlgorithms 的 CanonicalMPO `swap!`（Hastings
+# 更新，与 TEMPO/GTEMPO 对齐；右规范形式与记录的键谱在截断误差内保持），
+# 需要时自动完成规范化。`permute!` / `permute` 为链级置换的对应委托。
+swap!(x::ProcessTensor, bond::Int; trunc::TruncationScheme=DefaultITruncation) = (swap!(x.parent, bond; trunc); x)
 
-# Swap gate: builds the two-site block `x[bond] · x[bond+1]` (the PT contraction
-# convention carries the bond spectra inside the site tensors, so no explicit
-# spectrum is contracted here) with the conjugate pairs already swapped, i.e. in
-# the order (aL, pout2, pin2, pout1, pin1, aR), and re-decomposes it such that
-# the left factor carries the conjugate pair of site bond+1 and the right factor
-# the one of site bond. The renewed bond spectrum is absorbed into the left
-# factor (its norm equals the bond spectrum recorded in `x.s[bond+1]`), so the
-# chain contraction is preserved while the sites are exchanged.
-function _swap_gate(m1::DenseMPOTensor, m2::DenseMPOTensor; trunc::TruncationScheme)
-	@tensor block[a, e, f, b, c, d] := m1[a, b, k, c] * m2[k, e, d, f]
-	u, s, v = tsvd!(block, (1, 2, 3), (4, 5, 6); trunc=trunc)
-	u = u .* reshape(Vector(s), 1, 1, 1, :)
-	return permute(u, (1, 2, 4, 3)), s, permute(v, (1, 2, 4, 3))
-end
-
-
-function _permute!(x::ProcessTensor, perm::Vector{Int}; trunc::TruncationScheme=DefaultKTruncation)
-	@assert length(x) == length(perm)
-	if svectors_uninitialized(x)
-		canonicalize!(x, alg=Orthogonalize(trunc=trunc, normalize=false))
-	end
-	p = permutation2swaps(perm)
-	for i in p
-		swap!(x, i, trunc=trunc)
-	end
-	return x
-end
-permute!(x::ProcessTensor, perm::Vector; kwargs...) = _permute!(x, perm; kwargs...)
-permute(x::ProcessTensor, perm::Vector{Int}; kwargs...) = permute!(deepcopy(x), perm; kwargs...)
+permute!(x::ProcessTensor, perm::AbstractVector{Int}; kwargs...) = (permute!(x.parent, perm; kwargs...); x)
+permute(x::ProcessTensor, perm::AbstractVector{Int}; kwargs...) = ProcessTensor(permute(x.parent, perm; kwargs...))

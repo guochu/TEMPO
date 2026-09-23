@@ -4,35 +4,31 @@
 
 Fully contract the state represented by the MPS and return the resulting overall scalar value (equivalent to the total coefficient obtained by summing over all sites).
 
+Delegates to FiniteMPSAlgorithms' `sum(::CanonicalMPS)`（所有物理指标与全一向量
+收缩，含 `scaling^L` 因子）。
+
 # Arguments
 - `x::ADT`: MPS to contract
 
 # Returns
 Scalar: result of contracting the whole MPS.
 """
-function integrate(x::ADT)
-	L = length(x)
-	sca = scaling(x)
-	v = dropdims(sum(x[L], dims=2), dims=(2,3)) * sca
-	for i in L-1:-1:1
-		tmp = dropdims(sum(x[i], dims=2), dims=2) * sca
-		v = tmp * v
-	end
-	return only(v)
-end
+integrate(x::ADT) = sum(x.parent)
 
 
 """
 	integrate(x::ADT, y::ADT)
 
-Compute the overlap scalar between two MPS of equal length.
+Sum of the amplitudes of the pointwise (Hadamard) product `x ⊙ y` — equivalent to
+`sum(x ⊙ y)`, realized lazily: the physical indices of `x` and `y` are shared (summed
+over, no conjugation) while the bonds are contracted site by site.
 
 # Arguments
 - `x::ADT`: first MPS
 - `y::ADT`: second MPS, must have the same length as `x`
 
 # Returns
-Scalar: the inner product obtained by contracting `x` with `y`.
+Scalar: the summed amplitude of the pointwise product.
 """
 function integrate(x::ADT, y::ADT)
 	(length(x) == length(y)) || throw(DimensionMismatch("adt size mismatch"))
