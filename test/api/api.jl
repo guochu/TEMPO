@@ -3,7 +3,6 @@ println("|                API               |")
 println("------------------------------------")
 
 include("truncation.jl")
-include("linalg.jl")
 include("contour.jl")
 include("mpohamiltonian.jl")
 include("mps.jl")
