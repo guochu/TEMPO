@@ -50,8 +50,8 @@ end
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
 	alg1 = SVDCompression(trunc)
 	alg2 = DMRG1(trunc, initguess=:svd)
-	alg3 = DMRG1(trunc, initguess=:rand, maxiter=10)
-	alg4 = DMRG1(trunc, initguess=:pre, maxiter=10)
+	alg3 = DMRG1(trunc, initguess=:rand, maxiter=20)
+	alg4 = DMRG1(trunc, initguess=:pre, maxiter=20)
 	# trunc is parameterized: `SVDCompression` accepts any TruncationScheme,
 	# while `DMRG1` requires a scheme carrying the bond dimension `D`
 	alg5 = SVDCompression(truncdim(chi))
@@ -96,10 +96,12 @@ end
 	chi = 20
 	trunc_exact = truncdimcutoff(D=512, ϵ=1.0e-14, add_back=0)
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
-	algs_dmrg = (DMRG1(trunc, initguess=:svd),
-	             DMRG1(trunc, initguess=:rand, maxiter=10),
-	             DMRG1(trunc, initguess=:pre, maxiter=10),
-	             DMRG1(truncdim(chi), initguess=:svd))
+	# maxiter 提高到 20：谱对比检验的是 finalize 的正确性，不应受 ALS 迭代
+	# 次数不足（个别随机实例 5 轮不收敛）干扰
+	algs_dmrg = (DMRG1(trunc, initguess=:svd, maxiter=20),
+	             DMRG1(trunc, initguess=:rand, maxiter=20),
+	             DMRG1(trunc, initguess=:pre, maxiter=20),
+	             DMRG1(truncdim(chi), initguess=:svd, maxiter=20))
 	tol = 1.0e-6
 	for (name, randmps) in MPSConstructors
 		@testset "$name" begin

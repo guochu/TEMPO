@@ -33,6 +33,8 @@ function iterativemult(x::ProcessTensor, y::ProcessTensor, alg::DMRG1)
     # 与 ADT 侧及 svdmult 同构：`_finalize!` 把范数因子折叠进 `scaling(z)`，
     # 这里乘上输入 scaling 得到输出的绝对幅值（见 adt/mult/iterativemult.jl）。
     setscaling!(z, scaling(z) * scaling(x) * scaling(y))
-    _rescaling!(z)
+    # 首位张量范数折入 scaling（数值区间管理；与 FiniteMPSAlgorithms 的
+    # `_renormalize!` 一致）
+    _renormalize!(z, z[1], false)
     return z
 end

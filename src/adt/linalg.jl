@@ -50,8 +50,3 @@ Base.:-(x::ADT, y::ADT) = x + (-y)
 
 permute!(x::ADT, perm::AbstractVector{Int}; kwargs...) = (permute!(x.parent, perm; kwargs...); x)
 permute(x::ADT, perm::AbstractVector{Int}; kwargs...) = ADT(permute(x.parent, perm; kwargs...))
-
-function _mult_site_n(xj::DenseMPSTensor, yj::DenseMPSTensor)
-    @tensor r[1,4,2,5;3,6] := xj[1,2,3] * yj[4,5,6]
-    return r
-end

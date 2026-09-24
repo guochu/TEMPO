@@ -77,15 +77,3 @@ function canonicalize!(psi::ADT; alg::Orthogonalize = Orthogonalize(trunc=Defaul
 	FiniteMPSAlgorithms._canonicalize!(v; alg)
 	return psi
 end
-
-function _rescaling!(psi, n::Real)
-	L = length(psi)
-	scale1 = n^(1/L)
-	setscaling!(psi, scaling(psi) * scale1)
-	return psi
-end
-function _rescaling!(psi)
-	nrm1 = norm(psi[1])
-	psi[1] = rmul!(psi[1], 1/nrm1)
-	return _rescaling!(psi, nrm1)
-end

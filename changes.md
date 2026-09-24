@@ -1,3 +1,30 @@
+# 跟进（2026-09-23）：复用 FiniteMPSAlgorithms 新增接口
+
+FMA 接口调整（`SchurMPOTensor` 构造器只接受完整逻辑块矩阵（m, n ≥ 2，链边界由
+`tompotensors` 下游处理；单类型参数）等）后，清理 TEMPO 侧剩余的重复实现。全量
+测试通过（1244/1244）：
+
+- **mult 的 SVD 压缩路线整体委托**：删除 `adt/mult/svdmult.jl` 与
+  `pt/mult/svdmult.jl`（zip-up 的 QR 累积 + 截断右扫本地实现，约 90 行）。
+  ADT（Hadamard 乘积）改用 FMA 的 `hadamard(x.parent, y.parent, SVDCompression)`、
+  PT（MPO 乘积）改用 FMA 的 `mult(x.parent, y.parent, SVDCompression)`——均为
+  "精确乘积 + 单次 SVD 压缩扫"，scaling 语义一致（外标度经输出 `scaling` 字段
+  继承）。`mult` / `mult!` 的 `trunc`/`verbosity` keyword 接口与
+  `SVDCompression`/`DMRGAlgorithm` 分派保持不变（SVD 路线的 `verbosity` 由 FMA
+  忽略）。顺带删除失去调用者的 `_mult_site_n`。
+- **`_rescaling!` 删除**（`adt/orth.jl`）：与 FMA 的 `_renormalize!` /
+  `_rescaling!` 逐行等价，`iterativemult` 的调用点改为
+  `_renormalize!(z, z[1], false)`。
+- **`randomadt` / `randompt` 保留本地实现**：FMA 的 `randommps` / `randommpo`
+  用 `max_bonddims`（按单物理维）截顶键维并规范化，会改变"每键 = D"的构造
+  语义（测试与调用方依赖它构造键维充足的 ALS ansatz），故不委托。
+- **`SchurMPOTensor` 适配确认**：TEMPO 的衰减项 cell 恒为 (N+2)×(N+2)（N ≥ 0），
+  满足新接口的 m, n ≥ 2 要求；`MPOHamiltonian([mpoj, ...])` + `tompotensors`
+  的用法与新边界处理方式兼容，无需改动。
+- 测试：谱对比 testset 的 DMRG1 配置 `maxiter` 提至 20（个别随机实例 5 轮
+  ALS 不收敛，避免收敛噪声干扰 finalize 正确性检验）。
+- `docs/src/internals.md` §10.2/§10.3 同步更新（SVD 路线委托与 finalize 描述）。
+
 # Bug 修复（2026-09-23）：`mult`（DMRG1 路线）finalize 的 Schmidt 谱不正确
 
 ## 问题

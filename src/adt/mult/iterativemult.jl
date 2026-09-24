@@ -35,6 +35,8 @@ function iterativemult(x::ADT, y::ADT, alg::DMRG1)
     # svdmult 的 `setscaling!(x, scaling(x) * scaling(y))` 同构：输出的绝对
     # 幅值 = (scaling(z)·scaling(x)·scaling(y))^L × 单位规范链。
     setscaling!(z, scaling(z) * scaling(x) * scaling(y))
-    _rescaling!(z)
+    # 首位张量范数折入 scaling（数值区间管理；与 FiniteMPSAlgorithms 的
+    # `_renormalize!` 一致）
+    _renormalize!(z, z[1], false)
     return z
 end

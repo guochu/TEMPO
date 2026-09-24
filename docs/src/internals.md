@@ -282,14 +282,7 @@ On the QR path, truncation has no effect (a `@warn` is issued). The truncation e
 
 ### 10.2 MPS multiplication `mult!` / `mult`
 
-(`src/adt/mult/svdmult.jl`) the `mult!(x, y)` algorithm:
-
-1. `tqr!` at the left end (`tie(n_fuse(...), ...)` merges the indices);
-2. iterate from left to right: contract `tmp = r ⊗ x[i] ⊗ y[i]` → `n_fuse` → `tqr!` → `_renormalize!`;
-3. after finishing at the right end, `_rightorth!(x, SVD(), trunc)` performs the SVD truncation from right to left;
-4. `setscaling!(x, scaling(x)*scaling(y))`.
-
-`mult(x, y) = mult!(copy(x), y)` is the non-mutating version. `SVDCompression` compresses a single SVD sweep according to its `trunc` (any `TruncationScheme`); `DMRG1` (a `DMRGAlgorithm`) provides a variational variant with an `initguess` (default `:svd`) and requires a truncation scheme carrying the bond dimension `D` (`TruncationWithD`), which seeds the initial guess of the sweeps.
+The SVD compression route delegates to FiniteMPSAlgorithms on the payload chains: for the ADT (Hadamard product) it is `hadamard(x.parent, y.parent, SVDCompression(trunc))` (exact product + one SVD compression sweep); for the PT (MPO product) it is `mult(x.parent, y.parent, SVDCompression(trunc))`. `mult(x, y) = mult!(copy(x), y)` is the non-mutating version. `SVDCompression` compresses a single SVD sweep according to its `trunc` (any `TruncationScheme`); `DMRG1` (a `DMRGAlgorithm`) provides a variational variant with an `initguess` (default `:svd`) and requires a truncation scheme carrying the bond dimension `D` (`TruncationWithD`), which seeds the initial guess of the sweeps.
 
 ### 10.3 Iterative multiplication (`iterativemult`, the `DMRG1` algorithm)
 
@@ -305,7 +298,7 @@ by alternating least squares over the site tensors of `z` (a single-site DMRG sw
 mpsj = L · w_j · R        # (ADT: reduceH_single_site on the PT path)
 ```
 
-is the Riesz representative of the local functional $t \mapsto \langle z(\text{block } t), w\rangle$, and `norm(mpsj)` is pushed into the residual list `kvals`. The left pass (sites `1..L-1`) stores the `QRpos` factor $Q$ and rebuilds the left environments with `conj(z[site])`; the right pass (sites `L..2`) stores the `LQpos` factor; the sweeps are finalized by `finalize!` = one more left pass plus a right pass with truncated SVD (`rightsweep_final!`, which also sets `z.s`). Initial guesses: `:svd` (sequential SVD of the product network, default), `:rand`, `:pre` (bond-extended copy of `x`).
+is the Riesz representative of the local functional $t \mapsto \langle z(\text{block } t), w\rangle$, and `norm(mpsj)` is pushed into the residual list `kvals`. The left pass (sites `1..L-1`) stores the `QRpos` factor $Q$ and rebuilds the left environments with `conj(z[site])`; the right pass (sites `L..2`) stores the `LQpos` factor; after convergence, `_finalize!` canonicalizes the output chain through FiniteMPSAlgorithms' `canonicalize!` (an exact QR left sweep followed by a truncated SVD right sweep that records the bond spectra `z.s`, so the stored values are the exact Schmidt values of the truncated output). Initial guesses: `:svd` (sequential SVD of the product network, default), `:rand`, `:pre` (bond-extended copy of `x`).
 
 **Loss function and the meaning of the residuals.** With the mixed-canonical layout, each update replaces the visited site by the local optimum, so the loss decreases monotonically (numerically verified down to rounding). At stationarity every residual satisfies
 
