@@ -1,3 +1,37 @@
+# 重构（2026-09-26）：TDVPIF 流引擎切换为 FiniteMPSAlgorithms 的 TDVP
+
+`TDVPIF`（`src/influencefunctional/tdvpif/tdvpif.jl`）原先自带一套单站点 TDVP
+sweep（`_tdvpif_leftsweep_adt!` / `_tdvpif_rightsweep_adt!` 与 PT 版、局部映射
+`_tdvpif_ac_prime_*` / `_tdvpif_c_prime_*`、环境初始化，以及 Krylov
+`exponentiate` + `leftorth!`/`rightorth!` 规范移动 + `_renormalize!` 记账，约
+200 行）。FMA 的 `HadamardTDVP(Cache)` 与 `TDVPCache`/`TDVP1` 已实现同一算法，
+故改为在其上的轻量 wrapper（公共 API 的 8 个 `hybriddynamics`/`hybriddynamics!`
+方法与语义不变）：
+
+- **ADT 路线**：ADT 是物理腿融合为 (o, i) 的 MPS，生成元按逐点（Hadamard）方式
+  作用 → `HadamardTDVPCache(H.parent, z.parent)` + `HadamardTDVP(stepsize=δτ)`。
+- **PT 路线**：ProcessTensor 是真正的 MPO，生成元按左乘作用
+  → `TDVPCache(MPO(H.parent), z.parent)` + `TDVP1(stepsize=δτ, ishermitian=false)`。
+- `stepsize` 就是一次 `sweep!` 施加的复时间增量：`nsteps = round(1/δ)` 次 sweep
+  对应 τ : 0 → 1 的 `exp(+1·H)`。全程 `ishermitian=false`（Arnoldi），与原实现
+  一致（环境只有 bra 侧取共轭，投影生成元一般不厄米）。
+- **scaling**：FMA 的 Hadamard cache 自带 `scaling(H)^L` 因子，ADT 路线无需处理；
+  其密度算符 cache 无此钩子（plain `MPO` 不携带 scaling），故 PT 路线仍先经
+  `_absorb_scaling!` 把 H 的 scaling 折入站点张量。
+- 准备/收尾不变：`changebond!(z, trunc.D)` → `canonicalize!(NoTruncation)` → 流动
+  → `canonicalize!(trunc)` → `alg.callback`；链的演化仍经 cache 对 payload 的引用
+  就地完成。
+- 删除 TEMPO 侧全部 sweep / 环境 / 局部映射实现（供 `mult` 使用的
+  `get_left_xy`、`updatemultleft`、`reduceH_single_site` 等原语保留）。
+
+## 验证
+
+- 与重构前实现在同一脚本上逐案对比（ADT / PT × 虚时 / 实时，固定随机种子，
+  δτ = δt = 0.1，D 取到截断生效）：`norm` / `integrate` / `scaling` 相对偏差
+  ~1e-14，边界站点张量 ~1e-12。
+- `test/api/ifdynamics.jl`（TDVPIF 与 PartialIF/XTRGIF 的交叉检验、in-place 合并
+  等价性）全部通过；全量测试通过（1244/1244）。
+
 # 跟进（2026-09-23）：复用 FiniteMPSAlgorithms 新增接口
 
 FMA 接口调整（`SchurMPOTensor` 构造器只接受完整逻辑块矩阵（m, n ≥ 2，链边界由

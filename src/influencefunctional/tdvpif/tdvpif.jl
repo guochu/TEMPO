@@ -8,11 +8,27 @@
 #
 #     dz/dτ = H·z ,   τ : 0 → 1 ,
 #
-# starting from the identity influence functional z(0) = I (β = 0). Each flow
-# step is one forward-backward TDVP sweep: in a left-to-right (right-to-left)
-# sweep the center tensor AC is evolved by +δτ/2 through Krylov exponentiation
-# of the local effective map, factorized by QR (LQ), and the bond matrix C is
-# evolved by -δτ/2; the last (first) site performs a full +δτ step.
+# starting from the identity influence functional z(0) = I (β = 0), so that the
+# result is z(1) = e^H·z(0). Each flow step is one forward-backward TDVP sweep:
+# in a left-to-right (right-to-left) sweep the center tensor AC is evolved by
+# +δτ/2 through Krylov exponentiation of the local effective map, factorized by
+# QR (LQ), and the bond matrix C is evolved by -δτ/2; the last (first) site
+# performs a full +δτ step.
+#
+# The sweeps themselves are FiniteMPSAlgorithms' TDVP (`sweep!`), driven on the
+# chains' payloads. The manifold (and hence the cache) is selected by the chain
+# kind:
+#
+# * ADT: the chain is an MPS whose physical leg is the fused (o, i) pair, so the
+#   generator acts pointwise — FMA's Hadamard-product flow `dz/dτ = H ∘ z`
+#   (`HadamardTDVPCache` + `HadamardTDVP`);
+# * ProcessTensor: the chain is a genuine MPO, so the generator acts by left
+#   multiplication — FMA's density-operator flow `dz/dτ = H·z`
+#   (`TDVPCache` + `TDVP1`).
+#
+# `stepsize` of those algorithms is the complex time increment itself, so one
+# `sweep!` applies exp(stepsize·H); the flow runs `nsteps = 1/δ` sweeps of
+# `stepsize = δτ = 1/nsteps`, i.e. exp(+1·H) in total.
 #
 # The initial identity state is zero-padded up to the bond dimension D and
 # canonicalized without truncation, so that the zero-weight directions become
@@ -47,35 +63,8 @@ function _tdvpif_hamiltonian(lattice, corr, hyb, alg::TDVPIF)
 end
 
 # ======================================================================
-# ADT engine
+# flow engine (FiniteMPSAlgorithms TDVP)
 # ======================================================================
-
-# run the TDVP flow z(τ=1) = e^H·z(0) directly on the input state z, which may
-# be the identity influence functional (β = 0) or, more generally, any MPO on
-# the same lattice, e.g. the pure impurity dynamics (with Lindblad dissipation)
-# obtained from `sysdynamics`; the influence operator H is thereby merged into
-# the impurity dynamics in a single flow.
-#
-# preparation: lift z to the flow bond dimension (zero-padded) and canonicalize
-# without truncation, so that the zero-weight directions become orthonormal
-# directions of the environments and the sweeps can populate the full bond
-# profile min(d^j, d^{L-j}, D); finalization: canonicalize with the truncation
-# scheme. The global scaling factor of z is carried through the flow by the
-# `_renormalize!` bookkeeping, so the output value is e^H·z(0) regardless of
-# the gauge of the input.
-function _tdvpif_hybriddynamics_adt!(z::ADT, H::ADT, alg::TDVPIF)
-	# On the imaginary axis the correlation/hybridization are real-typed, yet the
-	# Prony (algexpan) exponential expansion of a real correlation can legitimately
-	# return complex exponents, which makes the influence operator H complex. The
-	# flow must then run in complex arithmetic; promote the flow state accordingly.
-	z = _tdvpif_promote_flowstate(z, H)
-	changebond!(z, alg.trunc.D)
-	canonicalize!(z, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
-	_tdvpif_flow_adt!(z, H, alg)
-	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
-	alg.callback(Float64[])
-	return z
-end
 
 # promote the flow state to the scalar type of the influence operator H when the
 # latter is wider (e.g. ComplexF64 from a complex Prony exponential expansion);
@@ -86,6 +75,14 @@ function _tdvpif_promote_flowstate(z::Dense1DTN, H::Dense1DTN)
 	(T == scalartype(z)) && return z
 	return complex(z)
 end
+
+# The flow must be driven by the generator's *represented value*
+# (value = scaling^L · ∏tensors), but FMA's caches contract its site tensors
+# only. The Hadamard cache folds `scaling(H)^L` into its local generators, while
+# the density-operator cache has no such hook (a plain `MPO` carries no scaling),
+# so there the scaling is absorbed into the site tensors first.
+_absorb_generator_scaling!(H::ADT) = H
+_absorb_generator_scaling!(H::ProcessTensor) = _absorb_scaling!(H)
 
 # absorb the global scaling factor of a tensor network into its site tensors
 # (value = scaling^L · ∏tensors  →  value = 1^L · ∏(scaling·tensors)) and reset
@@ -101,109 +98,63 @@ function _absorb_scaling!(x::Dense1DTN)
 	return x
 end
 
-# effective map on the center tensor at site j: the tangent-space projection
-# of the product H·z, built from the left environment hleft::(bra, H, ket),
-# the influence operator H[j] and the right environment hright::(ket, H, bra)
-function _tdvpif_ac_prime_adt(AC::DenseMPSTensor, Hj::DenseMPSTensor, hleft::DenseMPSTensor, hright::DenseMPSTensor)
-	left_xy = get_left_xy(hleft, Hj, AC)
-	@tensor tmp[1, 2, 5] := left_xy[1, 2, 3, 4] * hright[4, 3, 5]
-	return tmp
-end
+# the flow runs on the chains' payloads (`z` is evolved in place through the
+# cache's reference to it): the ADT's fused-leg MPS takes the pointwise
+# (Hadamard) generator, the ProcessTensor's MPO the left-multiplying one
+_tdvpif_cache(H::ADT, z::ADT) = HadamardTDVPCache(H.parent, z.parent)
+_tdvpif_cache(H::ProcessTensor, z::ProcessTensor) = TDVPCache(MPO(H.parent), z.parent)
 
-# effective map on the bond matrix C: contraction of the left and right
-# environments with the H bonds passing straight through the bond
-function _tdvpif_c_prime_adt(C::AbstractMatrix, hleft::DenseMPSTensor, hright::DenseMPSTensor)
-	@tensor tmp[1, 6] := (hleft[1, 2, 3] * C[3, 4]) * hright[4, 2, 6]
-	return tmp
-end
+# `stepsize` is the complex time increment applied by one `sweep!`, i.e. the
+# flow integrates dz/dτ = H·z over τ : 0 → 1 with exp(stepsize·H) per sweep.
+# `ishermitian=false` (Arnoldi) throughout: only the bra side of the
+# environments enters conjugated, so the projected generators are not hermitian
+# in general.
+_tdvpif_stepalg(::ADT, alg::TDVPIF, δτ::Float64) = HadamardTDVP(stepsize=δτ, verbosity=alg.verbosity)
+_tdvpif_stepalg(::ProcessTensor, alg::TDVPIF, δτ::Float64) =
+	TDVP1(stepsize=δτ, ishermitian=false, verbosity=alg.verbosity)
 
-# initialize the right environments ⟨z|H|z⟩; hstorage[i]::(ket, H, bra) is the
-# partial contraction over sites i:L
-function _tdvpif_init_hstorage_adt(z::ADT, H::ADT)
-	L = length(z)
-	T = scalartype(z)
-	hstorage = Vector{Array{T, 3}}(undef, L+1)
-	hstorage[L+1] = ones(T, space_r(z), space_r(H), space_r(z))
-	for i in L:-1:2
-		hstorage[i] = updatemultright(hstorage[i+1], z[i], H[i], z[i])
-	end
-	hstorage[1] = ones(T, space_l(z), space_l(H), space_l(z))
-	return hstorage
-end
-
-function _tdvpif_leftsweep_adt!(z::ADT, H::ADT, hstorage, δτ::Float64, alg::TDVPIF)
-	L = length(z)
-	krylov = Arnoldi()
-	for site in 1:L-1
-		(alg.verbosity > 3) && println("TDVPIF: left sweep at site $site")
-		# forward half-step of the center tensor
-		AC, info = exponentiate(x -> _tdvpif_ac_prime_adt(x, H[site], hstorage[site], hstorage[site+1]), δτ/2, z[site], krylov)
-		(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at site $site"
-		AL, C = leftorth!(AC, (1, 2), (3,))
-		z[site] = AL
-		C = Matrix(C)
-		_renormalize!(z, C, false)
-		# left environment with the new AL on both the bra and ket sides
-		hnew = updatemultleft(hstorage[site], AL, H[site], AL)
-		# backward half-step of the bond matrix
-		C, info = exponentiate(x -> _tdvpif_c_prime_adt(x, hnew, hstorage[site+1]), -δτ/2, C, krylov)
-		(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at bond $(site+1)"
-		_renormalize!(z, C, false)
-		hstorage[site+1] = hnew
-		# absorb the bond matrix into the next site
-		z[site+1] = @tensor tmp[-1, -2, -3] := C[-1, 1] * z[site+1][1, -2, -3]
-	end
-	# full step at the last site
-	AC, info = exponentiate(x -> _tdvpif_ac_prime_adt(x, H[L], hstorage[L], hstorage[L+1]), δτ, z[L], krylov)
-	(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at site $L"
-	z[L] = AC
-	_renormalize!(z, z[L], false)
-	return z
-end
-
-function _tdvpif_rightsweep_adt!(z::ADT, H::ADT, hstorage, δτ::Float64, alg::TDVPIF)
-	krylov = Arnoldi()
-	for site in length(z)-1:-1:1
-		(alg.verbosity > 3) && println("TDVPIF: right sweep at site $site")
-		C, AR = rightorth!(z[site+1], (1,), (2, 3))
-		z[site+1] = AR
-		C = Matrix(C)
-		# right environment with the new AR on both the bra and ket sides
-		hnew = updatemultright(hstorage[site+2], AR, H[site+1], AR)
-		# backward half-step of the bond matrix
-		C, info = exponentiate(x -> _tdvpif_c_prime_adt(x, hstorage[site+1], hnew), -δτ/2, C, krylov)
-		(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at bond $(site+1)"
-		_renormalize!(z, C, false)
-		hstorage[site+1] = hnew
-		# absorb the bond matrix into the site on the left
-		z[site] = @tensor tmp[-1, -2, -3] := z[site][-1, -2, 1] * C[1, -3]
-		# forward half-step of the center tensor
-		AC, info = exponentiate(x -> _tdvpif_ac_prime_adt(x, H[site], hstorage[site], hstorage[site+1]), δτ/2, z[site], krylov)
-		(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at site $site"
-		z[site] = AC
-		_renormalize!(z, z[site], false)
-	end
-	return z
-end
-
-function _tdvpif_flow_adt!(z::ADT, H::ADT, alg::TDVPIF)
-	# The flow contracts the raw site tensors of `H` and never applies its
-	# global scaling factor. The ADT convention is
-	#     value = scaling^L · ∏(site tensors),
-	# so any H with scaling ≠ 1 (e.g. after a canonicalization, which
-	# redistributes local weights into the scaling factor) would silently be
-	# evolved as H / scaling^L. Absorb the scaling into the site tensors first
-	# to make the flow independent of the gauge in which H is represented.
-	_absorb_scaling!(H)
-	hstorage = _tdvpif_init_hstorage_adt(z, H)
+function _tdvpif_flow!(z::Dense1DTN, H::Dense1DTN, alg::TDVPIF)
+	_absorb_generator_scaling!(H)
+	env = _tdvpif_cache(H, z)
 	nsteps = round(Int, 1 / alg.δ)
 	δτ = 1 / nsteps
+	stepalg = _tdvpif_stepalg(z, alg, δτ)
 	for n in 1:nsteps
-		_tdvpif_leftsweep_adt!(z, H, hstorage, δτ, alg)
-		_tdvpif_rightsweep_adt!(z, H, hstorage, δτ, alg)
+		sweep!(env, stepalg)
 		(alg.verbosity > 1) && println("TDVPIF step $n/$nsteps, τ = $(n * δτ)")
 	end
 	(alg.verbosity > 1) && println("TDVPIF flow finished, τ = 1")
+	return z
+end
+
+# ======================================================================
+# ADT engine
+# ======================================================================
+
+# run the TDVP flow z(τ=1) = e^H·z(0) directly on the input state z, which may
+# be the identity influence functional (β = 0) or, more generally, any MPO on
+# the same lattice, e.g. the pure impurity dynamics (with Lindblad dissipation)
+# obtained from `sysdynamics`; the influence operator H is thereby merged into
+# the impurity dynamics in a single flow.
+#
+# preparation: lift z to the flow bond dimension (zero-padded) and canonicalize
+# without truncation, so that the zero-weight directions become orthonormal
+# directions of the environments and the sweeps can populate the full bond
+# profile min(d^j, d^{L-j}, D); finalization: canonicalize with the truncation
+# scheme. The global scaling factor of z is carried through the flow by the
+# `_renormalize!` bookkeeping of the payload, so the output value is e^H·z(0)
+# regardless of the gauge of the input.
+function _tdvpif_hybriddynamics_adt!(z::ADT, H::ADT, alg::TDVPIF)
+	# On the imaginary axis the correlation/hybridization are real-typed, yet the
+	# Prony (algexpan) exponential expansion of a real correlation can legitimately
+	# return complex exponents, which makes the influence operator H complex. The
+	# flow must then run in complex arithmetic; promote the flow state accordingly.
+	z = _tdvpif_promote_flowstate(z, H)
+	changebond!(z, alg.trunc.D)
+	canonicalize!(z, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
+	_tdvpif_flow!(z, H, alg)
+	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
+	alg.callback(Float64[])
 	return z
 end
 
@@ -280,93 +231,9 @@ function _tdvpif_hybriddynamics_pt!(z::ProcessTensor, H::ProcessTensor, alg::TDV
 	z = _tdvpif_promote_flowstate(z, H)
 	changebond!(z, alg.trunc.D)
 	canonicalize!(z, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
-	_tdvpif_flow_pt!(z, H, alg)
+	_tdvpif_flow!(z, H, alg)
 	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
 	alg.callback(Float64[])
-	return z
-end
-
-# effective map on the center tensor: the tangent-space projection of the
-# operator product H·z; cleft/cright::(bra, H, ket)
-function _tdvpif_ac_prime_pt(AC::DenseMPOTensor, Hj::DenseMPOTensor, cleft::DenseMPSTensor, cright::DenseMPSTensor)
-	return reduceH_single_site(AC, Hj, cleft, cright)
-end
-
-# effective map on the bond matrix C: contraction of the left and right
-# environments with the H bonds passing straight through the bond
-function _tdvpif_c_prime_pt(C::AbstractMatrix, cleft::DenseMPSTensor, cright::DenseMPSTensor)
-	@tensor tmp[1, 6] := (cleft[1, 2, 3] * C[3, 4]) * cright[6, 2, 4]
-	return tmp
-end
-
-function _tdvpif_leftsweep_pt!(z::ProcessTensor, H::ProcessTensor, hstorage, δτ::Float64, alg::TDVPIF)
-	L = length(z)
-	krylov = Arnoldi()
-	for site in 1:L-1
-		(alg.verbosity > 3) && println("TDVPIF: left sweep at site $site")
-		# forward half-step of the center tensor
-		AC, info = exponentiate(x -> _tdvpif_ac_prime_pt(x, H[site], hstorage[site], hstorage[site+1]), δτ/2, z[site], krylov)
-		(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at site $site"
-		AL, C = leftorth!(AC, (1, 2, 4), (3,))
-		AL = permute(AL, (1, 2, 4, 3))
-		z[site] = AL
-		C = Matrix(C)
-		_renormalize!(z, C, false)
-		# left environment with the new AL on both the bra and ket sides
-		hnew = updateleft(hstorage[site], AL, H[site], AL)
-		# backward half-step of the bond matrix
-		C, info = exponentiate(x -> _tdvpif_c_prime_pt(x, hnew, hstorage[site+1]), -δτ/2, C, krylov)
-		(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at bond $(site+1)"
-		_renormalize!(z, C, false)
-		hstorage[site+1] = hnew
-		# absorb the bond matrix into the next site
-		z[site+1] = @tensor tmp[-1, -2, -3, -4] := C[-1, 1] * z[site+1][1, -2, -3, -4]
-	end
-	# full step at the last site
-	AC, info = exponentiate(x -> _tdvpif_ac_prime_pt(x, H[L], hstorage[L], hstorage[L+1]), δτ, z[L], krylov)
-	(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at site $L"
-	z[L] = AC
-	_renormalize!(z, z[L], false)
-	return z
-end
-
-function _tdvpif_rightsweep_pt!(z::ProcessTensor, H::ProcessTensor, hstorage, δτ::Float64, alg::TDVPIF)
-	krylov = Arnoldi()
-	for site in length(z)-1:-1:1
-		(alg.verbosity > 3) && println("TDVPIF: right sweep at site $site")
-		C, AR = rightorth!(z[site+1], (1,), (2, 3, 4))
-		z[site+1] = AR
-		C = Matrix(C)
-		# right environment with the new AR on both the bra and ket sides
-		hnew = updateright(hstorage[site+2], AR, H[site+1], AR)
-		# backward half-step of the bond matrix
-		C, info = exponentiate(x -> _tdvpif_c_prime_pt(x, hstorage[site+1], hnew), -δτ/2, C, krylov)
-		(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at bond $(site+1)"
-		_renormalize!(z, C, false)
-		hstorage[site+1] = hnew
-		# absorb the bond matrix into the site on the left
-		z[site] = @tensor tmp[-1, -2, -3, -4] := z[site][-1, -2, 1, -4] * C[1, -3]
-		# forward half-step of the center tensor
-		AC, info = exponentiate(x -> _tdvpif_ac_prime_pt(x, H[site], hstorage[site], hstorage[site+1]), δτ/2, z[site], krylov)
-		(info.converged > 0) || @warn "TDVPIF: Krylov exponentiation failed to converge at site $site"
-		z[site] = AC
-		_renormalize!(z, z[site], false)
-	end
-	return z
-end
-
-function _tdvpif_flow_pt!(z::ProcessTensor, H::ProcessTensor, alg::TDVPIF)
-	# same scaling absorption as in `_tdvpif_flow_adt!`
-	_absorb_scaling!(H)
-	hstorage = init_hstorage_right(z, H, z)
-	nsteps = round(Int, 1 / alg.δ)
-	δτ = 1 / nsteps
-	for n in 1:nsteps
-		_tdvpif_leftsweep_pt!(z, H, hstorage, δτ, alg)
-		_tdvpif_rightsweep_pt!(z, H, hstorage, δτ, alg)
-		(alg.verbosity > 1) && println("TDVPIF step $n/$nsteps, τ = $(n * δτ)")
-	end
-	(alg.verbosity > 1) && println("TDVPIF flow finished, τ = 1")
 	return z
 end
 
