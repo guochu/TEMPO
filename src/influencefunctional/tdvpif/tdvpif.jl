@@ -137,12 +137,12 @@ end
 # obtained from `sysdynamics`; the influence operator H is thereby merged into
 # the impurity dynamics in a single flow.
 #
-# preparation: lift z to the flow bond dimension (zero-padded) and canonicalize
-# without truncation, so that the zero-weight directions become orthonormal
-# directions of the environments and the sweeps can populate the full bond
-# profile min(d^j, d^{L-j}, D); finalization: canonicalize with the truncation
-# scheme. The global scaling factor of z is carried through the flow by the
-# `_renormalize!` bookkeeping of the payload, so the output value is e^H·z(0)
+# preparation: lift z to the flow bond dimension (zero-padded); `changebond!`
+# returns the chain in right-canonical form, so the zero-weight directions are
+# already orthonormal directions of the environments and the sweeps can
+# populate the full bond profile min(d^j, d^{L-j}, D); finalization: canonicalize
+# with the truncation scheme. The global scaling factor of z is carried through the
+# flow by the `_renormalize!` bookkeeping of the payload, so the output value is e^H·z(0)
 # regardless of the gauge of the input.
 function _tdvpif_hybriddynamics_adt!(z::ADT, H::ADT, alg::TDVPIF)
 	# On the imaginary axis the correlation/hybridization are real-typed, yet the
@@ -151,7 +151,6 @@ function _tdvpif_hybriddynamics_adt!(z::ADT, H::ADT, alg::TDVPIF)
 	# flow must then run in complex arithmetic; promote the flow state accordingly.
 	z = _tdvpif_promote_flowstate(z, H)
 	changebond!(z, alg.trunc.D)
-	canonicalize!(z, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
 	_tdvpif_flow!(z, H, alg)
 	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
 	alg.callback(Float64[])
@@ -230,7 +229,6 @@ function _tdvpif_hybriddynamics_pt!(z::ProcessTensor, H::ProcessTensor, alg::TDV
 	# same complex-promotion rationale as in `_tdvpif_hybriddynamics_adt!`
 	z = _tdvpif_promote_flowstate(z, H)
 	changebond!(z, alg.trunc.D)
-	canonicalize!(z, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
 	_tdvpif_flow!(z, H, alg)
 	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
 	alg.callback(Float64[])
