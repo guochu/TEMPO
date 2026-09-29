@@ -6,8 +6,10 @@
 #
 # TEMPO 特有行为保留在本 wrapper 中：
 # * 初始猜测 `alg.initguess`（`:svd` 经 FMA 的 `svdguess_hadamard` 流式 SVD /
-#   `:pre` / `:rand`）；
-# * 收敛判据采用 FiniteMPSAlgorithms 的 `iterative_compute!`；
+#   `:pre` / `:rand`；三者均输出右正则链——FMA 的 cache 构造要求右正则 bra
+#   且不再代为规范）；
+# * 收敛判据采用 FiniteMPSAlgorithms 的 `iterative_compute!`（返回
+#   `ALSConvergenceInfo`；未收敛时 FMA 已按 verbosity 自行告警）；
 # * finalize：对输出链做 FMA 的 `canonicalize!`（QR 左扫 + 以 `alg.trunc`
 #   截断的 SVD 右扫，见 fmabackend.jl），键谱写入 `z.s`。
 
@@ -29,7 +31,7 @@ function iterativemult(x::ADT, y::ADT, alg::DMRG1)
     end
     fmaalg = _fmadmrg1(alg)
     cache = HadamardCache(x.parent, y.parent, z.parent)
-    iterative_compute!(cache, fmaalg)
+    info = iterative_compute!(cache, fmaalg)
     _finalize!(cache, fmaalg, alg.trunc)
     # `_finalize!`（canonicalize!）把链的范数因子折叠进 `scaling(z)`，与
     # svdmult 的 `setscaling!(x, scaling(x) * scaling(y))` 同构：输出的绝对
