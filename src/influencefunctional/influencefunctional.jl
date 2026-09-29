@@ -64,7 +64,7 @@ function Base.getproperty(x::XTRGIF, s::Symbol)
 end
 
 """
-	TDVPIF(; algexpan, trunc, δ, verbosity, callback)
+	TDVPIF(; algexpan, trunc, δ, verbosity)
 
 Construct the influence functional with a second-order single-site TDVP imaginary-time flow: the influence functional is viewed as the "equilibrium state" IF = exp(H) of the influence operator H, and is computed by evolving the identity influence functional (β = 0) along the flow dz/dτ = H·z from τ = 0 to τ = 1.
 
@@ -75,7 +75,6 @@ Each flow step is one forward-backward TDVP sweep: the center tensor is evolved 
 - `trunc::TruncateDimCutoff`: bond dimension of the flow manifold / final influence functional.
 - `δ::Float64`: imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer).
 - `verbosity::Int`: verbosity level of the output.
-- `callback::Function`: callback function invoked after the flow.
 
 On real-time lattices (`RealADTLattice1Order` with `AdditiveHyb`, `RealPTLattice1Order` with `GeneralHybStyle`) the influence operator driving the flow is the sum (direct sum) of the 4 branch MPOs returned by `influenceoperators`, since the site-wise product algebra satisfies e^a∘e^b = e^{a+b}.
 """
@@ -84,22 +83,20 @@ struct TDVPIF <: InfluenceFunctionalAlgorithm
 	trunc::TruncateDimCutoff      # bond dimension of the flow manifold / final IF
 	δ::Float64                      # imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer)
 	verbosity::Int
-	callback::Function
 end
 """
-	TDVPIF(; algexpan, trunc, δ, verbosity, callback)
+	TDVPIF(; algexpan, trunc, δ, verbosity)
 
 Keyword constructor for `TDVPIF`; all parameters have default values and usually need not be passed explicitly.
 """
 function TDVPIF(; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny(n=15, tol=1.0e-4, verbosity=0),
 				trunc::TruncateDimCutoff=DefaultITruncation,
 				δ::Real=0.1,
-				verbosity::Int=0,
-				callback::Function=Returns(nothing))
+				verbosity::Int=0)
 	(0 < δ <= 1) || throw(ArgumentError("δ must be a real number in (0, 1], got $δ"))
 	# adjust δ so that 1/δ is an integer number of steps
 	n = max(round(Int, 1 / δ), 1)
-	return TDVPIF(algexpan, trunc, 1 / n, verbosity, callback)
+	return TDVPIF(algexpan, trunc, 1 / n, verbosity)
 end
 
 

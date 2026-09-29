@@ -143,32 +143,28 @@ end
 # initializers
 
 """
-	randompt(::Type{T}, ds::Vector{Int}; D::Int) where {T<:Number}
+	randompt(::Type{T}, ds::Vector{Int}; D::Int, normalize::Bool=true) where {T<:Number}
 
-Generate a randomly initialized `ProcessTensor` (MPO) with physical dimensions given by `ds` and bond dimension `D` at every bond.
+Generate a randomly initialized `ProcessTensor` (MPO) with physical dimensions given by `ds` and a maximum bond dimension `D`, brought to right-canonical form; with `normalize = true` the chain is normalized to unit norm.
+
+Lightweight wrapper around FiniteMPSAlgorithms' `randommpo` (bond profile capped by
+the operator-chain bound `min(D, ∏ds², ∏'ds²)`).
 
 # Arguments
 - `T`: element type (e.g. `Float64`, `ComplexF64`)
 - `ds::Vector{Int}`: physical dimension of each site
-- `D::Int`: bond dimension
+- `D::Int`: maximum bond dimension
+- `normalize::Bool`: normalize the state to unit norm (default `true`)
 
 # Returns
-A `ProcessTensor` with random tensor entries.
+A `ProcessTensor` with random entries in right-canonical form.
 
 # Examples
 ```julia
 julia> h = randompt(ComplexF64, [2, 2, 2], D=16)
 ```
 """
-function randompt(::Type{T}, ds::Vector{Int}; D::Int) where {T<:Number}
-	L = length(ds)
-	r = Vector{Array{T, 4}}(undef, L)
-	r[1] = randn(T, 1, ds[1], D, ds[1])
-	r[L] = randn(T, D, ds[L], 1, ds[L])
-	for i in 2:L-1
-		r[i] = randn(T, D, ds[i], D, ds[i])
-	end
-	return ProcessTensor(r)
-end
+randompt(::Type{T}, ds::Vector{Int}; D::Int, normalize::Bool=true) where {T<:Number} =
+	ProcessTensor(randommpo(T, ds; D=D, normalize=normalize))
 randompt(::Type{T}, L::Int; d::Int=2, D::Int) where {T<:Number} = randompt(T, [d for _ in 1:L], D=D)
 randompt(L::Int; kwargs...) = randompt(Float64, L; kwargs...)

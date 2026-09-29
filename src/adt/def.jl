@@ -94,33 +94,27 @@ end
 
 # initializers
 """
-	randomadt(::Type{T}, ds::AbstractVector{Int}; D::Int) where {T<:Number}
+	randomadt(::Type{T}, ds::AbstractVector{Int}; D::Int, normalize::Bool=true) where {T<:Number}
 
-Generate a randomly initialized `ADT` (MPS) with physical dimensions given by `ds` and bond dimension `D` at every bond.
+Generate a randomly initialized `ADT` (MPS) with physical dimensions given by `ds` and a maximum bond dimension `D`.
 
 # Arguments
 - `T`: element type (e.g. `Float64`, `ComplexF64`)
 - `ds::AbstractVector{Int}`: physical dimension of each site
-- `D::Int`: bond dimension
+- `D::Int`: maximum bond dimension
+- `normalize::Bool`: normalize the state to unit norm (default `true`)
 
 # Returns
-An `ADT` with random tensor entries.
+An `ADT` with random entries in right-canonical form; a lightweight wrapper around
+FiniteMPSAlgorithms' `randommps` (bond profile capped by the feasible `max_bonddims(ds, D)`).
 
 # Examples
 ```julia
 julia> psi = randomadt(ComplexF64, [2, 2, 2], D=16)
 ```
 """
-function randomadt(::Type{T}, ds::AbstractVector{Int}; D::Int) where {T<:Number}
-	L = length(ds)
-	mpstensors = Vector{Array{T, 3}}(undef, L)
-	mpstensors[1] = randn(T, 1,ds[1],D)
-	mpstensors[end] = randn(T, D, ds[end], 1)
-	for i in 2:L-1
-		mpstensors[i] = randn(T, D, ds[i], D)
-	end
-	return ADT(mpstensors)
-end
+randomadt(::Type{T}, ds::AbstractVector{Int}; D::Int, normalize::Bool=true) where {T<:Number} =
+	ADT(randommps(T, ds; D=D, normalize=normalize))
 """
 	randomadt(ds::AbstractVector{Int}; kwargs...)
 

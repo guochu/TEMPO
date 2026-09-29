@@ -18,8 +18,8 @@ sweep（`_tdvpif_leftsweep_adt!` / `_tdvpif_rightsweep_adt!` 与 PT 版、局部
 - **scaling**：FMA 的 Hadamard cache 自带 `scaling(H)^L` 因子，ADT 路线无需处理；
   其密度算符 cache 无此钩子（plain `MPO` 不携带 scaling），故 PT 路线仍先经
   `_absorb_scaling!` 把 H 的 scaling 折入站点张量。
-- 准备/收尾不变：`changebond!(z, trunc.D)` → `canonicalize!(NoTruncation)` → 流动
-  → `canonicalize!(trunc)` → `alg.callback`；链的演化仍经 cache 对 payload 的引用
+- 准备/收尾不变：`changebond!(z, trunc.D)`（输出右正则链）→ 流动
+  → `canonicalize!(trunc)`；链的演化仍经 cache 对 payload 的引用
   就地完成。
 - 删除 TEMPO 侧全部 sweep / 环境 / 局部映射实现（供 `mult` 使用的
   `get_left_xy`、`updatemultleft`、`reduceH_single_site` 等原语保留）。

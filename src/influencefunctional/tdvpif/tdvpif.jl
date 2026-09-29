@@ -153,7 +153,6 @@ function _tdvpif_hybriddynamics_adt!(z::ADT, H::ADT, alg::TDVPIF)
 	changebond!(z, alg.trunc.D)
 	_tdvpif_flow!(z, H, alg)
 	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
-	alg.callback(Float64[])
 	return z
 end
 
@@ -231,7 +230,6 @@ function _tdvpif_hybriddynamics_pt!(z::ProcessTensor, H::ProcessTensor, alg::TDV
 	changebond!(z, alg.trunc.D)
 	_tdvpif_flow!(z, H, alg)
 	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
-	alg.callback(Float64[])
 	return z
 end
 

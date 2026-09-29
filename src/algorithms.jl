@@ -6,8 +6,8 @@
 # `MPSAlgorithm` 也来自 FiniteMPSAlgorithms。
 #
 # `DMRG1` 保留 TEMPO 的公共接口：它携带截断方案 `trunc`（`trunc.D` 既是
-# 初始猜测的键维上限，也用于 ALS 收敛后的 finalize 截断）、初始猜测方式
-# `initguess` 与 `callback` 字段。FiniteMPSAlgorithms 的 `DMRG1` 只有纯迭代
+# 初始猜测的键维上限，也用于 ALS 收敛后的 finalize 截断）与初始猜测方式
+# `initguess`。FiniteMPSAlgorithms 的 `DMRG1` 只有纯迭代
 # 参数（maxiter/tol/D/verbosity，ALS 本身不截断）；两者的翻译与 TEMPO 特有
 # 的 finalize（带截断的末次 sweep，见 adt/mult 与 pt/mult）在 wrapper 层完成。
 # ---------------------------------------------------------------------------
@@ -31,9 +31,8 @@ Configuration of an MPS/MPO product compression algorithm based on DMRG iterativ
 - `tol::Float64`: convergence tolerance
 - `initguess::Symbol`: initial guess, one of `:svd`, `:pre`, `:rand`
 - `verbosity::Int`: verbosity level
-- `callback::Function`: callback function
 
-Main constructor: `DMRG1(trunc; maxiter=5, tol=1e-12, initguess=:svd, verbosity=0, callback=Returns(nothing))`.
+Main constructor: `DMRG1(trunc; maxiter=5, tol=1e-12, initguess=:svd, verbosity=0)`.
 """
 struct DMRG1{T<:TruncationWithD} <: DMRGAlgorithm
 	trunc::T
@@ -41,10 +40,9 @@ struct DMRG1{T<:TruncationWithD} <: DMRGAlgorithm
 	tol::Float64
 	initguess::Symbol
 	verbosity::Int
-	callback::Function
 end
 """
-	DMRG1(trunc::TruncationWithD; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0, callback::Function=Returns(nothing))
+	DMRG1(trunc::TruncationWithD; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0)
 
 Construct a `DMRG1` algorithm configuration.
 
@@ -54,11 +52,10 @@ Construct a `DMRG1` algorithm configuration.
 - `tol::Float64`: convergence tolerance
 - `initguess::Symbol`: initial guess, must be one of `:svd`, `:pre`, `:rand`, otherwise an `ArgumentError` is thrown
 - `verbosity::Int`: verbosity level
-- `callback::Function`: callback function
 """
-function DMRG1(trunc::TruncationWithD; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0, callback::Function=Returns(nothing))
+function DMRG1(trunc::TruncationWithD; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0)
 	(initguess in AllowedInitGuesses) || throw(ArgumentError("initguess must be one of $(AllowedInitGuesses)"))
-	return DMRG1(trunc, maxiter, tol, initguess, verbosity, callback)
+	return DMRG1(trunc, maxiter, tol, initguess, verbosity)
 end
 """
 	DMRG1(; trunc::TruncationWithD=DefaultITruncation, kwargs...)
@@ -66,8 +63,8 @@ end
 Construct a `DMRG1` from keyword arguments, with default truncation scheme `DefaultITruncation`.
 """
 DMRG1(; trunc::TruncationWithD=DefaultITruncation, kwargs...) = DMRG1(trunc; kwargs...)
-Base.similar(x::DMRG1; trunc::TruncationWithD=x.trunc, maxiter::Int=x.maxiter, tol::Float64=x.tol, initguess::Symbol=x.initguess, verbosity::Int=x.verbosity, callback=x.callback) = DMRG1(
-			trunc=trunc, maxiter=maxiter, tol=tol, initguess=initguess, verbosity=verbosity, callback=callback)
+Base.similar(x::DMRG1; trunc::TruncationWithD=x.trunc, maxiter::Int=x.maxiter, tol::Float64=x.tol, initguess::Symbol=x.initguess, verbosity::Int=x.verbosity) = DMRG1(
+			trunc=trunc, maxiter=maxiter, tol=tol, initguess=initguess, verbosity=verbosity)
 
 # ---------------------------------------------------------------------------
 # `SVDCompression`：FiniteMPSAlgorithms 的类型；这里补充 TEMPO 风格的

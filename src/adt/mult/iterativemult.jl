@@ -21,8 +21,8 @@ function iterativemult(x::ADT, y::ADT, alg::DMRG1)
     if alg.initguess == :svd
         z = ADT(svdguess_hadamard(x.parent, y.parent, alg.trunc.D))
     elseif alg.initguess == :rand
+        # randomadt is already right-canonical (FMA's randommps); no re-gauging needed
         z = randomadt(promote_type(scalartype(x), scalartype(y)), phydims(x), D=alg.trunc.D)
-        canonicalize!(z, alg=Orthogonalize(normalize=true))
     elseif alg.initguess == :pre
         z = changebond!(copy(x), alg.trunc.D)
         setscaling!(z, 1)

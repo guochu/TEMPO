@@ -18,8 +18,8 @@ function iterativemult(x::ProcessTensor, y::ProcessTensor, alg::DMRG1)
     if alg.initguess == :svd
         z = ProcessTensor(svdguess_mult(x.parent, y.parent, alg.trunc.D))
     elseif alg.initguess == :rand
+        # randompt is already right-canonical (FMA's randommpo); no re-gauging needed
         z = randompt(promote_type(scalartype(x), scalartype(y)), phydims(x), D=alg.trunc.D)
-        canonicalize!(z, alg=Orthogonalize(normalize=true))
     elseif alg.initguess == :pre
         z = changebond!(copy(x), alg.trunc.D)
         setscaling!(z, 1)

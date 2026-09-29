@@ -3,7 +3,9 @@
 # dot/norm/distance 的实现委托给 FiniteMPSAlgorithms 在 CanonicalMPS 视图上的
 # 同名函数（含 scaling^L 约定，见 fmabackend.jl）。
 LinearAlgebra.dot(psiA::Dense1DTN, psiB::Dense1DTN) = dot(psiA.parent, psiB.parent)
-LinearAlgebra.norm(psi::Dense1DTN) = norm(psi.parent)
+# FMA 的 MPO norm 对数值零（如 `h - h` 的浮点残差）可能给出微小的负内积；范数
+# 在公共 API 语义下非负，clamp 后再开方
+LinearAlgebra.norm(psi::Dense1DTN) = sqrt(max(real(dot(psi.parent, psi.parent)), 0))
 
 """
     distance(a::Dense1DTN, b::Dense1DTN)

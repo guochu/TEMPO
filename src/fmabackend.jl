@@ -9,7 +9,7 @@
 # ---------------------------------------------------------------------------
 
 # TEMPO 的 `DMRG1` 携带截断方案（`trunc.D` 是键维上限，并用于 initguess 与
-# finalize 截断）以及 initguess/callback 字段；FiniteMPSAlgorithms 的 `DMRG1`
+# finalize 截断）以及 initguess 字段；FiniteMPSAlgorithms 的 `DMRG1`
 # 只有纯迭代参数（maxiter/tol/D/verbosity）。此翻译器把 TEMPO 配置映射到
 # ALS 引擎的迭代参数。
 _fmadmrg1(alg::DMRG1) = FiniteMPSAlgorithms.DMRG1(maxiter=alg.maxiter, tol=alg.tol, D=alg.trunc.D, verbosity=alg.verbosity)
