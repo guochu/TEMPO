@@ -77,6 +77,8 @@ Each flow step is one forward-backward TDVP sweep: the center tensor is evolved 
 - `verbosity::Int`: verbosity level of the output.
 
 On real-time lattices (`RealADTLattice1Order` with `AdditiveHyb`, `RealPTLattice1Order` with `GeneralHybStyle`) the influence operator driving the flow is the sum (direct sum) of the 4 branch MPOs returned by `influenceoperators`, since the site-wise product algebra satisfies e^a∘e^b = e^{a+b}.
+
+`TDVPIF` is the recommended algorithm for constructing the influence functional on pure imaginary-time or pure real-time contours. Mixed-contour lattices (`MixedADTLattice` / `MixedPTLattice`) are currently not supported; use `PartialIF` there.
 """
 struct TDVPIF <: InfluenceFunctionalAlgorithm
 	algexpan::ExponentialExpansionAlgorithm
