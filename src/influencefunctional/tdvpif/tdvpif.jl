@@ -140,8 +140,10 @@ end
 # preparation: lift z to the flow bond dimension (zero-padded); `changebond!`
 # returns the chain in right-canonical form, so the zero-weight directions are
 # already orthonormal directions of the environments and the sweeps can
-# populate the full bond profile min(d^j, d^{L-j}, D); finalization: canonicalize
-# with the truncation scheme. The global scaling factor of z is carried through the
+# populate the full bond profile min(d^j, d^{L-j}, D); finalization: nothing —
+# the sweeps keep the chain right-canonical and at the flow bond dimension, only
+# the Schmidt values are stale (never written by the sweeps), so they are marked
+# uninitialized. The global scaling factor of z is carried through the
 # flow by the `_renormalize!` bookkeeping of the payload, so the output value is e^H·z(0)
 # regardless of the gauge of the input.
 function _tdvpif_hybriddynamics_adt!(z::ADT, H::ADT, alg::TDVPIF)
@@ -152,7 +154,7 @@ function _tdvpif_hybriddynamics_adt!(z::ADT, H::ADT, alg::TDVPIF)
 	z = _tdvpif_promote_flowstate(z, H)
 	changebond!(z, alg.trunc.D)
 	_tdvpif_flow!(z, H, alg)
-	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
+	unset_svectors!(z)
 	return z
 end
 
@@ -229,7 +231,7 @@ function _tdvpif_hybriddynamics_pt!(z::ProcessTensor, H::ProcessTensor, alg::TDV
 	z = _tdvpif_promote_flowstate(z, H)
 	changebond!(z, alg.trunc.D)
 	_tdvpif_flow!(z, H, alg)
-	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
+	unset_svectors!(z)
 	return z
 end
 
