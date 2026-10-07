@@ -1,11 +1,11 @@
 # 链级线性代数（后端：FiniteMPSAlgorithms；Dense1DTN 上的薄适配层）
 #
-# dot/norm/distance 的实现委托给 FiniteMPSAlgorithms 在 CanonicalMPS 视图上的
-# 同名函数（含 scaling^L 约定，见 fmabackend.jl）。
-LinearAlgebra.dot(psiA::Dense1DTN, psiB::Dense1DTN) = dot(psiA.parent, psiB.parent)
-# FMA 的 MPO norm 对数值零（如 `h - h` 的浮点残差）可能给出微小的负内积；范数
-# 在公共 API 语义下非负，clamp 后再开方
-LinearAlgebra.norm(psi::Dense1DTN) = sqrt(max(real(dot(psi.parent, psi.parent)), 0))
+# dot/norm/distance 的实现委托给 FiniteMPSAlgorithms 的同名函数
+# （含 per-site scaling 约定，见 fmabackend.jl）；ProcessTensor 一侧的 dot
+# 分派见 pt/linalg.jl（CanonicalMPO 无原生 dot，经 vectorize 转 CanonicalMPS 视图）
+LinearAlgebra.dot(psiA::ADT, psiB::ADT) = dot(psiA.parent, psiB.parent)
+# FMA 的 norm 对两类链均已按 per-site scaling 约定实现并自带 clamp
+LinearAlgebra.norm(psi::Dense1DTN) = norm(psi.parent)
 
 """
     distance(a::Dense1DTN, b::Dense1DTN)

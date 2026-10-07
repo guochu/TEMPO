@@ -1,3 +1,29 @@
+# 跟进（2026-10-07）：适配 FMA 4d3375b（same-kind MPO 算术 / timeevompo 返回 plain MPO）
+
+FMA 大重构（OpSum/OpTerm 携带 Vector、MPO ±/*/dot 限定 plain same-kind 链、
+CanonicalMPO 的 `+` 与 dot 删除、`SparseMPOTensor`/`AbstractSparseMPOTensor` 类型
+删除、`timeevompo` 返回 plain `MPO`/稠密 4 指标张量）后的 TEMPO 侧适配。全量测试
+通过（1244/1244）：
+
+- **ProcessTensor 加法恢复**（`pt/linalg.jl`）：FMA 已无 `CanonicalMPO +`，改为
+  两边 scaling 逐站点折入数据（`MPO(scaling .* data)`）后调 `_plus_data` 块对角
+  直和，再以 `CanonicalMPO(...; scaling=1)` 重包装；`-` 走 `x + (-y)` 自动恢复。
+- **dot/norm 适配**（`adt/linalg.jl`、`pt/linalg.jl`）：CanonicalMPS 的 dot 不变；
+  CanonicalMPO 无原生 dot，`dot(::ProcessTensor, ::ProcessTensor)` 经 FMA 的
+  `vectorize` 转 CanonicalMPS 视图求内积（per-site scaling 约定一致）；
+  `norm(::Dense1DTN)` 委托 FMA（两侧均已自带 clamp）。
+- **`tompotensors(::MPO) = h.data`**（`mpohamiltonian/compat.jl`）：`timeevompo`
+  现返回 plain `MPO`，FMA 的 `tompotensors` 只收 `MPOHamiltonian`，补上转换并
+  export `MPO`。
+- **`_get_mpo3` 支持稠密输入**（`ttiif/pt/imag.jl`）：单 SchurMPOTensor 的
+  `timeevompo` 现返回未裁剪的稠密张量（(1,1) = D 演化、首行 = C、首列 = B），
+  新增 `Array{T,4}` 分派：首站保留真空行（row 1）、末站保留闭合列（**col 1**，
+  与 FMA `timeevompo(::MPOHamiltonian)` 的 `O[L][:, :, 1:1, :]` 一致）、中间站
+  原样；与 FMA 整链演化逐元素一致（已验证）。Schur 输入仍走原
+  `MPOHamiltonian([m, m, m])` 路线。
+- **测试断言更新**（`test/api/mpohamiltonian.jl`）：`timeevompo(h, ...)` 结果
+  `isa MPO`；单张量演化结果 `isa Array`；ComplexStepper 两个半步 `isa MPO`。
+
 # 重构（2026-09-26）：TDVPIF 流引擎切换为 FiniteMPSAlgorithms 的 TDVP
 
 `TDVPIF`（`src/influencefunctional/tdvpif/tdvpif.jl`）原先自带一套单站点 TDVP

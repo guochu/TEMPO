@@ -71,10 +71,30 @@ end
 
 
 
-function _get_mpo3(mpoj)
+function _get_mpo3(mpoj::SchurMPOTensor)
 	# mpoj = ti_mpotensor(η, algexpan)
 	h = MPOHamiltonian([mpoj, mpoj, mpoj])
 	return tompotensors(h)
+end
+
+# timeevompo 现返回稠密 4 指标张量：布局为 (1,1) = D 的演化、首行 = C（起始通道）、
+# 首列 = B（闭合通道）、内部 = A，即真空行 = row 1、闭合列 = col 1（与 FMA
+# `timeevompo(::MPOHamiltonian)` 末站 `O[L][:, :, 1:1, :]` 的裁剪一致）。复刻旧
+# `MPOHamiltonian([mpoj, mpoj, mpoj]) + tompotensors` 的语义：三站链首站保留真空行、
+# 末站保留闭合列、中间站原样
+function _get_mpo3(mpoj::Array{T, 4}) where {T}
+	ni, nk = size(mpoj, 1), size(mpoj, 3)
+	d = size(mpoj, 2)
+	(size(mpoj, 4) == d) || throw(DimensionMismatch())
+	w1 = zeros(T, 1, d, nk, d)
+	for k in 1:nk
+		w1[1, :, k, :] .= mpoj[1, :, k, :]
+	end
+	w3 = zeros(T, ni, d, 1, d)
+	for i in 1:ni
+		w3[i, :, 1, :] .= mpoj[i, :, 1, :]
+	end
+	return [w1, mpoj, w3]
 end
 
 # function pt_ti_mpotensor(corr::CorrelationMatrix, op1::AbstractMatrix, op2::AbstractMatrix, alg::ExponentialExpansionAlgorithm)

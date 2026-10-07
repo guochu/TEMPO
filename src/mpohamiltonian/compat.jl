@@ -5,3 +5,7 @@
 # 因此这里用类型别名保持 `XTRGIF` 等接口的类型约束不变。
 
 const TimeEvoMPOAlgorithm = MPSAlgorithm
+
+# timeevompo 返回 plain `MPO`（FMA 的 `tompotensors` 只收 `MPOHamiltonian`），
+# 这里补上到稠密 4 指标站点张量列表的转换，保持与 `MPOHamiltonian` 版本一致
+tompotensors(h::MPO) = h.data

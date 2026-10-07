@@ -156,7 +156,7 @@ end
 	h1 = timeevompo(h, dt, WI())
 	h2 = timeevompo(h, dt, WII())
 	h3 = timeevompo(h, dt)          # keyword version defaults to WII
-	@test h1 isa MPOHamiltonian
+	@test h1 isa MPO
 	@test length(h1) == 2
 	@test WI() isa FirstOrderStepper
 	@test WII() isa FirstOrderStepper
@@ -169,11 +169,11 @@ end
 	@test distance(t2, t3) < 1.0e-12
 
 	m1 = timeevompo(m, dt, WI())
-	@test m1 isa SparseMPOTensor
+	@test m1 isa Array            # single SchurMPOTensor evolves to a dense rank-4 tensor
 	@test phydim(m1) == 2
 
 	u1, u2 = timeevompo(h, dt, ComplexStepper(WI()))
-	@test u1 isa MPOHamiltonian && u2 isa MPOHamiltonian
+	@test u1 isa MPO && u2 isa MPO
 	d1, d2 = complex_stepper(dt)
 	@test d1 + d2 ≈ dt
 end

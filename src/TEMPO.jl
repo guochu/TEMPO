@@ -8,8 +8,8 @@ export OrthogonalFactorizationAlgorithm, leftorth!, rightorth!, leftorth, righto
 # ContourIndex
 export ContourIndex, branch, scalartype
 # MPOHamiltonian
-export MPOHamiltonian, tompotensors, timeevompo, WI, WII, ComplexStepper, FirstOrderStepper, complex_stepper
-export SchurMPOTensor, SparseMPOTensor, ExponentialDecayTerm, GenericDecayTerm, PowerlawDecayTerm
+export MPOHamiltonian, MPO, tompotensors, timeevompo, WI, WII, ComplexStepper, FirstOrderStepper, complex_stepper
+export SchurMPOTensor, ExponentialDecayTerm, GenericDecayTerm, PowerlawDecayTerm
 export expand_decayterm
 
 # ADT
@@ -67,7 +67,7 @@ const TO = TensorOperations
 #
 # 张量运算原语（截断方案、tsvd!/leftorth!、tie/permute/isometry…）、
 # CanonicalMPS/CanonicalMPO 链类型、ALS 迭代引擎（MultCache/HadamardCache）、
-# SchurMPOTensor/SparseMPOTensor/MPOHamiltonian 以及 WI/WII/ComplexStepper
+# SchurMPOTensor/MPOHamiltonian 以及 WI/WII/ComplexStepper
 # 演化全部来自 FiniteMPSAlgorithms；TEMPO 的 ADT/ProcessTensor 等公共接口
 # 是其实现之上的轻量级 wrapper（见 fmabackend.jl 与 adt/ pt/ mpohamiltonian/）。
 #
@@ -79,10 +79,11 @@ using FiniteMPSAlgorithms
 # TEMPO 扩展（定义了新方法）的函数：必须 import，与 FMA 共用同一泛型函数
 import FiniteMPSAlgorithms: mult, mult!, canonicalize!, canonicalize, leftorth!, rightorth!,
 	swap!, permute!, permute, distance, distance2, scaling, setscaling!,
-	svectors_uninitialized, unset_svectors!, changebond!, phydim, SVDCompression
+	svectors_uninitialized, unset_svectors!, changebond!, phydim, SVDCompression,
+	tompotensors
 # 仅调用（无 TEMPO 方法）的内部原语与类型：纯引入
-using FiniteMPSAlgorithms: _renormalize!,
-	MPSAlgorithm, SchurMPOTensor, SparseMPOTensor, MPOHamiltonian,
+using FiniteMPSAlgorithms: _renormalize!, _plus_data, vectorize,
+	MPSAlgorithm, SchurMPOTensor, MPOHamiltonian,
 	QR, QRpos, LQ, LQpos, SVD, SDD, Polar,
 	OrthogonalFactorizationAlgorithm
 
