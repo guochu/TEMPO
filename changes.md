@@ -1,3 +1,10 @@
+# 跟进（2026-10-07）：FMA 提供 CanonicalMPO 原生 dot
+
+FMA 在 `CanonicalMPO` 上新增原生 `dot` / `distance` / `fidelity`（per-site scaling
+折入，与 CanonicalMPS 同约定）。`dot(::ProcessTensor, ::ProcessTensor)`
+（`pt/linalg.jl`）从经 `vectorize` 转 CanonicalMPS 视图的实现简化为直接委托
+`dot(ρA.parent, ρB.parent)`；`vectorize` 引入删除。全量测试通过（1245/1245）。
+
 # 跟进（2026-10-07）：FMA 恢复 CanonicalMPO 加法 / cache 构造器参数序调整
 
 FMA 52862a6..cfbeba2 后的适配。全量测试通过（1245/1245）：

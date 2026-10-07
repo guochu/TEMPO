@@ -82,7 +82,7 @@ import FiniteMPSAlgorithms: mult, mult!, canonicalize!, canonicalize, leftorth!,
 	svectors_uninitialized, unset_svectors!, changebond!, phydim, SVDCompression,
 	tompotensors
 # 仅调用（无 TEMPO 方法）的内部原语与类型：纯引入
-using FiniteMPSAlgorithms: _renormalize!, vectorize,
+using FiniteMPSAlgorithms: _renormalize!,
 	MPSAlgorithm, SchurMPOTensor, MPOHamiltonian,
 	QR, QRpos, LQ, LQpos, SVD, SDD, Polar,
 	OrthogonalFactorizationAlgorithm

@@ -9,10 +9,9 @@ function Base.:*(x::ProcessTensor, y::ProcessTensor)
     return ProcessTensor(x.parent * y.parent)
 end
 
-# CanonicalMPO 无原生 dot：经 vectorize 转为 CanonicalMPS 视图求内积
-# （per-site scaling 折入的约定两边一致）
-LinearAlgebra.dot(ρA::ProcessTensor, ρB::ProcessTensor) =
-    dot(vectorize(ρA.parent), vectorize(ρB.parent))
+# dot：委托给 FiniteMPSAlgorithms 的 CanonicalMPO 原生实现
+# （per-site scaling 折入，与 CanonicalMPS 的 dot 同约定）
+LinearAlgebra.dot(ρA::ProcessTensor, ρB::ProcessTensor) = dot(ρA.parent, ρB.parent)
 
 
 

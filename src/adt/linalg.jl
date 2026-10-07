@@ -2,7 +2,7 @@
 #
 # dot/norm/distance 的实现委托给 FiniteMPSAlgorithms 的同名函数
 # （含 per-site scaling 约定，见 fmabackend.jl）；ProcessTensor 一侧的 dot
-# 分派见 pt/linalg.jl（CanonicalMPO 无原生 dot，经 vectorize 转 CanonicalMPS 视图）
+# 分派见 pt/linalg.jl（FMA 的 CanonicalMPO 原生 dot）。
 LinearAlgebra.dot(psiA::ADT, psiB::ADT) = dot(psiA.parent, psiB.parent)
 # FMA 的 norm 对两类链均已按 per-site scaling 约定实现并自带 clamp
 LinearAlgebra.norm(psi::Dense1DTN) = norm(psi.parent)
