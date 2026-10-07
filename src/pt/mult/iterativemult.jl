@@ -28,8 +28,8 @@ function iterativemult(x::ProcessTensor, y::ProcessTensor, alg::DMRG1)
     end
     fmaalg = _fmadmrg1(alg)
     vz = z.parent
-    # MultCache(H, ket, bra)：H = mpo（x），ket = impo（y），bra = ompo（z）
-    cache = MultCache(x.parent, y.parent, vz)
+    # MultCache(bra, h, ket)：bra = ompo（z），h = mpo（x），ket = impo（y）
+    cache = MultCache(vz, x.parent, y.parent)
     info = iterative_compute!(cache, fmaalg)
     _finalize!(cache, fmaalg, NoTruncation())
     # 与 ADT 侧及 svdmult 同构：`_finalize!` 把范数因子折叠进 `scaling(z)`，

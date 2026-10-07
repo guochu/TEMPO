@@ -1,3 +1,17 @@
+# 跟进（2026-10-07）：FMA 恢复 CanonicalMPO 加法 / cache 构造器参数序调整
+
+FMA 52862a6..cfbeba2 后的适配。全量测试通过（1245/1245）：
+
+- **ProcessTensor 加法恢复直接委托**（`pt/linalg.jl`）：FMA 43933e5 重新提供了
+  `CanonicalMPO + CanonicalMPO`（两边 scaling 折入数据、结果 scaling = 1，
+  `_fold_scaling` 折到首站），删掉上一轮手工折算的实现，`+` 回到
+  `ProcessTensor(x.parent + y.parent)`；`_plus_data` 引入删除。
+- **cache 构造器参数序**（FMA cfbeba2：被优化链放首位，与 `mult!`/`hadamard!`/
+  `TDVPCache(state, h)` 等驱动签名对齐）：`MultCache(vz, x.parent, y.parent)`、
+  `HadamardCache(z.parent, x.parent, y.parent)`（adt/pt 的 iterativemult）、
+  `HadamardTDVPCache(z.parent, H.parent)`、`TDVPCache(z.parent, MPO(H.parent))`
+  （tdvpif）。struct 字段序不变，仅 convenience 构造器换序。
+
 # 跟进（2026-10-07）：finalize 默认截断与 schurmpo 文件合并
 
 - `_finalize!`（`fmabackend.jl`）的 `trunc` 默认值 `NoTruncation()` 改为

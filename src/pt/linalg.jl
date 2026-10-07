@@ -19,15 +19,9 @@ LinearAlgebra.dot(ρA::ProcessTensor, ρB::ProcessTensor) =
 """
     addition of two MPOs
 """
-# 块对角直和：FiniteMPSAlgorithms 的 exact 算术限定 plain same-kind 链（MPO + MPO），
-# 这里恢复 CanonicalMPO 的加法语义——两边 scaling 逐站点折入数据（scaling^L 约定），
-# 直和后以 scaling = 1 重新包装；`-` 走 `x + (-y)` 自动恢复
-function Base.:+(x::ProcessTensor, y::ProcessTensor)
-    (length(x) == length(y)) || throw(DimensionMismatch())
-    a = MPO(scaling(x.parent) .* x.parent.data)
-    b = MPO(scaling(y.parent) .* y.parent.data)
-    return ProcessTensor(CanonicalMPO(_plus_data(a, b).data))
-end
+# 块对角直和：FiniteMPSAlgorithms 的 CanonicalMPO 加法会把两边的 scaling 折入
+# 数据，结果 scaling = 1（与 CanonicalMPS 加法同构）
+Base.:+(x::ProcessTensor, y::ProcessTensor) = ProcessTensor(x.parent + y.parent)
 # adding mpo with adjoint mpo will return an normal mpo
 Base.:-(x::ProcessTensor, y::ProcessTensor) = x + (-y)
 Base.:-(x::ProcessTensor) = -1 * x

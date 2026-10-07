@@ -101,8 +101,8 @@ end
 # the flow runs on the chains' payloads (`z` is evolved in place through the
 # cache's reference to it): the ADT's fused-leg MPS takes the pointwise
 # (Hadamard) generator, the ProcessTensor's MPO the left-multiplying one
-_tdvpif_cache(H::ADT, z::ADT) = HadamardTDVPCache(H.parent, z.parent)
-_tdvpif_cache(H::ProcessTensor, z::ProcessTensor) = TDVPCache(MPO(H.parent), z.parent)
+_tdvpif_cache(H::ADT, z::ADT) = HadamardTDVPCache(z.parent, H.parent)
+_tdvpif_cache(H::ProcessTensor, z::ProcessTensor) = TDVPCache(z.parent, MPO(H.parent))
 
 # `stepsize` is the complex time increment applied by one `sweep!`, i.e. the
 # flow integrates dz/dτ = H·z over τ : 0 → 1 with exp(stepsize·H) per sweep.

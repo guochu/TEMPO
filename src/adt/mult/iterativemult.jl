@@ -30,7 +30,8 @@ function iterativemult(x::ADT, y::ADT, alg::DMRG1)
         error("unsupported initguess $(alg.initguess)")
     end
     fmaalg = _fmadmrg1(alg)
-    cache = HadamardCache(x.parent, y.parent, z.parent)
+    # HadamardCache(bra, ketx, kety)：bra = z，ketx = x，kety = y
+    cache = HadamardCache(z.parent, x.parent, y.parent)
     info = iterative_compute!(cache, fmaalg)
     _finalize!(cache, fmaalg, alg.trunc)
     # `_finalize!`（canonicalize!）把链的范数因子折叠进 `scaling(z)`，与
