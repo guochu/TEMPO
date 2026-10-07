@@ -22,13 +22,10 @@ prodmpo(L::Int, positions::Vector{Int}, ops::Vector{<:AbstractMatrix}) = prodmpo
 
 function longrange_xxz(J, Jzz, hz, α, p)
 	sp, sm, z = p["+"], p["-"], p["z"]
-	C = [sp, sm, z]
-	B = [2*J * sp', 2*J * sm', Jzz * z]
-	terms = []
-	for (a1, a2) in zip(C, B)
-		push!(terms, ExponentialDecayTerm(a1, a2, α=exp(-α)))
-	end
-	return SchurMPOTensor(hz * z, [terms...])
+	λ = exp(-α)
+	return SchurMPOTensor(ExpDecayOpTerm(2*J*sp, sp', 1.0, λ), hz * z) +
+		SchurMPOTensor(ExpDecayOpTerm(2*J*sm, sm', 1.0, λ)) +
+		SchurMPOTensor(ExpDecayOpTerm(Jzz*z, z, 1.0, λ))
 end
 
 function longrange_xxz_ham(L, hz, J, Jzz, α, p)
@@ -54,14 +51,9 @@ longrange_xxz_mpoham(L, hz, J, Jzz, α, p) = MPOHamiltonian([longrange_xxz(J, Jz
 
 function powlaw_xxz(L, J, Jzz, hz, α, p)
 	sp, sm, z = p["+"], p["-"], p["z"]
-	C = [sp, sm]
-	B = [2*J * sp', 2*J * sm']
-	terms = []
-	for (a1, a2) in zip(C, B)
-		push!(terms, ExponentialDecayTerm(a1, a2, α=exp(-1)))
-	end
-	append!(terms, expand_decayterm(PowerlawDecayTerm(z, Jzz*z, α=α), len=L, alg=OverDeterminedProny(tol=1.0e-8)))
-	return SchurMPOTensor(hz * z, [terms...])
+	return SchurMPOTensor(ExpDecayOpTerm(2*J*sp, sp', 1.0, exp(-1)), hz * z) +
+		SchurMPOTensor(ExpDecayOpTerm(2*J*sm, sm', 1.0, exp(-1))) +
+		SchurMPOTensor(expand_decayterm(PowerlawDecayTerm(z, Jzz*z, α=α), len=L, alg=OverDeterminedProny(tol=1.0e-8)))
 end
 
 powerlaw_xxz_mpoham(L, J, Jzz, hz, α, p) = MPOHamiltonian([powlaw_xxz(L, J, Jzz, hz, α, p) for i in 1:L])
@@ -103,12 +95,14 @@ end
 	fv = exp.(-(0:10))
 	g4 = GenericDecayTerm(a, b, fv)
 	@test g4 isa GenericDecayTerm
+	# expansion packs into an ExpDecayOpSum (one channel per exponential)
 	terms = expand_decayterm(g4)
-	@test !isempty(terms)
-	@test all(t -> t isa ExponentialDecayTerm, terms)
+	@test terms isa ExpDecayOpSum
+	@test !isempty(terms.αs) && !isempty(terms.λs)
+	@test length(terms.αs) == length(terms.λs)
 	# function-valued decay requires a sampling length
 	terms2 = expand_decayterm(g, len=10)
-	@test !isempty(terms2)
+	@test !isempty(terms2.αs)
 	# power-law convenience wrapper
 	g5 = PowerlawDecayTerm(a, b; α=-2.0)
 	@test g5 isa GenericDecayTerm
@@ -146,11 +140,8 @@ end
 
 @testset "MPOHamiltonian time evolution" begin
 	p = spin_half_matrices()
-	sp, sm, z = p["+"], p["-"], p["z"]
 	J, Jzz, hz, α = 1.0, 1.2, 0.8, 0.9
-	m = SchurMPOTensor(hz*z, [ExponentialDecayTerm(2*J*sp, sp', α=exp(-α)),
-	                          ExponentialDecayTerm(2*J*sm, sm', α=exp(-α)),
-	                          ExponentialDecayTerm(Jzz*z, z, α=exp(-α))])
+	m = longrange_xxz(J, Jzz, hz, α, p)
 	h = MPOHamiltonian([m, m])
 	dt = 1.0e-3
 	h1 = timeevompo(h, dt, WI())

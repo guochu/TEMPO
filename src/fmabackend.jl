@@ -23,7 +23,7 @@ _fmadmrg1(alg::DMRG1) = FiniteMPSAlgorithms.DMRG1(maxiter=alg.maxiter, tol=alg.t
 # Schmidt 值）。两步扫之后 bra 右正交，`z.s` 是（截断后）状态在各键的精确
 # Schmidt 值；这一保证不依赖 ALS 是否到达不动点。
 # ---------------------------------------------------------------------------
-function _finalize!(m::Union{MultCache,HadamardCache}, alg::FiniteMPSAlgorithms.DMRG1, trunc::TruncationScheme=NoTruncation())
-	canonicalize!(m.bra; alg=Orthogonalize(SVD(), trunc))
+function _finalize!(m::Union{MultCache,HadamardCache}, alg::FiniteMPSAlgorithms.DMRG1, trunc::TruncationScheme=DefaultKTruncation)
+	truncate!(m.bra; trunc)
 	return m
 end

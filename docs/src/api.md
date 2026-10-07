@@ -47,9 +47,7 @@ Modules = [TEMPO]
 Pages = ["mpohamiltonian/def.jl", "mpohamiltonian/abstractmpotensor.jl",
          "mpohamiltonian/sparsempotensor.jl", "mpohamiltonian/schurmpotensor.jl",
          "mpohamiltonian/mpohamiltonian.jl",
-         "mpohamiltonian/schurmpo/schurmpo.jl", "mpohamiltonian/schurmpo/longrange.jl",
-         "mpohamiltonian/schurmpo/exponentialdecay.jl", "mpohamiltonian/schurmpo/generaldecay.jl",
-         "mpohamiltonian/schurmpo/w1w2.jl"]
+         "mpohamiltonian/schurmpo.jl"]
 ```
 
 ## Augmented density tensor (ADT)

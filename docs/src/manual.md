@@ -203,7 +203,8 @@ Auxiliary functions: `Zvalue(cache)` (partition function), `Zvalue2(cache)`, `Tr
 
 ```julia
 # SchurMPOTensor: encodes [local terms + exponentially decaying long-range terms] into a compact MPO site tensor
-h = SchurMPOTensor(h1, h2s)    # h2s is a list of ExponentialDecayTerm / GenericDecayTerm / PowerlawDecayTerm
+s = expand_decayterm(GenericDecayTerm(op1, op2, f; coeff=c), len=L)  # Prony expansion -> ExpDecayOpSum
+h = SchurMPOTensor(s, h1)         # h1: local term (D corner); one MPO channel per exponential
 mpo = MPOHamiltonian([h for _ in 1:L])
 tensors = tompotensors(mpo)              # convert to dense MPO site tensors
 tensors2 = timeevompo(tensors, dt, WII())   # time evolution (WI / WII / ComplexStepper / FirstOrderStepper)

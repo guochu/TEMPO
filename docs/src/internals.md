@@ -128,7 +128,7 @@ On the mixed (Kadanoff-Baym) contour, the mapping from "correlation-function/ope
 Exponential expansion (the `ExpExp` package, re-exported by TEMPO):
 - `OverDeterminedProny`: expands the correlation function into a finite sum of exponentials (least-squares Prony method);
 - `DeterminedProny`: a deterministic variant of the Prony method;
-- `expand_decayterm(decayterm, alg=...)` returns the coefficient list `(η₁, η₂, …)`;
+- `expand_decayterm(decayterm, alg=...)` packs the expansion into an `ExpDecayOpSum` (strengths αₖ = coefficients × `coeff`, decay factors λₖ);
 - `expansion_error` estimates the expansion error.
 
 ## 5. Influence functionals for diagonal coupling (PartialIF / ADT path)
@@ -174,17 +174,17 @@ This corresponds to the "translationally invariant + exponential expansion + MPO
 ```julia
 m1 = GenericDecayTerm(op1, op2, corr.ηⱼₖ[2:end])   # long-range (cross-step) coupling
 m2 = GenericDecayTerm(op2, op1, corr.ηₖⱼ[2:end])
-m1s = expand_decayterm(m1, alg)                     # Prony expansion
+m1s = expand_decayterm(m1, alg)                     # Prony expansion -> ExpDecayOpSum
 m2s = expand_decayterm(m2, alg)
 h1  = (corr.ηₖⱼ[1] + corr.ηⱼₖ[1]) .* (op1 * op2)    # same-time (diagonal block) term
-return SchurMPOTensor(h1, vcat(m1s, m2s))
+return SchurMPOTensor(m1s, h1) + SchurMPOTensor(m2s)  # block-diagonal channel concatenation
 ```
 
-`SchurMPOTensor` is a block-triangular operator structure (`src/mpohamiltonian/schurmpo/`): `D = h1` (diagonal block, same-time coupling), `A = {decay terms}` (diagonal block, long-range coupling), and `B`, `C` are the upper/lower triangular connector blocks.
+`SchurMPOTensor` is a block-triangular operator structure (`FiniteMPSAlgorithms`): `D = h1` (diagonal block, same-time coupling), `A = {decay terms}` (diagonal block, long-range coupling), and `B`, `C` are the upper/lower triangular connector blocks.
 
 ### 6.2 Time evolution: WI / WII / ComplexStepper
 
-`timeevompo(m, dt, alg)` (`src/mpohamiltonian/schurmpo/w1w2.jl`); the schemes come from Zaletel et al., arXiv:1407.1832:
+`timeevompo(m, dt, alg)` (provided by `FiniteMPSAlgorithms`); the schemes come from Zaletel et al., arXiv:1407.1832:
 
 - **WI** (first order): `WD = I + dt·D`, `WB = B·√δt`, `WC = C·√δt` (`_sqrt2` returns `(√|dt|, −√|dt|)` for negative dt), which are then assembled into sparse MPO tensors;
 - **WII** (first order, more accurate): construct the `4d×4d` block matrix

@@ -132,8 +132,9 @@ function adt_ti_mpotensor(corr::CorrelationMatrix, op1::AbstractMatrix, op2::Abs
 	# h1 = corr.ηₖⱼ[1] * op1 * op2 + corr.ηⱼₖ[1] * op2 * op1
 	# h1 = corr.ηₖⱼ[1] * op2 * op1 + corr.ηⱼₖ[1] * op1 * op2
 
-	# h1 = (corr.ηₖⱼ[1] + corr.ηⱼₖ[1])  * op1 * op2 
+	# h1 = (corr.ηₖⱼ[1] + corr.ηⱼₖ[1])  * op1 * op2
 	h1 = eta .* (op1 * op2 )
-	return SchurMPOTensor(h1, vcat(m1s, m2s))
+	# 两个方向的 ExpDecayOpSum 各生成一个 SchurMPOTensor，块对角拼接（D 角相加）
+	return SchurMPOTensor(m1s, h1) + SchurMPOTensor(m2s)
 	# return SchurMPOTensor(h1, [])
 end

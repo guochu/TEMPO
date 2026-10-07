@@ -129,7 +129,8 @@ function pt_ti_mpotensor(corr::CorrelationMatrix, op1::AbstractMatrix, op2::Abst
 	m2s = expand_decayterm(m2, alg=alg)
 
 	h1 = ti_localop(corr, op1, op2, b1, b2)
-	return SchurMPOTensor(h1, vcat(m1s, m2s))
+	# 两个方向的 ExpDecayOpSum 各生成一个 SchurMPOTensor，块对角拼接（D 角相加）
+	return SchurMPOTensor(m1s, h1) + SchurMPOTensor(m2s)
 end
 
 

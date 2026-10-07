@@ -1,3 +1,26 @@
+# 跟进（2026-10-07）：finalize 默认截断与 schurmpo 文件合并
+
+- `_finalize!`（`fmabackend.jl`）的 `trunc` 默认值 `NoTruncation()` 改为
+  `DefaultKTruncation`（现有两个调用点均显式传 trunc，行为不变）。
+- `src/mpohamiltonian/schurmpo/` 三个文件（schurmpo.jl / longrange.jl /
+  generaldecay.jl）合并为 `src/mpohamiltonian/schurmpo.jl`，删除该子文件夹；
+  docs 的陈旧路径引用（api.md Pages 列表、internals.md 中已迁往 FMA 的
+  w1w2.jl / schurmpo 目录）同步修正。全量测试通过（1245/1245）。
+
+# 跟进（2026-10-07）：finalize 改用 truncate!；expand_decayterm 输出 ExpDecayOpSum
+
+- **finalize sweep**（`fmabackend.jl`）：`canonicalize!(m.bra; alg=Orthogonalize(SVD(), trunc))`
+  换成 FMA 等价的 `truncate!(m.bra; trunc)`（内部同为 `Orthogonalize(SVD(), trunc, false)`）。
+- **`ExponentialDecayTerm` 删除**：`expand_decayterm` 直接输出 FMA 的
+  `ExpDecayOpSum`（Prony 系数 × `coeff` 为强度 αₖ、指数为衰减因子 λₖ），经由 FMA 的
+  `SchurMPOTensor(::ExpDecayOpSum, hloc)` 构造站点张量（每个展开参数一个内部通道）；
+  `exponentialdecay.jl` 整文件删除（类型、`_longrange_schurmpo_util` 与
+  `SchurMPOTensor(h1, h2s::Vector)` 构造器；`_op_adjoint` 移入 generaldecay.jl）。
+  TTIIF 的 `adt_ti_mpotensor` / `pt_ti_mpotensor` 改为
+  `SchurMPOTensor(m1s, h1) + SchurMPOTensor(m2s)`（两个方向的 ExpDecayOpSum 各生成
+  一个 SchurMPOTensor，块对角拼接、D 角相加，通道数与旧实现一致）。TEMPO re-export
+  `ExpDecayOpTerm` / `ExpDecayOpSum`。全量测试通过（1245/1245）。
+
 # 跟进（2026-10-07）：适配 FMA 4d3375b（same-kind MPO 算术 / timeevompo 返回 plain MPO）
 
 FMA 大重构（OpSum/OpTerm 携带 Vector、MPO ±/*/dot 限定 plain same-kind 链、
