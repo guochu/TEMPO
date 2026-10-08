@@ -130,7 +130,7 @@ Key points:
 - `integrate(lattice, args...)` / `integrate(mpsA, mpsB)`: computes the partition function (path-integral sum);
 - `apply!(term, mps)`: applies a local operator;
 - `canonicalize!`, `leftorth!`, `rightorth!`: orthogonalization (`Orthogonalize` can be specified);
-- `bond_dimension(mps)`, `bond_dimensions(mps)`: bond dimension queries;
+- `bonddim(mps)`, `bonddims(mps)`: bond dimension queries;
 - `distance(mps1, mps2)` / `distance2`: distance between two tensors (for relative-error validation);
 - `randomadt` / `randompt`: random tensors (for testing); `vacuumstate(lattice)`: vacuum state.
 

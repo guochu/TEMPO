@@ -13,7 +13,7 @@ export SchurMPOTensor, GenericDecayTerm, PowerlawDecayTerm, ExpDecayOpTerm, ExpD
 export expand_decayterm
 
 # ADT
-export space_l, space_r, bond_dimension, bond_dimensions, scaling, phydim, phydims
+export space_l, space_r, bonddim, bonddims, scaling, phydim, phydims
 export ADT, randomadt, isleftcanonical, isrightcanonical, iscanonical
 export distance, distance2, Orthogonalize, leftorth!, rightorth!, canonicalize!
 export mult, mult!, DMRG1
@@ -80,7 +80,7 @@ using FiniteMPSAlgorithms
 import FiniteMPSAlgorithms: mult, mult!, canonicalize!, canonicalize, leftorth!, rightorth!,
 	swap!, permute!, permute, distance, distance2, scaling, setscaling!,
 	svectors_uninitialized, unset_svectors!, changebond!, phydim, SVDCompression,
-	tompotensors
+	bonddim, bonddims, tompotensors
 # 仅调用（无 TEMPO 方法）的内部原语与类型：纯引入
 using FiniteMPSAlgorithms: _renormalize!,
 	MPSAlgorithm, SchurMPOTensor, MPOHamiltonian,

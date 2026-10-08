@@ -52,21 +52,21 @@ function LinearAlgebra.normalize!(x::Dense1DTN)
 end
 
 """
-    bond_dimension(psi::Dense1DTN[, bond::Int])
-    bond_dimensions(psi::Dense1DTN)
+    bonddim(psi::Dense1DTN[, bond::Int])
+    bonddims(psi::Dense1DTN)
 
 Query the bond dimensions of the auxiliary bonds of a tensor network.
 
-- `bond_dimension(psi, bond)`: dimension of the `bond`-th bond (throws `BoundsError` if out of range);
-- `bond_dimension(psi)`: maximum over all bonds;
-- `bond_dimensions(psi)`: vector of all bond dimensions.
+- `bonddim(psi, bond)`: dimension of the `bond`-th bond (throws `BoundsError` if out of range);
+- `bonddim(psi)`: maximum over all bonds;
+- `bonddims(psi)`: vector of all bond dimensions.
 """
-bond_dimension(psi::Dense1DTN, bond::Int) = begin
+bonddim(psi::Dense1DTN, bond::Int) = begin
 	((bond >= 1) && (bond <= length(psi))) || throw(BoundsError(1:length(psi), bond))
 	space_r(psi[bond])
-end 
-bond_dimensions(psi::Dense1DTN) = [bond_dimension(psi, i) for i in 1:length(psi)]
-bond_dimension(psi::Dense1DTN) = maximum(bond_dimensions(psi))
+end
+bonddims(psi::Dense1DTN) = [bonddim(psi, i) for i in 1:length(psi)]
+bonddim(psi::Dense1DTN) = maximum(bonddims(psi))
 latticedims(psi::Dense1DTN) = [size(m, 2) for m in psi.data]
 
 """

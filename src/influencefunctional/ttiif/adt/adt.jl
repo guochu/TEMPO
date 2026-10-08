@@ -43,7 +43,7 @@ function _hybriddynamics_fast(lattice::AbstractADTLattice, corr::AbstractCorrela
 	algmult = alg.algmult
 	if alg.verbosity > 1
 		t = @elapsed mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algmult, algexpan=alg.algexpan)
-		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bond_dimension(mps))
+		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bonddim(mps))
 	else
 		mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algmult, algexpan=alg.algexpan)
 	end
@@ -51,7 +51,7 @@ function _hybriddynamics_fast(lattice::AbstractADTLattice, corr::AbstractCorrela
 	for i in 1:alg.k
 		if alg.verbosity > 1
 			t = @elapsed mps = mult(mps, mps, algmult)
-			println("the $i-th iteration takes $t seconds, bond dimension is ", bond_dimension(mps))
+			println("the $i-th iteration takes $t seconds, bond dimension is ", bonddim(mps))
 		else
 			mps = mult(mps, mps, algmult)
 		end
@@ -63,7 +63,7 @@ function _hybriddynamics_slow(lattice::AbstractADTLattice, corr::AbstractCorrela
 	algmult = alg.algmult
 	if alg.verbosity > 1
 		t = @elapsed mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algmult, algexpan=alg.algexpan)
-		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bond_dimension(mps))
+		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bonddim(mps))
 	else
 		mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algmult, algexpan=alg.algexpan)
 	end
@@ -72,7 +72,7 @@ function _hybriddynamics_slow(lattice::AbstractADTLattice, corr::AbstractCorrela
 	for i in 1:2^(alg.k)-1
 		if alg.verbosity > 1
 			t = @elapsed mps = mult(mps, mps0, algmult)
-			println("the $i-th iteration takes $t seconds, bond dimension is ", bond_dimension(mps))
+			println("the $i-th iteration takes $t seconds, bond dimension is ", bonddim(mps))
 		else
 			mps = mult(mps, mps0, algmult)
 		end		
@@ -96,7 +96,7 @@ function _hybriddynamics_slow!(gmps, lattice::AbstractADTLattice, corr::Abstract
 					mult!(gmps, mps, algmult)
 				end
 			end
-			println("the $i-th iteration takes $t seconds, bond dimension is ", bond_dimension(gmps))
+			println("the $i-th iteration takes $t seconds, bond dimension is ", bonddim(gmps))
 		else
 			for mps in mps_all
 				mult!(gmps, mps, algmult)

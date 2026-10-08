@@ -76,7 +76,7 @@ end
 			p2 = partialif_naive(lattice, ind1, corr, hyb)
 			@test distance(p1, p2) / norm(p1) < tol
 			# single-branch lattice: bond dimension d for any Hermitian operator
-			@test maximum(bond_dimensions(p1)) == d
+			@test maximum(bonddims(p1)) == d
 		end
 	end
 
@@ -94,7 +94,7 @@ end
 				p1 = partialif(lattice, ind1, corr, hyb)
 				p2 = partialif_naive(lattice, ind1, corr, hyb)
 				@test distance(p1, p2) / norm(p1) < tol
-				@test maximum(bond_dimensions(p1)) == d
+				@test maximum(bonddims(p1)) == d
 			end
 		end
 	end
@@ -117,7 +117,7 @@ end
 				p1 = partialif(lattice, ind1, corr, hyb)
 				p2 = partialif_naive(lattice, ind1, corr, hyb)
 				@test distance(p1, p2) / norm(p1) < tol
-				@test maximum(bond_dimensions(p1)) == d
+				@test maximum(bonddims(p1)) == d
 			end
 		end
 	end

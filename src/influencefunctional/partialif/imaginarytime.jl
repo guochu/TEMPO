@@ -31,7 +31,7 @@ function hybriddynamics!(gmps::ADT, lattice::ImagADTLattice1Order, corr::ImagCor
 			push!(coefs, coef)
 		end
 		tmp = partialif_densemps(ds, pos1, pos2s, op, coefs)
-		# println("bond dimension of $i-th partial IF is ", bond_dimensions(tmp))
+		# println("bond dimension of $i-th partial IF is ", bonddims(tmp))
 		mult!(gmps, tmp, trunc=trunc)
 	end
 	return gmps

@@ -130,7 +130,7 @@ function main(t; δt = 0.05, Δ = 1., β = 2.5, α=0.1, s=0.5, wc = 5., chi = 10
 		Serialization.serialize(mpspath, mpsI)
 	end
 
-	println("mpsI bond dimension ", bond_dimension(mpsI))
+	println("mpsI bond dimension ", bonddim(mpsI))
 	
 	ρimp = [0 0; 0 1.]
 

@@ -1,3 +1,11 @@
+# 跟进（2026-10-07）：bond_dimension(s) 改名 bonddim(s)
+
+`bond_dimension` / `bond_dimensions` 改名为 `bonddim` / `bonddims`，与
+FiniteMPSAlgorithms 的命名对齐（同名泛型函数经 `import` 扩展，`Dense1DTN` 方法
+语义不变：单键 / 全链最大 / 全部键维向量）。定义（`adt/abstractdefs.jl`）、export、
+全部调用点（ttiif 的进度输出、测试、tutorials、performance 脚本）与 manual.md
+同步更新。全量测试通过（1245/1245）。
+
 # 跟进（2026-10-07）：FMA 提供 CanonicalMPO 原生 dot
 
 FMA 在 `CanonicalMPO` 上新增原生 `dot` / `distance` / `fidelity`（per-site scaling

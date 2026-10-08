@@ -55,7 +55,7 @@ _relative_error(num, ref) = norm(num - ref) / norm(ref)
 
 MPS 的最大键维。
 """
-_maxbond(mps) = maximum(bond_dimensions(mps))
+_maxbond(mps) = maximum(bonddims(mps))
 
 # ============================================================================
 # 1. 虚时间基准：G(τ) = <d(τ) d†(0)>

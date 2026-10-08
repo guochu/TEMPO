@@ -15,8 +15,8 @@ const MPSConstructors = ("ADT" => randomadt, "ProcessTensor" => randompt)
 				@test space_l(psi) == 1
 				@test space_r(psi) == 1
 
-				@test bond_dimension(psi) <= D
-				@test bond_dimensions(psi) isa Vector{Int}
+				@test bonddim(psi) <= D
+				@test bonddims(psi) isa Vector{Int}
 				psi1 = leftorth!(deepcopy(psi), alg = Orthogonalize(QR(), normalize=false))
 				@test norm(psi) ≈ norm(psi1) atol = tol
 				@test distance(psi, psi1) / norm(psi) < tol

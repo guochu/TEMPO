@@ -14,7 +14,7 @@
 # 			push!(coefs, coef)
 # 		end
 # 		pos2s, mpsdata = partialif_densempo(pos1, pos2s, op, coefs)
-# 		# println("bond dimension of $i-th partial IF is ", bond_dimensions(tmp))
+# 		# println("bond dimension of $i-th partial IF is ", bonddims(tmp))
 # 		tmp = _fit_to_full(length(lattice), lattice.d, pos2s, mpsdata)
 # 		apply!(gmps, tmp)
 # 		canonicalize!(gmps, alg=orth)
