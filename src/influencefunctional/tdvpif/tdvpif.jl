@@ -47,12 +47,12 @@
 # NOTE: the direct-sum bond dimensions of the four branches add up, so the
 # branches are summed one by one, compressing with SVD canonicalization after
 # each addition to keep the bond dimension bounded. The compression uses the
-# tight `DefaultKTruncation` (not `alg.trunc`): the compression error of H
+# tight `Defaults.alg_trunc_sys()` (not `alg.trunc`): the compression error of H
 # is exponentially amplified by the flow (IF = e^H), so a loose tolerance
 # would degrade the accuracy of the influence functional.
 function _tdvpif_hamiltonian(lattice, corr, hyb, alg::TDVPIF)
-	h1, h2, h3, h4 = influenceoperators(lattice, corr, hyb, algexpan=alg.algexpan)
-	orth = Orthogonalize(SVD(), DefaultKTruncation; normalize=false)
+	h1, h2, h3, h4 = influenceoperators(lattice, corr, hyb, algexpan=alg.alg_expan)
+	orth = Orthogonalize(SVD(), Defaults.alg_trunc_sys(); normalize=false)
 	H = h1 + h2
 	canonicalize!(H, alg=orth)
 	H = H + h3
@@ -184,14 +184,14 @@ The modified `gmps`.
 """
 function hybriddynamics!(gmps::ADT, lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, hyb::AdditiveHyb, alg::TDVPIF)
 	# influence operator H in MPO (fused-leg MPS) form
-	H = only(influenceoperators(lattice, corr, hyb, algexpan=alg.algexpan))
+	H = only(influenceoperators(lattice, corr, hyb, algexpan=alg.alg_expan))
 	return _tdvpif_hybriddynamics_adt!(gmps, H, alg)
 end
 
 """
 	hybriddynamics(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, hyb::AdditiveHyb, alg::TDVPIF)
 
-Construct the influence functional on a real-time ADT lattice with the `TDVPIF` algorithm: the 4 branch influence operators returned by `influenceoperators` ((+,+), (+,−), (−,+), (−,−)) are summed one by one into a single influence operator H (each partial sum compressed by SVD canonicalization with `DefaultKTruncation`), which then drives the same TDVP imaginary-time flow as in the imaginary-time case.
+Construct the influence functional on a real-time ADT lattice with the `TDVPIF` algorithm: the 4 branch influence operators returned by `influenceoperators` ((+,+), (+,−), (−,+), (−,−)) are summed one by one into a single influence operator H (each partial sum compressed by SVD canonicalization with `Defaults.alg_trunc_sys()`), which then drives the same TDVP imaginary-time flow as in the imaginary-time case.
 
 # Returns
 The influence functional, represented as an `ADT`.
@@ -261,14 +261,14 @@ The modified `gmps`.
 """
 function hybriddynamics!(gmps::ProcessTensor, lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, hyb::GeneralHybStyle, alg::TDVPIF)
 	# influence operator H in MPO form
-	H = only(influenceoperators(lattice, corr, hyb, algexpan=alg.algexpan))
+	H = only(influenceoperators(lattice, corr, hyb, algexpan=alg.alg_expan))
 	return _tdvpif_hybriddynamics_pt!(gmps, H, alg)
 end
 
 """
 	hybriddynamics(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::GeneralHybStyle, alg::TDVPIF)
 
-Construct the influence functional on a real-time PT lattice with the `TDVPIF` algorithm: the 4 branch influence operators returned by `influenceoperators` ((+,+), (+,−), (−,+), (−,−)) are summed one by one into a single influence operator H (each partial sum compressed by SVD canonicalization with `DefaultKTruncation`), which then drives the same TDVP imaginary-time flow as in the imaginary-time case.
+Construct the influence functional on a real-time PT lattice with the `TDVPIF` algorithm: the 4 branch influence operators returned by `influenceoperators` ((+,+), (+,−), (−,+), (−,−)) are summed one by one into a single influence operator H (each partial sum compressed by SVD canonicalization with `Defaults.alg_trunc_sys()`), which then drives the same TDVP imaginary-time flow as in the imaginary-time case.
 
 # Returns
 The influence functional, represented as a `ProcessTensor`.

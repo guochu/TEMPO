@@ -67,7 +67,7 @@ PowerlawDecayTerm(a::AbstractMatrix, b::AbstractMatrix; α::Number=1., kwargs...
 # L is the number of sites
 
 """
-    expand_decayterm(x::GenericDecayTerm; len, alg=OverDeterminedProny())
+    expand_decayterm(x::GenericDecayTerm; len, alg=Defaults.alg_expan())
 
 Convert a `GenericDecayTerm` into an `ExpDecayOpSum`: the exponential expansion
 coefficients (times the term's `coeff`) become the strengths `αs`, the exponents the
@@ -75,7 +75,7 @@ decay factors `λs`. The sum converts directly to a `SchurMPOTensor` (one intern
 channel per expansion parameter). When `x.f` is a vector, `len` is ignored; when
 `x.f` is a function, `len` is the sampling length.
 """
-function expand_decayterm(x::GenericDecayTerm{M1, M, M2, F, T}; len::Union{Int, Nothing}=nothing, alg::ExponentialExpansionAlgorithm=OverDeterminedProny()) where {M1, M, M2, F, T}
+function expand_decayterm(x::GenericDecayTerm{M1, M, M2, F, T}; len::Union{Int, Nothing}=nothing, alg::ExponentialExpansionAlgorithm=Defaults.alg_expan()) where {M1, M, M2, F, T}
     if F <: AbstractVector
         xs, lambdas = exponential_expansion(x.f, alg=alg)
         isa(len, Int) && println("key len ignored")

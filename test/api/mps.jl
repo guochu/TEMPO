@@ -48,15 +48,15 @@ end
 	L = 6
 	chi = 20
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
-	alg1 = SVDCompression(trunc)
-	alg2 = DMRG1(trunc, initguess=:svd)
-	alg3 = DMRG1(trunc, initguess=:rand, maxiter=20)
-	alg4 = DMRG1(trunc, initguess=:pre, maxiter=20)
+	alg1 = SVDCompression(trunc=trunc)
+	alg2 = DMRG1(trunc=trunc, initguess=:svd)
+	alg3 = DMRG1(trunc=trunc, initguess=:rand, maxiter=20)
+	alg4 = DMRG1(trunc=trunc, initguess=:pre, maxiter=20)
 	# trunc is parameterized: `SVDCompression` accepts any TruncationScheme,
 	# while `DMRG1` requires a scheme carrying the bond dimension `D`
-	alg5 = SVDCompression(truncdim(chi))
-	alg6 = DMRG1(truncdim(chi), initguess=:svd)
-	alg7 = SVDCompression(truncrelerr(ϵ=1.0e-10))
+	alg5 = SVDCompression(trunc=truncdim(chi))
+	alg6 = DMRG1(trunc=truncdim(chi), initguess=:svd)
+	alg7 = SVDCompression(trunc=truncrelerr(ϵ=1.0e-10))
 	algs = [alg1, alg2, alg3, alg4, alg5, alg6, alg7]
 	tol = 1.0e-7
 	for (name, randmps) in MPSConstructors
@@ -98,10 +98,10 @@ end
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
 	# maxiter 提高到 20：谱对比检验的是 finalize 的正确性，不应受 ALS 迭代
 	# 次数不足（个别随机实例 5 轮不收敛）干扰
-	algs_dmrg = (DMRG1(trunc, initguess=:svd, maxiter=20),
-	             DMRG1(trunc, initguess=:rand, maxiter=20),
-	             DMRG1(trunc, initguess=:pre, maxiter=20),
-	             DMRG1(truncdim(chi), initguess=:svd, maxiter=20))
+	algs_dmrg = (DMRG1(trunc=trunc, initguess=:svd, maxiter=20),
+	             DMRG1(trunc=trunc, initguess=:rand, maxiter=20),
+	             DMRG1(trunc=trunc, initguess=:pre, maxiter=20),
+	             DMRG1(trunc=truncdim(chi), initguess=:svd, maxiter=20))
 	tol = 1.0e-6
 	for (name, randmps) in MPSConstructors
 		@testset "$name" begin
@@ -128,7 +128,7 @@ end
 				# 有截断：谱是截断态的精确 Schmidt 值（iscanonical 检验自洽性）；
 				# distance 只做方向一致性 sanity 检查——强截断下 ALS 的变分误差
 				# 本身可以很大（新旧实现一致，见 changes.md）
-				z6 = mult(psi1, psi2, DMRG1(truncdim(6), initguess=:svd))
+				z6 = mult(psi1, psi2, DMRG1(trunc=truncdim(6), initguess=:svd))
 				@test iscanonical(z6)
 				@test distance(z6, exact) / norm(exact) < 1.0
 			end

@@ -1,104 +1,78 @@
 abstract type InfluenceFunctionalAlgorithm end
 """
-	PartialIF(; trunc::TruncateDimCutoff=DefaultITruncation)
+	PartialIF(; trunc::TruncateDimCutoff=Defaults.alg_trunc_if())
 
 Construct the full influence functional as a product of partial influence functionals (partial IFs), each with bond dimension D=2.
 
 See [SciPost Phys. Core 7, 063 (2024)].
 
 # Arguments
-- `trunc::TruncateDimCutoff=DefaultITruncation`: truncation scheme used when multiplying the partial IFs successively into the full IF.
+- `trunc::TruncateDimCutoff=Defaults.alg_trunc_if()`: truncation scheme used when multiplying the partial IFs successively into the full IF.
 """
-struct PartialIF <: InfluenceFunctionalAlgorithm
-	trunc::TruncateDimCutoff
+@kwdef struct PartialIF <: InfluenceFunctionalAlgorithm
+	trunc::TruncateDimCutoff = Defaults.alg_trunc_if()
 end
-"""
-	PartialIF(; trunc::TruncateDimCutoff=DefaultITruncation)
-
-Keyword constructor for `PartialIF`; the truncation scheme is specified by `trunc`.
-"""
-PartialIF(; trunc::TruncateDimCutoff=DefaultITruncation) = PartialIF(trunc)
 
 """
-	XTRGIF(; algexpan, algevo, algmult, k, fast, verbosity)
+	XTRGIF(; alg_expan, alg_evo, alg_mult, k, fast, verbosity)
 
 Construct the influence functional as a translationally invariant MPO: first build the differential influence functional of width dt/2^k, then repeatedly square it k times (`fast=true`) via the tree bipartition scheme to obtain the full-length influence functional.
 
 See [SciPost Phys. Core 7, 063 (2024)].
 
 # Fields
-- `algexpan::ExponentialExpansionAlgorithm`: exponential (Prony) expansion algorithm for the bath correlation function.
-- `algevo::TimeEvoMPOAlgorithm`: time-evolution algorithm for the differential influence functional (`FirstOrderStepper` or `ComplexStepper`).
-- `algmult::MPSAlgorithm`: MPO multiplication (compression) algorithm (`DMRG1` or `SVDCompression`).
-- `k::Int`: number of tree bipartition iterations, corresponding to 2^k time steps.
-- `fast::Bool`: if `true`, use the fast tree bipartition scheme (k multiplications); otherwise use the sequential scheme (2^k-1 multiplications).
-- `verbosity::Int`: verbosity level of the output.
+- `alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan()`: exponential (Prony) expansion algorithm for the bath correlation function.
+- `alg_evo::TimeEvoMPOAlgorithm=Defaults.alg_evo()`: time-evolution algorithm for the differential influence functional (`FirstOrderStepper` or `ComplexStepper`).
+- `alg_mult::MPSAlgorithm=Defaults.alg_mult()`: MPO multiplication (compression) algorithm (`DMRG1` or `SVDCompression`).
+- `k::Int=5`: number of tree bipartition iterations, corresponding to 2^k time steps.
+- `fast::Bool=true`: if `true`, use the fast tree bipartition scheme (k multiplications); otherwise use the sequential scheme (2^k-1 multiplications).
+- `verbosity::Int=0`: verbosity level of the output.
 """
-struct XTRGIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm, M<:MPSAlgorithm} <: InfluenceFunctionalAlgorithm 
-	algexpan::T
-	algevo::E
-	algmult::M
-	# trunc::TruncateDimCutoff
-	k::Int
-	fast::Bool
-	verbosity::Int
+@kwdef struct XTRGIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm, M<:MPSAlgorithm} <: InfluenceFunctionalAlgorithm
+	alg_expan::T = Defaults.alg_expan()
+	alg_evo::E = Defaults.alg_evo()
+	alg_mult::M = Defaults.alg_mult()
+	k::Int = 5
+	fast::Bool = true
+	verbosity::Int = 0
 end
-"""
-	XTRGIF(; algexpan, algevo, algmult, k, fast, verbosity)
-
-Keyword constructor for `XTRGIF`; all parameters have default values and usually need not be passed explicitly.
-"""
-XTRGIF(; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny(n=15, tol=1.0e-4, verbosity=0), 
-						 algevo::TimeEvoMPOAlgorithm=WII(), 
-						 algmult::MPSAlgorithm=DefaultMultAlg,
-						 k::Int=5, 
-						 fast::Bool=true,
-						 verbosity::Int=0) = XTRGIF(algexpan, algevo, algmult, k, fast, verbosity)
 
 function Base.getproperty(x::XTRGIF, s::Symbol)
 	if s == :trunc
-		return x.algmult.trunc
+		return x.alg_mult.trunc
 	else
 		getfield(x, s)
 	end
 end
 
 """
-	TDVPIF(; algexpan, trunc, δ, verbosity)
+	TDVPIF(; alg_expan, trunc, δ, verbosity)
 
 Construct the influence functional with a second-order single-site TDVP imaginary-time flow: the influence functional is viewed as the "equilibrium state" IF = exp(H) of the influence operator H, and is computed by evolving the identity influence functional (β = 0) along the flow dz/dτ = H·z from τ = 0 to τ = 1.
 
 Each flow step is one forward-backward TDVP sweep: the center tensor is evolved by +δτ/2 (Krylov exponentiation of the local effective map) and the bond matrix by -δτ/2, with a full +δτ step at the turning site. The state is zero-padded to bond dimension `trunc.D` before the flow, so the bond dimension grows with the correlations up to `trunc.D`.
 
 # Fields
-- `algexpan::ExponentialExpansionAlgorithm`: exponential (Prony) expansion algorithm for the bath correlation function.
-- `trunc::TruncateDimCutoff`: bond dimension of the flow manifold / final influence functional.
-- `δ::Float64`: imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer).
-- `verbosity::Int`: verbosity level of the output.
+- `alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan()`: exponential (Prony) expansion algorithm for the bath correlation function.
+- `trunc::TruncateDimCutoff=Defaults.alg_trunc_if()`: bond dimension of the flow manifold / final influence functional.
+- `δ::Float64=0.1`: imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer).
+- `verbosity::Int=0`: verbosity level of the output.
 
 On real-time lattices (`RealADTLattice1Order` with `AdditiveHyb`, `RealPTLattice1Order` with `GeneralHybStyle`) the influence operator driving the flow is the sum (direct sum) of the 4 branch MPOs returned by `influenceoperators`, since the site-wise product algebra satisfies e^a∘e^b = e^{a+b}.
 
 `TDVPIF` is the recommended algorithm for constructing the influence functional on pure imaginary-time or pure real-time contours. Mixed-contour lattices (`MixedADTLattice` / `MixedPTLattice`) are currently not supported; use `PartialIF` there.
 """
-struct TDVPIF <: InfluenceFunctionalAlgorithm
-	algexpan::ExponentialExpansionAlgorithm
-	trunc::TruncateDimCutoff      # bond dimension of the flow manifold / final IF
-	δ::Float64                      # imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer)
-	verbosity::Int
-end
-"""
-	TDVPIF(; algexpan, trunc, δ, verbosity)
-
-Keyword constructor for `TDVPIF`; all parameters have default values and usually need not be passed explicitly.
-"""
-function TDVPIF(; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny(n=15, tol=1.0e-4, verbosity=0),
-				trunc::TruncateDimCutoff=DefaultITruncation,
-				δ::Real=0.1,
-				verbosity::Int=0)
-	(0 < δ <= 1) || throw(ArgumentError("δ must be a real number in (0, 1], got $δ"))
-	# adjust δ so that 1/δ is an integer number of steps
-	n = max(round(Int, 1 / δ), 1)
-	return TDVPIF(algexpan, trunc, 1 / n, verbosity)
+@kwdef struct TDVPIF{T<:ExponentialExpansionAlgorithm} <: InfluenceFunctionalAlgorithm
+	alg_expan::T = Defaults.alg_expan()
+	trunc::TruncateDimCutoff = Defaults.alg_trunc_if()
+	δ::Float64 = 0.1                      # imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer)
+	verbosity::Int = 0
+	function TDVPIF(alg_expan::T, trunc, δ, verbosity) where {T}
+		(0 < δ <= 1) || throw(ArgumentError("δ must be a real number in (0, 1], got $δ"))
+		# adjust δ so that 1/δ is an integer number of steps
+		n = max(round(Int, 1 / δ), 1)
+		new{T}(alg_expan, trunc, 1 / n, verbosity)
+	end
 end
 
 

@@ -1,5 +1,5 @@
 """
-	partialif_naive(lattice::AbstractPTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
+	partialif_naive(lattice::AbstractPTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; trunc::TruncationScheme=Defaults.alg_trunc_if())
 
 Naive partial influence functional construction on PT lattices: apply the exp(ηᵢⱼ op⊗op) gates successively for each column index (`_get_contour_op` handles the transpose of op according to the contour branch), orthogonalizing/truncating along the way.
 
@@ -8,13 +8,13 @@ Naive partial influence functional construction on PT lattices: apply the exp(η
 - `rowind::ContourIndex`: contour index (row) associated with the partial IF.
 - `corr::AbstractCorrelationFunction`: bath correlation function.
 - `hyb::NonAdditiveHyb`: non-additive (symmetric) system-bath coupling.
-- `trunc::TruncationScheme=DefaultITruncation`: truncation scheme used during orthogonalization.
+- `trunc::TruncationScheme=Defaults.alg_trunc_if()`: truncation scheme used during orthogonalization.
 
 # Returns
 The partial IF, represented as a `ProcessTensor`.
 """
 function partialif_naive(lattice::AbstractPTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; 
-							trunc::TruncationScheme=DefaultITruncation)
+							trunc::TruncationScheme=Defaults.alg_trunc_if())
 	z = hyb.op
 	(lattice.d == size(z, 1) == size(z, 2)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
 	# d = lattice.d

@@ -59,9 +59,9 @@ end
 
 	adag = bosonadagoperator(d=d)
 	hyb = NonDiagonalHyb(adag)
-	algmult = DMRG1(trunc)
-	algexpan = OverDeterminedProny(n=20, tol=1.0e-8)
-	alg = XTRGIF(k=5, fast=true, algmult=algmult, algexpan=algexpan)
+	alg_mult = DMRG1(trunc=trunc)
+	alg_expan = OverDeterminedProny(n=20, tol=1.0e-8)
+	alg = XTRGIF(k=5, fast=true, alg_mult=alg_mult, alg_expan=alg_expan)
 
 	mpsI = hybriddynamics(lattice, corr, hyb, alg)
 
@@ -133,9 +133,9 @@ end
 
 	adag = bosonadagoperator(d=d)
 	hyb = NonDiagonalHyb(adag)
-	algmult = DMRG1(trunc)
-	algexpan = OverDeterminedProny(n=20, tol=1.0e-8)
-	alg = XTRGIF(k=5, fast=true, algmult=algmult, algexpan=algexpan)
+	alg_mult = DMRG1(trunc=trunc)
+	alg_expan = OverDeterminedProny(n=20, tol=1.0e-8)
+	alg = XTRGIF(k=5, fast=true, alg_mult=alg_mult, alg_expan=alg_expan)
 
 	mpsI = hybriddynamics(lattice, corr, hyb, alg)
 

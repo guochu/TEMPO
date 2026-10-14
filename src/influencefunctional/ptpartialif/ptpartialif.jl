@@ -38,7 +38,7 @@ hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractC
 				gmps, lattice, corr, hyb, trunc=alg.trunc)
 
 """
-	hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
+	hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; trunc::TruncationScheme=Defaults.alg_trunc_if())
 
 In-place `hybriddynamics` on PT lattices with the analytic `PartialIF` algorithm: for each contour lattice point, construct its partial IF as a bond-`d` MPO (`partialif`) and multiply it into `gmps` with the truncation scheme `trunc`.
 
@@ -46,7 +46,7 @@ In-place `hybriddynamics` on PT lattices with the analytic `PartialIF` algorithm
 The modified `gmps`.
 """
 function hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; 
-							trunc::TruncationScheme=DefaultITruncation)
+							trunc::TruncationScheme=Defaults.alg_trunc_if())
 	for b1 in branches(lattice)
 		k1 = (b1 == :τ) ? lattice.Nτ : lattice.Nt
 		for i in 1:k1
@@ -112,7 +112,7 @@ end
 
 
 # naive implementation with N^2 gate operations
-# function hybriddynamics_naive!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
+# function hybriddynamics_naive!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; trunc::TruncationScheme=Defaults.alg_trunc_if())
 # 	z = hyb.op
 # 	(lattice.d == size(z, 1) == size(z, 2)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
 # 	d = lattice.d
@@ -150,7 +150,7 @@ end
 # end
 
 function hybriddynamics_naive!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; 
-								trunc::TruncationScheme=DefaultITruncation)
+								trunc::TruncationScheme=Defaults.alg_trunc_if())
 	for b1 in branches(lattice)
 		k1 = (b1 == :τ) ? lattice.Nτ : lattice.Nt
 		for i in 1:k1

@@ -52,7 +52,7 @@ end
 
 # naive implementation with N^2 gate operations
 """
-	hybriddynamics_naive!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
+	hybriddynamics_naive!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=Defaults.alg_trunc_if())
 
 In-place version of `hybriddynamics_naive`: construct a partial IF for each contour lattice point and multiply it directly into `gmps` (N² gate operations in total), truncating after each multiplication according to `trunc`.
 
@@ -62,7 +62,7 @@ The modified `gmps`.
 See also [`hybriddynamics_naive`](@ref) and [`hybriddynamics`](@ref).
 """
 function hybriddynamics_naive!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb; 
-								trunc::TruncationScheme=DefaultITruncation)
+								trunc::TruncationScheme=Defaults.alg_trunc_if())
 	for b1 in branches(lattice)
 		k1 = (b1 == :τ) ? lattice.Nτ : lattice.Nt
 		for i in 1:k1

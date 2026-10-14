@@ -39,9 +39,9 @@ end
 imag_algs(trunc, δτ) = [(XTRGIF(k=5, fast=true), 1.0e-2),
                         (XTRGIF(k=5, fast=false), 1.0e-2),
                         (TDVPIF(trunc=trunc, δ=δτ), 5.0e-2)]
-real_algs(trunc, δt) = [(XTRGIF(k=5, algevo=WII(), algmult=SVDCompression(trunc)), 1.0e-2),
-                        (XTRGIF(k=5, algmult=DMRG1(trunc=trunc, initguess=:svd)), 1.0e-2),
-                        (XTRGIF(k=5, algmult=DMRG1(trunc=trunc), fast=false), 1.0e-2),
+real_algs(trunc, δt) = [(XTRGIF(k=5, alg_evo=WII(), alg_mult=SVDCompression(trunc=trunc)), 1.0e-2),
+                        (XTRGIF(k=5, alg_mult=DMRG1(trunc=trunc, initguess=:svd)), 1.0e-2),
+                        (XTRGIF(k=5, alg_mult=DMRG1(trunc=trunc), fast=false), 1.0e-2),
                         (TDVPIF(trunc=trunc, δ=δt), 5.0e-2)]
 
 # cross-check the candidate algorithms against the PartialIF reference dynamics,
@@ -102,7 +102,7 @@ end
 			model = ImpurityHamiltonian(_rand_ham(name == "ADT" ? Float64 : ComplexF64, d))
 			mps4 = hybriddynamics!(sysdynamics(lattice, model, trunc=trunc), lattice, corr, hyb, TDVPIF(trunc=trunc, δ=δτ))
 			g0 = sysdynamics(lattice, model, trunc=trunc)
-			mult!(g0, hybriddynamics(lattice, corr, hyb, TDVPIF(trunc=trunc, δ=δτ)), SVDCompression(trunc))
+			mult!(g0, hybriddynamics(lattice, corr, hyb, TDVPIF(trunc=trunc, δ=δτ)), SVDCompression(trunc=trunc))
 			@test distance(mps4, g0) / norm(g0) < 5.0e-2
 		end
 	end
@@ -118,7 +118,7 @@ end
 	trunc = truncdimcutoff(D=100, ϵ=1.0e-6, add_back=0)
 	base_alg = PartialIF(trunc=trunc)
 	algs = real_algs(trunc, δt)
-	inplace = XTRGIF(k=5, algmult=DMRG1(trunc=trunc), fast=false)
+	inplace = XTRGIF(k=5, alg_mult=DMRG1(trunc=trunc), fast=false)
 
 	# ADT lattice, diagonal hybridization
 	lattice = ADTLattice(N=N, δt=δt, contour=:real, d=d)

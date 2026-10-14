@@ -109,9 +109,6 @@ include("pt/pt.jl")
 # FiniteMPSAlgorithms 适配层（零拷贝视图、DMRG1 翻译等；依赖 ADT/ProcessTensor）
 include("fmabackend.jl")
 
-# conversion between pt and adt
-include("conversions.jl")
-
 
 # adtterms
 include("adtterms.jl")

@@ -194,7 +194,7 @@ end
 
 # swap gate：委托给 FiniteMPSAlgorithms 的 CanonicalMPS `swap!`（Hastings
 # 更新，需要时自动完成规范化；右规范形式与键谱在截断误差内保持）
-function swap!(x::ADT, bond::Int; trunc::TruncationScheme=DefaultITruncation)
+function swap!(x::ADT, bond::Int; trunc::TruncationScheme=Defaults.alg_trunc_if())
 	swap!(x.parent, bond; trunc)
 	return x
 end

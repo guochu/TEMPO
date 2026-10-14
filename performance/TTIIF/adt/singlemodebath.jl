@@ -33,7 +33,7 @@ trunc2 = truncdimcutoff(D=2*chi, ϵ=1.0e-10, add_back=0)
 
 # 两种待比较的影响泛函算法（Vector of Pairs 保持顺序）
 algs = [
-	"XTRGIF" => XTRGIF(k=5, fast=true, algmult=SVDCompression(trunc)),
+	"XTRGIF" => XTRGIF(k=5, fast=true, alg_mult=SVDCompression(trunc=trunc)),
 	"TDVPIF"                 => TDVPIF(trunc=trunc, δ=0.1),
 ]
 

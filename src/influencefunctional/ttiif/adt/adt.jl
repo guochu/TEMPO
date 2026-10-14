@@ -14,7 +14,7 @@ See also [`XTRGIF`](@ref).
 function hybriddynamics!(gmps::ADT, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::XTRGIF)
 	if alg.fast
 		mps = hybriddynamics(lattice, corr, hyb, alg)
-		return mult!(gmps, mps, alg.algmult)
+		return mult!(gmps, mps, alg.alg_mult)
 	else
 		(alg.verbosity > 1) && println("Serial scheme using 2^$(alg.k) multiplications")
 		return _hybriddynamics_slow!(gmps, lattice, corr, hyb, alg)
@@ -40,12 +40,12 @@ function hybriddynamics(lattice::AbstractADTLattice, corr::AbstractCorrelationFu
 end
 
 function _hybriddynamics_fast(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::XTRGIF)
-	algmult = alg.algmult
+	algmult = alg.alg_mult
 	if alg.verbosity > 1
-		t = @elapsed mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algmult, algexpan=alg.algexpan)
+		t = @elapsed mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.alg_evo, algmult, algexpan=alg.alg_expan)
 		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bonddim(mps))
 	else
-		mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algmult, algexpan=alg.algexpan)
+		mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.alg_evo, algmult, algexpan=alg.alg_expan)
 	end
 
 	for i in 1:alg.k
@@ -60,12 +60,12 @@ function _hybriddynamics_fast(lattice::AbstractADTLattice, corr::AbstractCorrela
 end
 
 function _hybriddynamics_slow(lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::XTRGIF)
-	algmult = alg.algmult
+	algmult = alg.alg_mult
 	if alg.verbosity > 1
-		t = @elapsed mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algmult, algexpan=alg.algexpan)
+		t = @elapsed mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.alg_evo, algmult, algexpan=alg.alg_expan)
 		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bonddim(mps))
 	else
-		mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algmult, algexpan=alg.algexpan)
+		mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.alg_evo, algmult, algexpan=alg.alg_expan)
 	end
 	mps = mps0
 
@@ -81,12 +81,12 @@ function _hybriddynamics_slow(lattice::AbstractADTLattice, corr::AbstractCorrela
 end
 
 function _hybriddynamics_slow!(gmps, lattice::AbstractADTLattice, corr::AbstractCorrelationFunction, hyb::AdditiveHyb, alg::XTRGIF)
-	algmult = alg.algmult
+	algmult = alg.alg_mult
 	if alg.verbosity > 1
-		t = @elapsed mps_all = influenceoperatorsteppers(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algexpan=alg.algexpan)
+		t = @elapsed mps_all = influenceoperatorsteppers(lattice, corr, 1/2^(alg.k), hyb, alg.alg_evo, algexpan=alg.alg_expan)
 		println("building the initial MPS-IFs takes $t seconds ")
 	else
-		mps_all = influenceoperatorsteppers(lattice, corr, 1/2^(alg.k), hyb, alg.algevo, algexpan=alg.algexpan)
+		mps_all = influenceoperatorsteppers(lattice, corr, 1/2^(alg.k), hyb, alg.alg_evo, algexpan=alg.alg_expan)
 	end
 
 	for i in 1:2^(alg.k)

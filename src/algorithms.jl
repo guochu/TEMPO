@@ -18,66 +18,35 @@ abstract type DMRGAlgorithm <: MPSAlgorithm end
 # requires one of these, since `D` seeds the initial guess of the sweeps
 const TruncationWithD = Union{TruncateDim, TruncateDimCutoff}
 
-const AllowedInitGuesses = (:svd, :pre, :rand)
-
 """
 	DMRG1 <: DMRGAlgorithm
 
 Configuration of an MPS/MPO product compression algorithm based on DMRG iterative sweeping.
 
 # Fields
-- `trunc::TruncationWithD`: truncation scheme carrying a maximum bond dimension `D` (`truncdim(D)` or `truncdimcutoff(D, ϵ)`), used both to compress the result and to seed the initial guess
-- `maxiter::Int`: maximum number of iterations
-- `tol::Float64`: convergence tolerance
-- `initguess::Symbol`: initial guess, one of `:svd`, `:pre`, `:rand`
-- `verbosity::Int`: verbosity level
+- `trunc::TruncationWithD=Defaults.alg_trunc_if()`: truncation scheme carrying a maximum bond dimension `D` (`truncdim(D)` or `truncdimcutoff(D, ϵ)`), used both to compress the result and to seed the initial guess; schemes without a dimension cap (`truncrelerr`, `NoTruncation`) are not allowed
+- `maxiter::Int=5`: maximum number of iterations
+- `tol::Float64=1e-12`: convergence tolerance
+- `initguess::Symbol=:svd`: initial guess, one of `:svd`, `:pre`, `:rand`
+- `verbosity::Int=0`: verbosity level
 
-Main constructor: `DMRG1(trunc; maxiter=5, tol=1e-12, initguess=:svd, verbosity=0)`.
+`DMRG1` is defined with `@kwdef` and constructed via keywords: `DMRG1(; trunc, maxiter, tol, initguess, verbosity)`.
 """
-struct DMRG1{T<:TruncationWithD} <: DMRGAlgorithm
-	trunc::T
-	maxiter::Int
-	tol::Float64
-	initguess::Symbol
-	verbosity::Int
+@kwdef struct DMRG1{T<:TruncationWithD} <: DMRGAlgorithm
+	trunc::T = Defaults.alg_trunc_if()
+	maxiter::Int = 5
+	tol::Float64 = 1.0e-12
+	initguess::Symbol = :svd
+	verbosity::Int = 0
 end
-"""
-	DMRG1(trunc::TruncationWithD; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0)
-
-Construct a `DMRG1` algorithm configuration.
-
-# Arguments
-- `trunc::TruncationWithD`: truncation scheme carrying a maximum bond dimension `D` (constructed with `truncdimcutoff(D, ϵ)` or `truncdim(D)`); schemes without a dimension cap (`truncrelerr`, `NoTruncation`) are not allowed
-- `maxiter::Int`: maximum number of iterations
-- `tol::Float64`: convergence tolerance
-- `initguess::Symbol`: initial guess, must be one of `:svd`, `:pre`, `:rand`, otherwise an `ArgumentError` is thrown
-- `verbosity::Int`: verbosity level
-"""
-function DMRG1(trunc::TruncationWithD; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0)
-	(initguess in AllowedInitGuesses) || throw(ArgumentError("initguess must be one of $(AllowedInitGuesses)"))
-	return DMRG1(trunc, maxiter, tol, initguess, verbosity)
-end
-"""
-	DMRG1(; trunc::TruncationWithD=DefaultITruncation, kwargs...)
-
-Construct a `DMRG1` from keyword arguments, with default truncation scheme `DefaultITruncation`.
-"""
-DMRG1(; trunc::TruncationWithD=DefaultITruncation, kwargs...) = DMRG1(trunc; kwargs...)
-Base.similar(x::DMRG1; trunc::TruncationWithD=x.trunc, maxiter::Int=x.maxiter, tol::Float64=x.tol, initguess::Symbol=x.initguess, verbosity::Int=x.verbosity) = DMRG1(
-			trunc=trunc, maxiter=maxiter, tol=tol, initguess=initguess, verbosity=verbosity)
 
 # ---------------------------------------------------------------------------
-# `SVDCompression`：FiniteMPSAlgorithms 的类型；这里补充 TEMPO 风格的
-# positional 构造器（`SVDCompression(trunc; verbosity)`），保持与旧版 TEMPO
-# 完全兼容。关键字构造（`SVDCompression(; trunc, verbosity)`）沿用
-# FiniteMPSAlgorithms 的 `@kwdef` 定义。
+# `SVDCompression`：直接采用 FiniteMPSAlgorithms 的 `@kwdef` 定义
+# （`SVDCompression(; trunc, verbosity)`，字段均有默认值），无 TEMPO 侧包装。
 # ---------------------------------------------------------------------------
 """
-    SVDCompression(trunc::TruncationScheme; verbosity=0)
     SVDCompression(; trunc=truncdimcutoff(D=Defaults.D, ϵ=Defaults.tol, add_back=0), verbosity=0)
 
 Parameters for an SVD-based DMRG compression algorithm: singular values are truncated according to the truncation scheme `trunc` (any `TruncationScheme`),
 while `verbosity` controls the verbosity of the output. The scheme is accessible through the `trunc` field.
 """
-SVDCompression(trunc::TruncationScheme; verbosity::Int=0) = SVDCompression{typeof(trunc)}(trunc, verbosity)
-Base.similar(x::SVDCompression; trunc::TruncationScheme=x.trunc, verbosity::Int=x.verbosity) = SVDCompression(trunc; verbosity=verbosity)

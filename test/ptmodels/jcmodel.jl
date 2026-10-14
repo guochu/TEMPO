@@ -43,9 +43,9 @@ println("------------------------------------")
 	bath = bosonicbath(spec, β=β)
 	corr = correlationfunction(bath, lattice)
 
-	algmult = SVDCompression(trunc)
-	algexpan = OverDeterminedProny(n=20, tol=1.0e-8)
-	alg = XTRGIF(k=5, fast=true, algmult=algmult, algexpan=algexpan, verbosity=2)
+	alg_mult = SVDCompression(trunc=trunc)
+	alg_expan = OverDeterminedProny(n=20, tol=1.0e-8)
+	alg = XTRGIF(k=5, fast=true, alg_mult=alg_mult, alg_expan=alg_expan, verbosity=2)
 	mpsI = hybriddynamics(lattice, corr, bs, alg)
 	# @test distance(mpsI, mpsI′) / norm(mpsI′) < tol
 	mpsK = sysdynamics(lattice, model, trunc=trunc)

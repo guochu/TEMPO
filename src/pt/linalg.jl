@@ -42,7 +42,7 @@ end
 # swap gate：委托给 FiniteMPSAlgorithms 的 CanonicalMPO `swap!`（Hastings
 # 更新，与 TEMPO/GTEMPO 对齐；右规范形式与记录的键谱在截断误差内保持），
 # 需要时自动完成规范化。`permute!` / `permute` 为链级置换的对应委托。
-swap!(x::ProcessTensor, bond::Int; trunc::TruncationScheme=DefaultITruncation) = (swap!(x.parent, bond; trunc); x)
+swap!(x::ProcessTensor, bond::Int; trunc::TruncationScheme=Defaults.alg_trunc_if()) = (swap!(x.parent, bond; trunc); x)
 
 permute!(x::ProcessTensor, perm::AbstractVector{Int}; kwargs...) = (permute!(x.parent, perm; kwargs...); x)
 permute(x::ProcessTensor, perm::AbstractVector{Int}; kwargs...) = ProcessTensor(permute(x.parent, perm; kwargs...))

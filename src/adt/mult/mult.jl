@@ -1,7 +1,7 @@
 include("iterativemult.jl")
 
 """
-	mult(x::ADT, y::ADT; trunc::TruncationScheme=DefaultITruncation, verbosity::Int=0)
+	mult(x::ADT, y::ADT; trunc::TruncationScheme=Defaults.alg_trunc_if(), verbosity::Int=0)
 
 Compute the (compressed) product of two MPS and return a new `ADT` (inputs are not modified).
 
@@ -11,8 +11,8 @@ The SVD compression route delegates to FiniteMPSAlgorithms' `hadamard`: the exac
 # Returns
 The product `ADT`.
 """
-mult(x::ADT, y::ADT; trunc::TruncationScheme = DefaultITruncation, verbosity::Int = 0) =
-	mult(x, y, SVDCompression(trunc; verbosity))
+mult(x::ADT, y::ADT; trunc::TruncationScheme = Defaults.alg_trunc_if(), verbosity::Int = 0) =
+	mult(x, y, SVDCompression(trunc=trunc, verbosity=verbosity))
 """
 	mult(x::ADT, y::ADT, alg::SVDCompression)
 
@@ -28,11 +28,11 @@ Compute the product of two MPS using a DMRG iterative algorithm (e.g., `DMRG1`).
 mult(x::ADT, y::ADT, alg::DMRGAlgorithm) = iterativemult(x, y, alg)
 
 """
-	mult!(x::ADT, y::ADT; trunc::TruncationScheme=DefaultITruncation, verbosity::Int=0)
+	mult!(x::ADT, y::ADT; trunc::TruncationScheme=Defaults.alg_trunc_if(), verbosity::Int=0)
 
 Compute the (compressed) product of two MPS in place on `x`, and return `x`.
 """
-mult!(x::ADT, y::ADT; trunc::TruncationScheme = DefaultITruncation, verbosity::Int = 0) =
+mult!(x::ADT, y::ADT; trunc::TruncationScheme = Defaults.alg_trunc_if(), verbosity::Int = 0) =
 	copy!(x, mult(x, y; trunc, verbosity))
 """
 	mult!(x::ADT, y::ADT, alg::SVDCompression)

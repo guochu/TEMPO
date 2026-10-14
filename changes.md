@@ -1,3 +1,39 @@
+# 跟进（2026-10-14）：Defaults 函数化 + 算法配置统一 @kwdef
+
+默认值全部收口到 `Defaults` 模块的函数，常量式默认与手写构造器删除。全量测试通过
+（1240/1240）：
+
+- **Defaults 函数化**（`defaults.jl`）：新增 `alg_trunc_if()` / `alg_trunc_sys()` /
+  `alg_mult()` / `alg_evo() = WII()` / `alg_expan()`（OverDeterminedProny，
+  n=15, tol=1e-4, verbosity=0）；`DefaultITruncation` / `DefaultKTruncation` /
+  `DefaultMultAlg` 三个常量删除，库内全部默认值改经 Defaults 函数路由；
+  ttiif / `expand_decayterm` 中散落的 `OverDeterminedProny()` 默认值统一为
+  `Defaults.alg_expan()`。
+  两个实现要点：① Julia 子模块不继承父模块的绑定，`Defaults` 内显式
+  `using FiniteMPSAlgorithms: …` / `using ExpExp: …` / `import ..DMRG1`；
+  ② `truncdimcutoff(D=D, ϵ=ϵ, add_back)` 中裸 `add_back` 会被解析为位置参数，
+  改写为 `add_back=add_back`。
+- **算法配置统一 `@kwdef`**（`algorithms.jl`、`influencefunctional.jl`）：
+  - `DMRG1` 改 `@kwdef`（字段默认 trunc=alg_trunc_if(), maxiter=5, tol=1e-12,
+    initguess=:svd, verbosity=0），删除 positional 构造器、kw 包装构造器、
+    `Base.similar` 与 `AllowedInitGuesses`（initguess 的非法值由 mult 引擎的
+    `error("unsupported initguess")` 兜底）；只能关键字构造（`DMRG1(trunc=…)`）。
+  - `SVDCompression` 的 TEMPO 侧 positional 构造器与 `Base.similar` 删除，完全
+    沿用 FMA 的 `@kwdef` 定义（`SVDCompression(; trunc, verbosity)`）。
+  - `PartialIF` 改 `@kwdef`，删除手写 kw 构造器。
+  - `XTRGIF` 改 `@kwdef`；`TDVPIF` 改参数化 `@kwdef struct TDVPIF{T<:ExponentialExpansionAlgorithm}`
+    （inner 构造器以 `where {T}` + `new{T}` 编写，kwdef 的 kw 构造器按名调用它，
+    δ 校验与 1/δ 取整调整逻辑保留）。
+  - **XTRGIF / TDVPIF 字段改名**：`algexpan` → `alg_expan`、`algevo` → `alg_evo`、
+    `algmult` → `alg_mult`（字段访问点 ttiif/adt/adt.jl、ttiif/pt/pt.jl、
+    tdvpif/tdvpif.jl 同步）；函数关键字参数（`influenceoperators` 等的
+    `algexpan`）不变。
+- **conversions.jl 删除**：仅含注释占位与未被使用的 `copytensor`，
+  `TEMPO.jl` 的 include 同步移除。
+- **测试与脚本同步**：truncation（kwdef 构造 / MethodError 拒绝，`similar`
+  测试删除）、mps、ifdynamics、influenceoperator、ptmodels 的 positional 与
+  旧字段名调用全部改关键字风格；performance/TTIIF 的脚本与 README 同步。
+
 # 跟进（2026-10-07）：bond_dimension(s) 改名 bonddim(s)
 
 `bond_dimension` / `bond_dimensions` 改名为 `bonddim` / `bonddims`，与

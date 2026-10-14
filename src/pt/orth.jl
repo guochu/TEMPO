@@ -55,7 +55,7 @@ end
 
 canonicalize(psi::ProcessTensor; kwargs...) = canonicalize!(deepcopy(psi); kwargs...)
 """
-	canonicalize!(psi::ProcessTensor; alg::Orthogonalize=Orthogonalize(trunc=DefaultITruncation, normalize=false))
+	canonicalize!(psi::ProcessTensor; alg::Orthogonalize=Orthogonalize(trunc=Defaults.alg_trunc_if(), normalize=false))
 
 Transform the MPO into canonical form, modifying `psi` in place and returning it.
 
@@ -64,7 +64,7 @@ Internally performs a left orthogonalization with `QR` (without truncation) firs
 # Returns
 `psi` itself.
 """
-function canonicalize!(psi::ProcessTensor; alg::Orthogonalize = Orthogonalize(trunc=DefaultITruncation, normalize=false))
+function canonicalize!(psi::ProcessTensor; alg::Orthogonalize = Orthogonalize(trunc=Defaults.alg_trunc_if(), normalize=false))
 	alg.normalize && @warn "canonicalize with renormalization not recommanded for ProcessTensor"
 	v = psi.parent
 	FiniteMPSAlgorithms._canonicalize!(v; alg)

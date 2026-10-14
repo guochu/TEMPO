@@ -8,14 +8,14 @@ Multiply the partial influence functional of each contour lattice point in-place
 - `lattice::AbstractADTLattice`: ADT contour lattice.
 - `corr::AbstractCorrelationFunction`: bath correlation function.
 - `hyb::AdditiveHyb`: additive (diagonal) system-bath coupling.
-- `trunc::TruncationScheme=DefaultITruncation`: truncation scheme used after each multiplication.
+- `trunc::TruncationScheme=Defaults.alg_trunc_if()`: truncation scheme used after each multiplication.
 
 # Returns
 The modified `gmps`.
 
 See also [`hybriddynamics`](@ref) and [`hybriddynamics_naive`](@ref).
 """
-function hybriddynamics!(gmps::ADT, lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=DefaultITruncation)
+function hybriddynamics!(gmps::ADT, lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=Defaults.alg_trunc_if())
 	k = lattice.N
 	op = hyb.op
 	(lattice.d == length(op)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))

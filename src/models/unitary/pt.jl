@@ -2,24 +2,24 @@
 
 # process tensor (nonadditive baths)
 """
-    sysdynamics!(gmps::ProcessTensor, lattice::ImagPTLattice, model::AbstractImpurityHamiltonian; trunc::TruncationScheme=DefaultKTruncation)
+    sysdynamics!(gmps::ProcessTensor, lattice::ImagPTLattice, model::AbstractImpurityHamiltonian; trunc::TruncationScheme=Defaults.alg_trunc_sys())
 
 In-place version of [`sysdynamics`](@ref): apply the bare impurity Hamiltonian `model` to the given process tensor, evolving along the imaginary-time branch.
 """
-function sysdynamics!(gmps::ProcessTensor, lattice::ImagPTLattice, model::AbstractImpurityHamiltonian; trunc::TruncationScheme=DefaultKTruncation)
+function sysdynamics!(gmps::ProcessTensor, lattice::ImagPTLattice, model::AbstractImpurityHamiltonian; trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	return sysdynamics_imaginary!(gmps, lattice, model; trunc=trunc)
 end 
 
 
 """
     sysdynamics!(gmps::ProcessTensor, lattice::RealPTLattice, model::AbstractImpurityHamiltonian;
-                 branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+                 branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 
 Apply system dynamics in place to a process tensor on the real-time contour: with `branch=nothing`, acts successively on the `:+` and `:-` branches;
 when `branch` is specified, acts only on the corresponding branch.
 """
 function sysdynamics!(gmps::ProcessTensor, lattice::RealPTLattice, model::AbstractImpurityHamiltonian; 
-						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	if isnothing(branch)
 		sysdynamics_forward!(gmps, lattice, model; trunc=trunc)
 		return sysdynamics_backward!(gmps, lattice, model; trunc=trunc)
@@ -31,13 +31,13 @@ end
 
 """
     sysdynamics!(gmps::ProcessTensor, lattice::MixedPTLattice, model::AbstractImpurityHamiltonian;
-                 branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+                 branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 
 Apply system dynamics in place to a process tensor on the mixed contour: with `branch=nothing`, acts successively on the forward, backward and imaginary-time branches;
 when `branch` (`:+`, `:-` or `:τ`) is specified, acts only on the corresponding branch.
 """
 function sysdynamics!(gmps::ProcessTensor, lattice::MixedPTLattice, model::AbstractImpurityHamiltonian; 
-						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	if isnothing(branch)
 		sysdynamics_forward!(gmps, lattice, model; trunc=trunc)
 		sysdynamics_backward!(gmps, lattice, model; trunc=trunc)
@@ -55,15 +55,15 @@ function sysdynamics!(gmps::ProcessTensor, lattice::MixedPTLattice, model::Abstr
 end 
 
 
-sysdynamics_forward!(mps::ProcessTensor, lattice::AbstractPTLattice, model::AbstractImpurityHamiltonian; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+sysdynamics_forward!(mps::ProcessTensor, lattice::AbstractPTLattice, model::AbstractImpurityHamiltonian; trunc::TruncationScheme=Defaults.alg_trunc_sys()) = _sysdynamics_util!(
 						mps, lattice, model, :+, lattice.Nt; trunc=trunc)
-sysdynamics_backward!(mps::ProcessTensor, lattice::AbstractPTLattice, model::AbstractImpurityHamiltonian; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+sysdynamics_backward!(mps::ProcessTensor, lattice::AbstractPTLattice, model::AbstractImpurityHamiltonian; trunc::TruncationScheme=Defaults.alg_trunc_sys()) = _sysdynamics_util!(
 						mps, lattice, model, :-, lattice.Nt; trunc=trunc)
-sysdynamics_imaginary!(mps::ProcessTensor, lattice::AbstractPTLattice, model::AbstractImpurityHamiltonian; trunc::TruncationScheme=DefaultKTruncation) = _sysdynamics_util!(
+sysdynamics_imaginary!(mps::ProcessTensor, lattice::AbstractPTLattice, model::AbstractImpurityHamiltonian; trunc::TruncationScheme=Defaults.alg_trunc_sys()) = _sysdynamics_util!(
 						mps, lattice, model, :τ, lattice.Nτ; trunc=trunc)
 
 
-function _sysdynamics_util!(gmps::ProcessTensor, lattice::AbstractPTLattice, model::ImpurityHamiltonian, branch::Symbol, N::Int; trunc::TruncationScheme=DefaultKTruncation)
+function _sysdynamics_util!(gmps::ProcessTensor, lattice::AbstractPTLattice, model::ImpurityHamiltonian, branch::Symbol, N::Int; trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	# free dynamics
 	U = propagator(model, lattice, branch)
 	# data = decompose_to_mps(U)
@@ -78,7 +78,7 @@ end
 
 # generic per-step loop supporting time-dependent models; for time-independent
 # models the (branch-constant) propagator is unchanged
-function _sysdynamics_util!(gmps::ProcessTensor, lattice::AbstractPTLattice, model::AbstractImpurityHamiltonian, branch::Symbol, N::Int; trunc::TruncationScheme=DefaultKTruncation)
+function _sysdynamics_util!(gmps::ProcessTensor, lattice::AbstractPTLattice, model::AbstractImpurityHamiltonian, branch::Symbol, N::Int; trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	alg = Orthogonalize(SVD(), trunc)
 	for j in 1:N
 		U = propagator(model, lattice, branch, j, N)
