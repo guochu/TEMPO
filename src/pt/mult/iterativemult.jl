@@ -10,9 +10,8 @@
 #   且不再代为规范）；
 # * 收敛判据采用 FiniteMPSAlgorithms 的 `iterative_compute!`（返回
 #   `ALSConvergenceInfo`；未收敛时 FMA 已按 verbosity 自行告警）；
-# * finalize：对输出链做 FMA 的 `canonicalize!`（共享 `_finalize!`，见
-#   fmabackend.jl；与 ADT 侧不同，PT 侧以 `NoTruncation()` 调用——保持旧行
-#   为——只重新规范化并把键谱写入 `z.s`）。
+# * finalize：对输出链做 FMA 的 `truncate!`（与 ADT 侧共享 `_finalize!`，见
+#   fmabackend.jl；以 `alg.trunc` 截断并重新规范化，键谱写入 `z.s`）。
 
 function iterativemult(x::ProcessTensor, y::ProcessTensor, alg::DMRG1)
     if alg.initguess == :svd
@@ -21,7 +20,8 @@ function iterativemult(x::ProcessTensor, y::ProcessTensor, alg::DMRG1)
         # randompt is already right-canonical (FMA's randommpo); no re-gauging needed
         z = randompt(promote_type(scalartype(x), scalartype(y)), phydims(x), D=alg.trunc.D)
     elseif alg.initguess == :pre
-        z = changebond!(copy(x), alg.trunc.D)
+        # 键维更大的输入包含的乘积结构信息更多，以其为初值收敛更快；键维相同时用 x
+        z = changebond!(copy(bonddim(x) ≥ bonddim(y) ? x : y), alg.trunc.D)
         setscaling!(z, 1)
     else
         error("unsupported initguess $(alg.initguess)")
@@ -31,7 +31,7 @@ function iterativemult(x::ProcessTensor, y::ProcessTensor, alg::DMRG1)
     # MultCache(bra, h, ket)：bra = ompo（z），h = mpo（x），ket = impo（y）
     cache = MultCache(vz, x.parent, y.parent)
     info = iterative_compute!(cache, fmaalg)
-    _finalize!(cache, fmaalg, NoTruncation())
+    _finalize!(cache, alg)
     # 与 ADT 侧及 svdmult 同构：`_finalize!` 把范数因子折叠进 `scaling(z)`，
     # 这里乘上输入 scaling 得到输出的绝对幅值（见 adt/mult/iterativemult.jl）。
     setscaling!(z, scaling(z) * scaling(x) * scaling(y))

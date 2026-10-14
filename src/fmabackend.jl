@@ -18,12 +18,13 @@ _fmadmrg1(alg::DMRG1) = FiniteMPSAlgorithms.DMRG1(maxiter=alg.maxiter, tol=alg.t
 # finalize sweep（ADT/PT 的 `mult`（DMRG1 路线）共用）
 #
 # ALS 收敛后 bra 链本身就是最终输出态，规范与 Schmidt 谱不再依赖环境：直接用
-# FiniteMPSAlgorithms 的 `canonicalize!`——先 QR 左扫（精确、不截断、不改变
-# 状态），再以 `trunc` 做 SVD 右扫（每步把 u·s 折回左侧并把谱写入该键的
-# Schmidt 值）。两步扫之后 bra 右正交，`z.s` 是（截断后）状态在各键的精确
-# Schmidt 值；这一保证不依赖 ALS 是否到达不动点。
+# FiniteMPSAlgorithms 的 `truncate!`（先 QR 左扫——精确、不截断、不改变状态，
+# 再以 `alg.trunc` 做 SVD 右扫——每步把 u·s 折回左侧并把谱写入该键的 Schmidt
+# 值）。两步扫之后 bra 右正交，`z.s` 是（截断后）状态在各键的精确 Schmidt 值；
+# 这一保证不依赖 ALS 是否到达不动点。截断方案统一取 TEMPO `DMRG1` 配置的
+# `alg.trunc`，无需单独传入。
 # ---------------------------------------------------------------------------
-function _finalize!(m::Union{MultCache,HadamardCache}, alg::FiniteMPSAlgorithms.DMRG1, trunc::TruncationScheme=Defaults.alg_trunc_sys())
-	truncate!(m.bra; trunc)
+function _finalize!(m::Union{MultCache,HadamardCache}, alg::DMRG1)
+	truncate!(m.bra; trunc=alg.trunc)
 	return m
 end

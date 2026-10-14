@@ -1,3 +1,19 @@
+# 跟进（2026-10-14）：iterativemult 初值选择与 finalize 签名调整
+
+全量测试通过（1240/1240）：
+
+- **`:pre` 初值取键维更大的输入**（`adt/mult/iterativemult.jl`、
+  `pt/mult/iterativemult.jl`）：原来固定 `changebond!(copy(x), D)`，改为
+  `changebond!(copy(bonddim(x) ≥ bonddim(y) ? x : y), D)`——键维更大的输入
+  包含的乘积结构信息更多，以其为初值 ALS 收敛更快；键维相同时仍用 `x`，
+  与旧行为一致。
+- **`_finalize!` 签名简化**（`fmabackend.jl`）：删除 `trunc` 参数，改为
+  `_finalize!(m, alg::DMRG1)` 并在内部取 TEMPO `DMRG1` 配置的 `alg.trunc`
+  （原来接收 FMA 翻译后的 `fmaalg`，截断方案需在调用点单独传入）。两个调用点
+  改为 `_finalize!(cache, alg)`；**PT 侧行为随之统一**——原来传
+  `NoTruncation()`（只重新规范化），现在与 ADT 侧一致以 `alg.trunc` 截断
+  （PT 的 ALS 键维本就 ≤ D，仅裁掉极小 Schmidt 值，精度不受影响）。
+
 # 跟进（2026-10-14）：Defaults 函数化 + 算法配置统一 @kwdef
 
 默认值全部收口到 `Defaults` 模块的函数，常量式默认与手写构造器删除。全量测试通过

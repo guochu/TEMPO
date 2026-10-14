@@ -24,7 +24,8 @@ function iterativemult(x::ADT, y::ADT, alg::DMRG1)
         # randomadt is already right-canonical (FMA's randommps); no re-gauging needed
         z = randomadt(promote_type(scalartype(x), scalartype(y)), phydims(x), D=alg.trunc.D)
     elseif alg.initguess == :pre
-        z = changebond!(copy(x), alg.trunc.D)
+        # 键维更大的输入包含的乘积结构信息更多，以其为初值收敛更快；键维相同时用 x
+        z = changebond!(copy(bonddim(x) ≥ bonddim(y) ? x : y), alg.trunc.D)
         setscaling!(z, 1)
     else
         error("unsupported initguess $(alg.initguess)")
@@ -33,8 +34,8 @@ function iterativemult(x::ADT, y::ADT, alg::DMRG1)
     # HadamardCache(bra, ketx, kety)：bra = z，ketx = x，kety = y
     cache = HadamardCache(z.parent, x.parent, y.parent)
     info = iterative_compute!(cache, fmaalg)
-    _finalize!(cache, fmaalg, alg.trunc)
-    # `_finalize!`（canonicalize!）把链的范数因子折叠进 `scaling(z)`，与
+    _finalize!(cache, alg)
+    # `_finalize!`（truncate!）把链的范数因子折叠进 `scaling(z)`，与
     # svdmult 的 `setscaling!(x, scaling(x) * scaling(y))` 同构：输出的绝对
     # 幅值 = (scaling(z)·scaling(x)·scaling(y))^L × 单位规范链。
     setscaling!(z, scaling(z) * scaling(x) * scaling(y))
