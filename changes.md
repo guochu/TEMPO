@@ -1,3 +1,29 @@
+# 跟进（2026-10-15）：新增 DMRG2（两站点）乘法后端
+
+`mult` / `mult!`（ADT 与 ProcessTensor）在 `SVDCompression`、`DMRG1` 之外新增
+`DMRG2` 两站点变分扫描路线。全量测试通过（1342/1342）：
+
+- **`DMRG2` 配置**（`algorithms.jl`）：`@kwdef struct DMRG2{T<:TruncationWithD} <:
+  DMRGAlgorithm`，字段 `trunc`（默认 `Defaults.alg_trunc_if()`，须携带键维上限）、
+  `maxiter=5`、`tol=1e-12`、`initguess=:svd`、`verbosity=0`。`initguess` 两选一：
+  `:svd`（精确乘积的流式 SVD，键维上限 `trunc.D`）或 `:pre`（复制键维较大的输入，
+  与 `DMRG1` 的 `:pre` 不同——不调 `changebond!` 升键维，因两站点扫描自行适配键维；
+  被复制的初值须已是右正则链）。export `DMRG2`。
+- **引擎翻译**（`fmabackend.jl`）：`_fmadmrg2` 把 TEMPO 配置映射到 FMA 的
+  `DMRG2`（maxiter/tol/trunc/verbosity）；`_finalize!` 分派从 `alg::DMRG1`
+  放宽到 `alg::DMRGAlgorithm`（只用 `alg.trunc`，DMRG1 路线行为不变）。
+- **`iterativemult` 新增 DMRG2 方法**（adt/pt 的 iterativemult.jl）：`:svd` 初值
+  `svdguess_hadamard` / `svdguess_mult`（键维上限 `trunc.D`，右正则链）、`:pre`
+  初值 `copy` 键维较大的输入（不 changebond!，见上），随后 FMA 的
+  `iterative_compute!` 两站点扫描（相邻站点联合优化、以 `trunc` 截断的 SVD
+  重分裂，键维在迭代中自适应增减），finalize 与 scaling 记账复用现有流程。
+  `mult`/`mult!` 对 `alg::DMRGAlgorithm` 的现有分派自动覆盖 DMRG2。
+- **测试**：`truncation.jl` 增 DMRG2 构造测试（kwdef 默认值、initguess 字段、
+  无 D 方案的 MethodError）；`mps.jl` 的 "multiplications" 与 "mult output:
+  canonical form and spectra" 两个测试集加入 `DMRG2`（`:svd` 与 `:pre` 两种
+  初值、`truncdimcutoff` 与 `truncdim` 两种方案，ADT/ProcessTensor ×
+  Float64/ComplexF64 全组合，含谱对比与 `iscanonical` 检查）。
+
 # 跟进（2026-10-14）：iterativemult 初值选择与 finalize 签名调整
 
 全量测试通过（1240/1240）：

@@ -16,7 +16,7 @@ export expand_decayterm
 export space_l, space_r, bonddim, bonddims, scaling, phydim, phydims
 export ADT, randomadt, isleftcanonical, isrightcanonical, iscanonical
 export distance, distance2, Orthogonalize, leftorth!, rightorth!, canonicalize!
-export mult, mult!, DMRG1
+export mult, mult!, DMRG1, DMRG2
 # PT
 export ProcessTensor, randompt
 # ADT terms

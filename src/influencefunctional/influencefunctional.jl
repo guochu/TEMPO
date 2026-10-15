@@ -23,7 +23,7 @@ See [SciPost Phys. Core 7, 063 (2024)].
 # Fields
 - `alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan()`: exponential (Prony) expansion algorithm for the bath correlation function.
 - `alg_evo::TimeEvoMPOAlgorithm=Defaults.alg_evo()`: time-evolution algorithm for the differential influence functional (`FirstOrderStepper` or `ComplexStepper`).
-- `alg_mult::MPSAlgorithm=Defaults.alg_mult()`: MPO multiplication (compression) algorithm (`DMRG1` or `SVDCompression`).
+- `alg_mult::MPSAlgorithm=Defaults.alg_mult()`: MPO multiplication (compression) algorithm (`DMRG1`, `DMRG2` or `SVDCompression`).
 - `k::Int=5`: number of tree bipartition iterations, corresponding to 2^k time steps.
 - `fast::Bool=true`: if `true`, use the fast tree bipartition scheme (k multiplications); otherwise use the sequential scheme (2^k-1 multiplications).
 - `verbosity::Int=0`: verbosity level of the output.

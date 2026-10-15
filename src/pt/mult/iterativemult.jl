@@ -1,4 +1,4 @@
-# DMRG1 / DMRGAlgorithm 定义于 src/algorithms.jl。
+# DMRG1 / DMRG2 / DMRGAlgorithm 定义于 src/algorithms.jl。
 #
 # ALS 引擎（MultCache、iterative_compute!、leftsweep!/rightsweep!）来自
 # FiniteMPSAlgorithms：ProcessTensor×ProcessTensor 对应其 MPO×MPO 的 mult
@@ -7,10 +7,11 @@
 # TEMPO 特有行为保留在本 wrapper 中：
 # * 初始猜测 `alg.initguess`（`:svd` 经 FMA 的 `svdguess_mult` 流式 SVD /
 #   `:pre` / `:rand`；三者均输出右正则链——FMA 的 cache 构造要求右正则 bra
-#   且不再代为规范）；
+#   且不再代为规范）；DMRG2 的 `:svd` 同上，`:pre` 只复制键维较大的输入
+#   （两站点扫描自行适配键维，不调 `changebond!` 升键维；初值须已右正则）；
 # * 收敛判据采用 FiniteMPSAlgorithms 的 `iterative_compute!`（返回
 #   `ALSConvergenceInfo`；未收敛时 FMA 已按 verbosity 自行告警）；
-# * finalize：对输出链做 FMA 的 `truncate!`（与 ADT 侧共享 `_finalize!`，见
+# * finalize：对输出链做 FMA 的 `truncate!`（共享 `_finalize!`，见
 #   fmabackend.jl；以 `alg.trunc` 截断并重新规范化，键谱写入 `z.s`）。
 
 function iterativemult(x::ProcessTensor, y::ProcessTensor, alg::DMRG1)
@@ -37,6 +38,29 @@ function iterativemult(x::ProcessTensor, y::ProcessTensor, alg::DMRG1)
     setscaling!(z, scaling(z) * scaling(x) * scaling(y))
     # 首位张量范数折入 scaling（数值区间管理；与 FiniteMPSAlgorithms 的
     # `_renormalize!` 一致）
+    _renormalize!(z, z[1], false)
+    return z
+end
+
+# 两站点路线：`:svd` 初值取精确乘积的流式 SVD（键维上限 trunc.D，右正则链）；
+# `:pre` 只复制键维较大的输入（键维由两站点扫描自适应，无需 changebond! 升维；
+# 初值须已是右正则链，copy 保持其规范）。其余流程（scaling 记账、finalize）与
+# DMRG1 路线一致。
+function iterativemult(x::ProcessTensor, y::ProcessTensor, alg::DMRG2)
+    if alg.initguess == :svd
+        z = ProcessTensor(svdguess_mult(x.parent, y.parent, alg.trunc.D))
+    elseif alg.initguess == :pre
+        z = copy(bonddim(x) ≥ bonddim(y) ? x : y)
+        setscaling!(z, 1)
+    else
+        error("unsupported initguess $(alg.initguess)")
+    end
+    fmaalg = _fmadmrg2(alg)
+    vz = z.parent
+    cache = MultCache(vz, x.parent, y.parent)
+    info = iterative_compute!(cache, fmaalg)
+    _finalize!(cache, alg)
+    setscaling!(z, scaling(z) * scaling(x) * scaling(y))
     _renormalize!(z, z[1], false)
     return z
 end

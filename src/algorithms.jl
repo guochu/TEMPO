@@ -40,6 +40,31 @@ Configuration of an MPS/MPO product compression algorithm based on DMRG iterativ
 	verbosity::Int = 0
 end
 
+"""
+	DMRG2 <: DMRGAlgorithm
+
+Configuration of an MPS/MPO product compression algorithm based on two-site DMRG
+iterative sweeping: the neighboring site pair is optimized jointly and re-split by a
+truncating SVD under `trunc`, so the bond dimension adapts during the sweeps (growth
+where the environment demands it, truncation where the scheme caps it).
+
+# Fields
+- `trunc::TruncationWithD=Defaults.alg_trunc_if()`: truncation scheme carrying a maximum bond dimension `D`, used for the two-site re-splits (and the `:svd` initial-guess cap); schemes without a dimension cap (`truncrelerr`, `NoTruncation`) are not allowed
+- `maxiter::Int=5`: maximum number of iterations
+- `tol::Float64=1e-12`: convergence tolerance
+- `initguess::Symbol=:svd`: initial guess, one of `:svd` (streaming SVD of the exact product with bond cap `trunc.D`) or `:pre` (plain copy of the input with the larger bond dimension — unlike `DMRG1`'s `:pre`, no `changebond!` is applied, since the two-site sweeps adapt the bond dimension themselves; the copied chain must already be right-canonical)
+- `verbosity::Int=0`: verbosity level
+
+`DMRG2` is defined with `@kwdef` and constructed via keywords: `DMRG2(; trunc, maxiter, tol, initguess, verbosity)`.
+"""
+@kwdef struct DMRG2{T<:TruncationWithD} <: DMRGAlgorithm
+	trunc::T = Defaults.alg_trunc_if()
+	maxiter::Int = 5
+	tol::Float64 = 1.0e-12
+	initguess::Symbol = :svd
+	verbosity::Int = 0
+end
+
 # ---------------------------------------------------------------------------
 # `SVDCompression`：直接采用 FiniteMPSAlgorithms 的 `@kwdef` 定义
 # （`SVDCompression(; trunc, verbosity)`，字段均有默认值），无 TEMPO 侧包装。

@@ -23,7 +23,7 @@ mult(x::ADT, y::ADT, alg::SVDCompression) = ADT(hadamard(x.parent, y.parent, alg
 """
 	mult(x::ADT, y::ADT, alg::DMRGAlgorithm)
 
-Compute the product of two MPS using a DMRG iterative algorithm (e.g., `DMRG1`).
+Compute the product of two MPS using a DMRG iterative algorithm (`DMRG1` or `DMRG2`).
 """
 mult(x::ADT, y::ADT, alg::DMRGAlgorithm) = iterativemult(x, y, alg)
 
@@ -43,7 +43,7 @@ mult!(x::ADT, y::ADT, alg::SVDCompression) = copy!(x, mult(x, y, alg))
 """
 	mult!(x::ADT, y::ADT, alg::DMRGAlgorithm)
 
-Compute the product of two MPS in place using a DMRG iterative algorithm (e.g., `DMRG1`), storing the result in `x`.
+Compute the product of two MPS in place using a DMRG iterative algorithm (`DMRG1` or `DMRG2`), storing the result in `x`.
 """
 function mult!(x::ADT, y::ADT, alg::DMRGAlgorithm)
 	r = iterativemult(x, y, alg)

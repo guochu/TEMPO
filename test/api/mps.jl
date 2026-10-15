@@ -57,7 +57,12 @@ end
 	alg5 = SVDCompression(trunc=truncdim(chi))
 	alg6 = DMRG1(trunc=truncdim(chi), initguess=:svd)
 	alg7 = SVDCompression(trunc=truncrelerr(ϵ=1.0e-10))
-	algs = [alg1, alg2, alg3, alg4, alg5, alg6, alg7]
+	# two-site route: bond dimension adapts during the sweeps under `trunc`;
+	# `:pre` just copies the larger-bonddim input (no changebond!)
+	alg8 = DMRG2(trunc=trunc, maxiter=20)
+	alg9 = DMRG2(trunc=truncdim(chi), maxiter=20)
+	alg10 = DMRG2(trunc=trunc, maxiter=20, initguess=:pre)
+	algs = [alg1, alg2, alg3, alg4, alg5, alg6, alg7, alg8, alg9, alg10]
 	tol = 1.0e-7
 	for (name, randmps) in MPSConstructors
 		@testset "$name" begin
@@ -101,7 +106,9 @@ end
 	algs_dmrg = (DMRG1(trunc=trunc, initguess=:svd, maxiter=20),
 	             DMRG1(trunc=trunc, initguess=:rand, maxiter=20),
 	             DMRG1(trunc=trunc, initguess=:pre, maxiter=20),
-	             DMRG1(trunc=truncdim(chi), initguess=:svd, maxiter=20))
+	             DMRG1(trunc=truncdim(chi), initguess=:svd, maxiter=20),
+	             DMRG2(trunc=trunc, maxiter=20),
+	             DMRG2(trunc=trunc, maxiter=20, initguess=:pre))
 	tol = 1.0e-6
 	for (name, randmps) in MPSConstructors
 		@testset "$name" begin

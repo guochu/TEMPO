@@ -20,7 +20,7 @@ mult(x::ProcessTensor, y::ProcessTensor, alg::SVDCompression) = ProcessTensor(mu
 """
 	mult(x::ProcessTensor, y::ProcessTensor, alg::DMRGAlgorithm)
 
-Compute the product of two MPO using a DMRG iterative algorithm (e.g., `DMRG1`).
+Compute the product of two MPO using a DMRG iterative algorithm (`DMRG1` or `DMRG2`).
 """
 mult(x::ProcessTensor, y::ProcessTensor, alg::DMRGAlgorithm) = iterativemult(x, y, alg)
 
@@ -40,7 +40,7 @@ mult!(x::ProcessTensor, y::ProcessTensor, alg::SVDCompression) = copy!(x, mult(x
 """
 	mult!(x::ProcessTensor, y::ProcessTensor, alg::DMRGAlgorithm)
 
-Compute the product of two MPO in place using a DMRG iterative algorithm (e.g., `DMRG1`), storing the result in `x`.
+Compute the product of two MPO in place using a DMRG iterative algorithm (`DMRG1` or `DMRG2`), storing the result in `x`.
 """
 function mult!(x::ProcessTensor, y::ProcessTensor, alg::DMRGAlgorithm)
 	r = iterativemult(x, y, alg)

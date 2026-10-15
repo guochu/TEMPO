@@ -21,4 +21,12 @@
 	@test DMRG1() isa DMRG1
 	@test SVDCompression(trunc=truncdim(4), verbosity=2).trunc == truncdim(4)
 	@test DMRG1(trunc=truncdim(4), initguess=:rand).trunc == truncdim(4)
+	# `truncrelerr`/`NoTruncation` are rejected by both DMRG1 and DMRG2
+	@test_throws MethodError DMRG2(trunc=truncrelerr(ϵ=1.0e-8))
+	@test_throws MethodError DMRG2(trunc=NoTruncation())
+	# DMRG2 keyword constructor and defaults (initguess: :svd or :pre)
+	@test DMRG2() isa DMRG2
+	@test DMRG2(trunc=truncdim(4), maxiter=9).trunc == truncdim(4)
+	@test DMRG2(trunc=truncdimcutoff(D=10, ϵ=1.0e-8)).trunc == truncdimcutoff(D=10, ϵ=1.0e-8)
+	@test DMRG2(trunc=truncdim(4), initguess=:pre).initguess == :pre
 end
