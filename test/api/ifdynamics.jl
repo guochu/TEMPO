@@ -35,14 +35,16 @@ end
 end
 
 # candidate algorithms to cross-check against the PartialIF reference: (algorithm, rtol);
-# TDVPIF advances the influence operator stepwise with step δ
+# TDVPIF/TDVP2IF advance the influence operator stepwise with step δ
 imag_algs(trunc, δτ) = [(XTRGIF(k=5, fast=true), 1.0e-2),
                         (XTRGIF(k=5, fast=false), 1.0e-2),
-                        (TDVPIF(trunc=trunc, δ=δτ), 5.0e-2)]
+                        (TDVPIF(trunc=trunc, δ=δτ), 5.0e-2),
+                        (TDVP2IF(trunc=trunc, δ=δτ), 5.0e-2)]
 real_algs(trunc, δt) = [(XTRGIF(k=5, alg_evo=WII(), alg_mult=SVDCompression(trunc=trunc)), 1.0e-2),
                         (XTRGIF(k=5, alg_mult=DMRG1(trunc=trunc, initguess=:svd)), 1.0e-2),
                         (XTRGIF(k=5, alg_mult=DMRG1(trunc=trunc), fast=false), 1.0e-2),
-                        (TDVPIF(trunc=trunc, δ=δt), 5.0e-2)]
+                        (TDVPIF(trunc=trunc, δ=δt), 5.0e-2),
+                        (TDVP2IF(trunc=trunc, δ=δt), 5.0e-2)]
 
 # cross-check the candidate algorithms against the PartialIF reference dynamics,
 # plus one in-place flow from the vacuum with the `inplace` algorithm

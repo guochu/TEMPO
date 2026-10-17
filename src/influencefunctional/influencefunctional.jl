@@ -46,9 +46,24 @@ function Base.getproperty(x::XTRGIF, s::Symbol)
 end
 
 """
+	AbstractTDVPIFAlgorithm <: InfluenceFunctionalAlgorithm
+
+Abstract base of the TDVP-flow influence functional algorithms ([`TDVPIF`](@ref),
+[`TDVP2IF`](@ref)): the influence functional is viewed as the "equilibrium state"
+IF = exp(H) of the influence operator H (the MPO returned by `influenceoperators`),
+and computed by evolving the identity influence functional (β = 0) along the
+imaginary-time flow dz/dτ = H·z from τ = 0 to τ = 1.
+
+On real-time lattices (`RealADTLattice1Order` with `AdditiveHyb`, `RealPTLattice1Order` with `GeneralHybStyle`) the influence operator driving the flow is the sum (direct sum) of the 4 branch MPOs returned by `influenceoperators`, since the site-wise product algebra satisfies e^a∘e^b = e^{a+b}.
+
+Both algorithms are recommended for constructing the influence functional on pure imaginary-time or pure real-time contours. Mixed-contour lattices (`MixedADTLattice` / `MixedPTLattice`) are currently not supported; use `PartialIF` there.
+"""
+abstract type AbstractTDVPIFAlgorithm <: InfluenceFunctionalAlgorithm end
+
+"""
 	TDVPIF(; alg_expan, trunc, δ, verbosity)
 
-Construct the influence functional with a second-order single-site TDVP imaginary-time flow: the influence functional is viewed as the "equilibrium state" IF = exp(H) of the influence operator H, and is computed by evolving the identity influence functional (β = 0) along the flow dz/dτ = H·z from τ = 0 to τ = 1.
+Construct the influence functional with a second-order **single-site** TDVP imaginary-time flow: the influence functional is viewed as the "equilibrium state" IF = exp(H) of the influence operator H, and is computed by evolving the identity influence functional (β = 0) along the flow dz/dτ = H·z from τ = 0 to τ = 1.
 
 Each flow step is one forward-backward TDVP sweep: the center tensor is evolved by +δτ/2 (Krylov exponentiation of the local effective map) and the bond matrix by -δτ/2, with a full +δτ step at the turning site. The state is zero-padded to bond dimension `trunc.D` before the flow, so the bond dimension grows with the correlations up to `trunc.D`.
 
@@ -58,16 +73,42 @@ Each flow step is one forward-backward TDVP sweep: the center tensor is evolved 
 - `δ::Float64=0.1`: imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer).
 - `verbosity::Int=0`: verbosity level of the output.
 
-On real-time lattices (`RealADTLattice1Order` with `AdditiveHyb`, `RealPTLattice1Order` with `GeneralHybStyle`) the influence operator driving the flow is the sum (direct sum) of the 4 branch MPOs returned by `influenceoperators`, since the site-wise product algebra satisfies e^a∘e^b = e^{a+b}.
-
-`TDVPIF` is the recommended algorithm for constructing the influence functional on pure imaginary-time or pure real-time contours. Mixed-contour lattices (`MixedADTLattice` / `MixedPTLattice`) are currently not supported; use `PartialIF` there.
+See [`AbstractTDVPIFAlgorithm`](@ref) for the shared conventions (influence operator on real-time lattices, supported contours).
 """
-@kwdef struct TDVPIF{T<:ExponentialExpansionAlgorithm} <: InfluenceFunctionalAlgorithm
+@kwdef struct TDVPIF{T<:ExponentialExpansionAlgorithm} <: AbstractTDVPIFAlgorithm
 	alg_expan::T = Defaults.alg_expan()
 	trunc::TruncateDimCutoff = Defaults.alg_trunc_if()
 	δ::Float64 = 0.1                      # imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer)
 	verbosity::Int = 0
 	function TDVPIF(alg_expan::T, trunc, δ, verbosity) where {T}
+		(0 < δ <= 1) || throw(ArgumentError("δ must be a real number in (0, 1], got $δ"))
+		# adjust δ so that 1/δ is an integer number of steps
+		n = max(round(Int, 1 / δ), 1)
+		new{T}(alg_expan, trunc, 1 / n, verbosity)
+	end
+end
+
+"""
+	TDVP2IF(; alg_expan, trunc, δ, verbosity)
+
+Construct the influence functional with a second-order **two-site** TDVP imaginary-time flow — the same flow dz/dτ = H·z from τ = 0 to τ = 1 as [`TDVPIF`](@ref), but driven by FiniteMPSAlgorithms' `TDVP2` / `HadamardTDVP2` sweeps: the neighboring site pair is evolved jointly by +δτ/2 (Krylov exponentiation of the two-site effective generator), re-split by a *truncating* SVD under `trunc`, followed by the single-site backward half-step -δτ/2.
+
+Unlike the single-site variant the bond dimension **adapts during the flow**: the bond-dimension-1 identity guess is grown by the pair updates themselves up to the cap `trunc.D` (no zero-padding preparation), and trimmed where the spectrum allows. `trunc` is therefore the truncation scheme of the pair re-splits, which both caps and shapes the final bond profile.
+
+# Fields
+- `alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan()`: exponential (Prony) expansion algorithm for the bath correlation function.
+- `trunc::TruncateDimCutoff=Defaults.alg_trunc_if()`: truncation scheme (carrying the bond cap `D`) of the two-site re-splits; the bond dimension grows during the flow up to `trunc.D`.
+- `δ::Float64=0.1`: imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer).
+- `verbosity::Int=0`: verbosity level of the output.
+
+See [`AbstractTDVPIFAlgorithm`](@ref) for the shared conventions (influence operator on real-time lattices, supported contours).
+"""
+@kwdef struct TDVP2IF{T<:ExponentialExpansionAlgorithm} <: AbstractTDVPIFAlgorithm
+	alg_expan::T = Defaults.alg_expan()
+	trunc::TruncateDimCutoff = Defaults.alg_trunc_if()
+	δ::Float64 = 0.1                      # imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer)
+	verbosity::Int = 0
+	function TDVP2IF(alg_expan::T, trunc, δ, verbosity) where {T}
 		(0 < δ <= 1) || throw(ArgumentError("δ must be a real number in (0, 1], got $δ"))
 		# adjust δ so that 1/δ is an integer number of steps
 		n = max(round(Int, 1 / δ), 1)
