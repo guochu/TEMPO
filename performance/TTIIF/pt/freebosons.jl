@@ -1,5 +1,5 @@
 # ============================================================================
-# 性能对比基准（PT 路径）：XTRGIF vs TDVPIF
+# 性能对比基准（PT 路径）：XTRGIF vs TDVPIF vs TDVP2IF
 #
 # 模型：自由玻色子杂质模型（free bosons），一个玻色子杂质模式（频率 ϵ_d）
 #       线性耦合到连续谱玻色子热库（Ohmic 型谱）：
@@ -14,7 +14,7 @@
 # 比较内容：
 #   1. 效率：影响泛函构建时间、观测量扫描时间、最终键维
 #   2. 精度：虚时间 Green 函数 G(τ) 与实时间 greater Green 函数 G>(t)
-#      相对严格解的相对误差，以及两种算法所得 IF 的相互偏差
+#      相对严格解的相对误差，以及各算法所得 IF 的相互偏差
 #
 # 说明：
 #   - 玻色子杂质的局域希尔伯特空间截断为 d（虚时间 d=10，实时间 d=4），
@@ -39,7 +39,11 @@ chi = 30
 trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 trunc2 = truncdimcutoff(D=2*chi, ϵ=1.0e-10, add_back=0)
 
-# 两种待比较的影响泛函算法（相同的 Prony 展开保证公平）
+# 待比较的影响泛函算法（相同的 Prony 展开保证公平）
+# 注：TDVP2IF 不纳入本基准——其两站点 pair 演化的 Krylov 向量维度为
+# chi·d·d × chi·d·d（虚时间 d=10、chi=30 时达 9e6 元素），单次 pair 步的
+# Krylov 指数与截断 SVD 开销随 d³ 增长，本高维模型下单条流耗时小时级，
+# 与单站点 TDVPIF（每步仅 41 个单站点更新）相差两个量级以上。
 alg_expan = OverDeterminedProny(n=20, tol=1.0e-8)
 algs = [
 	"XTRGIF" => XTRGIF(k=5, fast=true, alg_mult=DMRG1(trunc=trunc), alg_expan=alg_expan),
@@ -139,15 +143,16 @@ for (name, alg) in algs
 	push!(imag_results, (name=name, t_if=t_if, t_obs=t_obs, Dmax=Dmax, err=err))
 end
 
-# 两种算法得到的 IF 互相比较
+# 各算法得到的 IF 相对第一个算法（XTRG-IF）的距离
 names = [n for (n, _) in algs]
-dIF = distance(mpsI_imag[names[1]], mpsI_imag[names[2]]) / norm(mpsI_imag[names[2]])
 
 @printf("%-24s %12s %14s %10s %14s\n", "算法", "IF构建(s)", "观测量扫描(s)", "最大键维", "G(τ)相对误差")
 for r in imag_results
 	@printf("%-24s %12.3f %14.3f %10d %14.3e\n", r.name, r.t_if, r.t_obs, r.Dmax, r.err)
 end
-@printf("\n两种算法 IF 的相对距离 (XTRG-IF vs TDVP): %.3e\n", dIF)
+for n in names[2:end]
+	@printf("IF 相对距离 (%s vs %s): %.3e\n", n, names[1], distance(mpsI_imag[n], mpsI_imag[names[1]]) / norm(mpsI_imag[names[1]]))
+end
 
 # ============================================================================
 # 2. 实时间基准：G>(t) = -i <a(t) a†(0)>（直积初态，占据数 1）
@@ -215,13 +220,13 @@ for (name, alg) in algs
 	push!(real_results, (name=name, t_if=t_if, t_obs=t_obs, Dmax=Dmax, err=err))
 end
 
-dIF = distance(mpsI_real[names[1]], mpsI_real[names[2]]) / norm(mpsI_real[names[2]])
-
 @printf("%-24s %12s %14s %10s %14s\n", "算法", "IF构建(s)", "观测量扫描(s)", "最大键维", "G>(t)相对误差")
 for r in real_results
 	@printf("%-24s %12.3f %14.3f %10d %14.3e\n", r.name, r.t_if, r.t_obs, r.Dmax, r.err)
 end
-@printf("\n两种算法 IF 的相对距离 (XTRG-IF vs TDVP): %.3e\n", dIF)
+for n in names[2:end]
+	@printf("IF 相对距离 (%s vs %s): %.3e\n", n, names[1], distance(mpsI_real[n], mpsI_real[names[1]]) / norm(mpsI_real[names[1]]))
+end
 
 println()
 println("="^70)
