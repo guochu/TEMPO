@@ -65,7 +65,7 @@ Internally performs a left orthogonalization with `QR` (without truncation) firs
 `psi` itself.
 """
 function canonicalize!(psi::ProcessTensor; alg::Orthogonalize = Orthogonalize(trunc=Defaults.alg_trunc_if(), normalize=false))
-	alg.normalize && @warn "canonicalize with renormalization not recommanded for ProcessTensor"
+	alg.normalize && alg.verbosity > 0 && @warn "canonicalize with renormalization not recommanded for ProcessTensor"
 	v = psi.parent
 	FiniteMPSAlgorithms._canonicalize!(v; alg)
 	return psi
