@@ -33,7 +33,7 @@ This package depends on the following packages (see `Project.toml`):
 | Package | Purpose |
 |---|---|
 | `ImpurityModelBase` | Defines basic objects such as spectral densities, baths (`bosonicbath`), and bosonic operators |
-| `QuAPI` | Provides basic contour types such as `ContourIndex`, `branch`, and `index` |
+| `QuAPI` | Provides basic contour types such as `AbstractContourIndex`, `branch`, and `index` |
 | `ExpExp` | Exponential expansion of hybridization functions (Prony method) |
 | `TensorOperations` | Tensor network contractions |
 | `Polynomials`, `LinearAlgebra`, `Statistics`, `TupleTools`, `Logging` | General-purpose numerical and linear-algebra utilities |

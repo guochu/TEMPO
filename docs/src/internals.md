@@ -4,7 +4,7 @@ This document describes the internals of the `TEMPO` toolkit in depth: data stru
 
 ## 1. Overview and module structure
 
-The toolkit implements the TEMPO algorithm on top of `ImpurityModelBase` (system model definitions) and `QuAPI` (basic tensor-network types `Dense1DTN`, `DenseMPSTensor`, `ContourIndex`, `branch`/`index`, etc.). The loading order is defined in `src/TEMPO.jl`:
+The toolkit implements the TEMPO algorithm on top of `ImpurityModelBase` (system model definitions) and `QuAPI` (basic tensor-network types `Dense1DTN`, `DenseMPSTensor`, `AbstractContourIndex`, `branch`/`index`, etc.). The loading order is defined in `src/TEMPO.jl`:
 
 ```
 tensorops ──→ defaults ──→ mpohamiltonian ──→ contourindices
