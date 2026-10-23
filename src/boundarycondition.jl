@@ -7,11 +7,11 @@ boundarycondition(x::ADT, lattice::AbstractADTLattice; kwargs...) = boundarycond
 
 
 """
-    boundarycondition!(x::ADT, lattice::ImagADTLattice1Order)
+    boundarycondition!(x::ADT, lattice::ImagADTLattice)
 
 Apply the boundary condition in place on an imaginary-time ADT lattice: connect the lattice points at the two ends of the imaginary-time contour with the identity matrix.
 """
-function boundarycondition!(x::ADT, lattice::ImagADTLattice1Order)
+function boundarycondition!(x::ADT, lattice::ImagADTLattice)
 	pos1, pos2 = lattice[BosonicContourIndex(1, :τ)], lattice[BosonicContourIndex(lattice.k, :τ)]
 	d = lattice.d
 	return apply!(ADTTerm((pos1, pos2), isometry(d)), x)
@@ -23,12 +23,12 @@ end
 
 # the initial state of the impurity is maximally-mixed by default
 """
-    boundarycondition!(x::ADT, lattice::RealADTLattice1Order; ρ₀::VecOrMat=ones(lattice.d))
+    boundarycondition!(x::ADT, lattice::RealADTLattice; ρ₀::VecOrMat=ones(lattice.d))
 
 Apply the boundary condition in place on a real-time ADT lattice: connect the ends of the `:+`/`:-` branches and apply the initial density matrix `ρ₀`.
 By default `ρ₀` is the maximally mixed state (a vector of ones).
 """
-function boundarycondition!(x::ADT, lattice::RealADTLattice1Order; ρ₀::VecOrMat=ones(lattice.d))
+function boundarycondition!(x::ADT, lattice::RealADTLattice; ρ₀::VecOrMat=ones(lattice.d))
 	d = lattice.d
 	Is = isometry(d)
 	pos1, pos2 = lattice[BosonicContourIndex(lattice.k, :+)], lattice[BosonicContourIndex(lattice.k, :-)]
@@ -39,11 +39,11 @@ end
 
 
 """
-    initialstate!(x::ADT, lattice::RealADTLattice1Order, v0::AbstractVector)
+    initialstate!(x::ADT, lattice::RealADTLattice, v0::AbstractVector)
 
 Apply the initial state `v0` in vector form (diagonal placeholder) in place to the real-time ADT lattice; internally converts it to a diagonal density matrix and calls the matrix version.
 """
-function initialstate!(x::ADT, lattice::RealADTLattice1Order, v0::AbstractVector)
+function initialstate!(x::ADT, lattice::RealADTLattice, v0::AbstractVector)
 	d = length(v0)
 	m = zeros(eltype(v0), d, d)
 	for i in 1:d
@@ -52,11 +52,11 @@ function initialstate!(x::ADT, lattice::RealADTLattice1Order, v0::AbstractVector
 	return initialstate!(x, lattice, m)
 end
 """
-    initialstate!(x::ADT, lattice::RealADTLattice1Order, ρ0::AbstractMatrix)
+    initialstate!(x::ADT, lattice::RealADTLattice, ρ0::AbstractMatrix)
 
 Apply the initial density matrix `ρ0` (normalized to `ρ0/tr(ρ0)`) in place to the first `:+`/`:-` index pair of the real-time ADT lattice.
 """
-function initialstate!(x::ADT, lattice::RealADTLattice1Order, ρ0::AbstractMatrix)
+function initialstate!(x::ADT, lattice::RealADTLattice, ρ0::AbstractMatrix)
 	(size(ρ0, 1) == size(ρ0, 2) == lattice.d) || throw(DimensionMismatch("diagonal element size mismatch with phydim"))
 	pos1, pos2 = lattice[BosonicContourIndex(1, :+)], lattice[BosonicContourIndex(1, :-)]
 	return apply!(ADTTerm((pos1, pos2), ρ0/tr(ρ0)), x)
@@ -66,11 +66,11 @@ end
 
 
 """
-    initialstate!(x::ProcessTensor, lattice::RealPTLattice1Order, ρ0::AbstractMatrix)
+    initialstate!(x::ProcessTensor, lattice::RealPTLattice, ρ0::AbstractMatrix)
 
 Apply the initial density matrix `ρ0` (normalized to `ρ0/tr(ρ0)`) in place to the first `:+`/`:-` index pair of the real-time PT lattice (absorbing it into the process tensor via tensor decomposition).
 """
-function initialstate!(x::ProcessTensor, lattice::RealPTLattice1Order, ρ0::AbstractMatrix)
+function initialstate!(x::ProcessTensor, lattice::RealPTLattice, ρ0::AbstractMatrix)
 	(size(ρ0, 1) == size(ρ0, 2) == lattice.d) || throw(DimensionMismatch("diagonal element size mismatch with phydim"))
 	ρ0 = ρ0 / tr(ρ0)   # normalize the initial density matrix
 	pos1, pos2 = lattice[BosonicContourIndex(1, :+)], lattice[BosonicContourIndex(1, :-)]
@@ -90,11 +90,11 @@ end
 
 
 """
-    boundarycondition!(x::ADT, lattice::MixedADTLattice1Order)
+    boundarycondition!(x::ADT, lattice::MixedADTLattice)
 
 Apply the boundary condition in place on a mixed ADT lattice: connect the `:-`/`:+` ends and the two ends of the imaginary-time branch with the identity matrix.
 """
-function boundarycondition!(x::ADT, lattice::MixedADTLattice1Order)
+function boundarycondition!(x::ADT, lattice::MixedADTLattice)
 	d = lattice.d
 	Is = isometry(d)
 

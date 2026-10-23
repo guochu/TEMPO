@@ -1,23 +1,9 @@
 """
     MixedADTLattice{O<:MixedFockOrdering} <: AbstractADTLattice{O}
 
-Abstract ADT lattice type on the mixed (Kadanoff-Baym, real-time + imaginary-time) contour: scalar type `ComplexF64`,
-containing the `:+`, `:-` and `:τ` branches.
-"""
-abstract type MixedADTLattice{O<:MixedFockOrdering} <: AbstractADTLattice{O} end
-TO.scalartype(::Type{<:MixedADTLattice}) = ComplexF64
-"""
-    branches(::Type{<:MixedADTLattice})
-
-Tuple of branch symbols of the mixed ADT lattice, `(:+, :-, :τ)`.
-"""
-branches(::Type{<:MixedADTLattice}) = (:+, :-, :τ)
-
-"""
-	struct MixedADTLattice1Order{O<:MixedFockOrdering} <: MixedADTLattice{O}
-
-First-order ADT lattice on the mixed contour: discretizes the real-time interval `[0, t]` into `Nt` steps (size `δt`) and
-the imaginary-time interval `[0, β]` into `Nτ` steps (size `δτ`).
+ADT lattice on the mixed (Kadanoff-Baym, real-time + imaginary-time) contour: scalar type `ComplexF64`,
+containing the `:+`, `:-` and `:τ` branches. The lattice discretizes the real-time interval `[0, t]` into `Nt` steps
+(size `δt`) and the imaginary-time interval `[0, β]` into `Nτ` steps (size `δτ`).
 
 # Fields
 - `δt::Float64`: real-time step size.
@@ -46,7 +32,7 @@ of each branch is the boundary/junction point and receives no influence-function
 This convention is applied uniformly in `partialif`/`partialif_naive`/`hybriddynamics!` on the mixed contour
 (see `src/influencefunctional/partialif/util.jl`, `partialif.jl` and `mixedtime.jl`).
 """
-struct MixedADTLattice1Order{O<:MixedFockOrdering} <: MixedADTLattice{O}
+struct MixedADTLattice{O<:MixedFockOrdering} <: AbstractADTLattice{O}
 	δt::Float64
 	Nt::Int
 	δτ::Float64
@@ -54,37 +40,30 @@ struct MixedADTLattice1Order{O<:MixedFockOrdering} <: MixedADTLattice{O}
 	d::Int
 	ordering::O
 
-	MixedADTLattice1Order(δt::Real, N::Int, δτ::Real, Ni::Int, d::Int, ordering::MixedFockOrdering) = new{typeof(ordering)}(
+	MixedADTLattice(δt::Real, N::Int, δτ::Real, Ni::Int, d::Int, ordering::MixedFockOrdering) = new{typeof(ordering)}(
 								convert(Float64, δt), N, convert(Float64, δτ), Ni, d, ordering)
 end
 
 # the default is that the system starts from 0 temperature (state 0)
 """
-    MixedADTLattice1Order(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, d::Int=2, ordering::MixedFockOrdering=M2M1_m1M1m2M2())
+    MixedADTLattice(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, d::Int=2, ordering::MixedFockOrdering=M2M1_m1M1m2M2())
 
-Convenience constructor for a first-order mixed ADT lattice.
+Convenience constructor for a mixed ADT lattice.
 """
-MixedADTLattice1Order(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, d::Int=2, ordering::MixedFockOrdering=M2M1_m1M1m2M2()) = MixedADTLattice1Order(
+MixedADTLattice(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, d::Int=2, ordering::MixedFockOrdering=M2M1_m1M1m2M2()) = MixedADTLattice(
 							δt, Nt, δτ, Nτ, d, ordering)
-Base.similar(x::MixedADTLattice1Order; δt::Real=x.δt, Nt::Int=x.Nt, δτ::Real=x.δτ, Nτ::Int=x.Nτ, d::Int=x.d, ordering::MixedFockOrdering=x.ordering) = MixedADTLattice1Order(
+Base.similar(x::MixedADTLattice; δt::Real=x.δt, Nt::Int=x.Nt, δτ::Real=x.δτ, Nτ::Int=x.Nτ, d::Int=x.d, ordering::MixedFockOrdering=x.ordering) = MixedADTLattice(
 			δt, Nt, δτ, Nτ, d, ordering)
 
-
+TO.scalartype(::Type{<:MixedADTLattice}) = ComplexF64
 """
-    MixedADTLattice(; order::Int=1, kwargs...)
+    branches(::Type{<:MixedADTLattice})
 
-Construct a mixed ADT lattice; `order` specifies the splitting order (currently only first order is supported, i.e. `order == 1`).
+Tuple of branch symbols of the mixed ADT lattice, `(:+, :-, :τ)`.
 """
-function MixedADTLattice(; order::Int=1, kwargs...)
-	(order in (1, 2)) || throw(ArgumentError("order must be 1 or 2"))
-	if order == 1
-		return MixedADTLattice1Order(; kwargs...)
-	else
-		error("Second orderr MixedGrassmannLattice not implemented")
-	end
-end
+branches(::Type{<:MixedADTLattice}) = (:+, :-, :τ)
 
-function Base.getproperty(x::MixedADTLattice1Order, s::Symbol)
+function Base.getproperty(x::MixedADTLattice, s::Symbol)
 	if s == :t
 		return x.Nt * x.δt
 	elseif s == :β
@@ -104,15 +83,15 @@ function Base.getproperty(x::MixedADTLattice1Order, s::Symbol)
 	end
 end
 
-Base.length(x::MixedADTLattice1Order) = 2 * x.kt + x.kτ
+Base.length(x::MixedADTLattice) = 2 * x.kt + x.kτ
 
 # acending order for real branch, descending order for imag time
 """
-    getindex(x::MixedADTLattice1Order{<:M2M1_m1M1m2M2}, a::BosonicContourIndex)
+    getindex(x::MixedADTLattice{<:M2M1_m1M1m2M2}, a::BosonicContourIndex)
 
 Map the contour index `a` (time step `a.j`, branch `:+`, `:-` or `:τ`) to the global lattice position.
 """
-function Base.getindex(x::MixedADTLattice1Order{<:M2M1_m1M1m2M2}, a::BosonicContourIndex)
+function Base.getindex(x::MixedADTLattice{<:M2M1_m1M1m2M2}, a::BosonicContourIndex)
 	b = branch(a)
 	@boundscheck begin
 		(b in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
@@ -136,11 +115,11 @@ end
 
 # key is timestep, conj, branch, band
 """
-    indexmappings(lattice::MixedADTLattice1Order)
+    indexmappings(lattice::MixedADTLattice)
 
 Return a `Dict{Tuple{Int, Symbol}, Int}` mapping `(time step, branch)` to the global index of the mixed ADT lattice.
 """
-function indexmappings(lattice::MixedADTLattice1Order)
+function indexmappings(lattice::MixedADTLattice)
 	r = Dict{Tuple{Int, Symbol}, Int}()
 	for i in 1:lattice.kτ
 		f = :τ

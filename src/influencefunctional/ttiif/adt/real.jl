@@ -1,10 +1,10 @@
 
 """
-	influenceoperators(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, hyb::AdditiveHyb; algexpan=Defaults.alg_expan())
+	influenceoperators(lattice::RealADTLattice, corr::RealCorrelationFunction, hyb::AdditiveHyb; algexpan=Defaults.alg_expan())
 
 `influenceoperators` method on real-time ADT lattices, returning a tuple of 4 branch MPOs ((+,+), (+,−), (−,+), (−,−)).
 """
-function influenceoperators(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, hyb::AdditiveHyb; algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
+function influenceoperators(lattice::RealADTLattice, corr::RealCorrelationFunction, hyb::AdditiveHyb; algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr)
 	op1, op2 = pairop(hyb)
 	mpoj1 = adt_ti_mpotensor(η⁺⁺, op1, op2, algexpan)
@@ -20,11 +20,11 @@ function influenceoperators(lattice::RealADTLattice1Order, corr::RealCorrelation
 end
 
 """
-	influenceoperatorsteppers(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::TimeEvoMPOAlgorithm; algexpan=Defaults.alg_expan())
+	influenceoperatorsteppers(lattice::RealADTLattice, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::TimeEvoMPOAlgorithm; algexpan=Defaults.alg_expan())
 
 `influenceoperatorsteppers` method on real-time ADT lattices. `FirstOrderStepper` returns 4 MPOs and `ComplexStepper` returns 8 (one before and one after evolution for each branch).
 """
-function influenceoperatorsteppers(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper;
+function influenceoperatorsteppers(lattice::RealADTLattice, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper;
 										algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr)
 	op1, op2 = pairop(hyb)
@@ -41,7 +41,7 @@ function influenceoperatorsteppers(lattice::RealADTLattice1Order, corr::RealCorr
 	return mpo1, mpo2, mpo3, mpo4
 end
 
-function influenceoperatorsteppers(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper;
+function influenceoperatorsteppers(lattice::RealADTLattice, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper;
 										algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr)
 	op1, op2 = pairop(hyb)
@@ -65,11 +65,11 @@ function influenceoperatorsteppers(lattice::RealADTLattice1Order, corr::RealCorr
 end
 
 """
-	influenceoperatorstepper(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::TimeEvoMPOAlgorithm, algmult::MPSAlgorithm; algexpan=Defaults.alg_expan())
+	influenceoperatorstepper(lattice::RealADTLattice, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::TimeEvoMPOAlgorithm, algmult::MPSAlgorithm; algexpan=Defaults.alg_expan())
 
 `influenceoperatorstepper` method on real-time ADT lattices: multiply the branch differential IFs in successively to construct the full differential influence functional.
 """
-function influenceoperatorstepper(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper,
+function influenceoperatorstepper(lattice::RealADTLattice, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper,
 											algmult::MPSAlgorithm; algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	h1, h2, h3, h4 = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=algexpan)
 	mps = mult(h2, h1, algmult)
@@ -77,7 +77,7 @@ function influenceoperatorstepper(lattice::RealADTLattice1Order, corr::RealCorre
 	mps = mult(h4, mps, algmult)
 	return mps
 end
-function influenceoperatorstepper(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper,
+function influenceoperatorstepper(lattice::RealADTLattice, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper,
 											algmult::MPSAlgorithm; algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	h1a, h1b, h2a, h2b, h3a, h3b, h4a, h4b = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=algexpan)
 	mps = mult(h1b, h1a, algmult)
@@ -94,7 +94,7 @@ function influenceoperatorstepper(lattice::RealADTLattice1Order, corr::RealCorre
 	return mps
 end
 
-function _fit_to_lattice_diag(lattice::RealADTLattice1Order, mpotensors, f1::Symbol, f2::Symbol, trunc::TruncationScheme=Defaults.alg_trunc_sys())
+function _fit_to_lattice_diag(lattice::RealADTLattice, mpotensors, f1::Symbol, f2::Symbol, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	@assert length(mpotensors) == 3
 	L = length(lattice)
 	data2 = similar(mpotensors, L)
@@ -159,7 +159,7 @@ function _fit_to_lattice_diag(lattice::RealADTLattice1Order, mpotensors, f1::Sym
 	return ADT(data2)
 end
 
-function _fit_to_lattice_offdiag(lattice::RealADTLattice1Order, mpotensors, f1::Symbol, f2::Symbol, trunc::TruncationScheme=Defaults.alg_trunc_sys())
+function _fit_to_lattice_offdiag(lattice::RealADTLattice, mpotensors, f1::Symbol, f2::Symbol, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	@assert length(mpotensors) == 3
 	L = length(lattice)
 	data2 = similar(mpotensors, L)
@@ -260,9 +260,9 @@ function _fit_to_lattice_offdiag(lattice::RealADTLattice1Order, mpotensors, f1::
 	return ADT(data2)
 end
 
-band_boundary(lattice::RealADTLattice1Order, j::Int) = lattice[BosonicContourIndex(j, :+)], lattice[BosonicContourIndex(j, :-)]
+band_boundary(lattice::RealADTLattice, j::Int) = lattice[BosonicContourIndex(j, :+)], lattice[BosonicContourIndex(j, :-)]
 
-function _get_signed_corr(lattice::RealADTLattice1Order, corr::RealCorrelationFunction)
+function _get_signed_corr(lattice::RealADTLattice, corr::RealCorrelationFunction)
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = branch(corr, :+, :+), branch(corr, :+, :-), branch(corr, :-, :+), branch(corr, :-, :-)
 	# if index(lattice, 1, branch=:+) > index(lattice, 1, branch=:+)
 	# 	η⁺⁺ = transpose(η⁺⁺)

@@ -1,15 +1,15 @@
 """
-	hybriddynamics!(gmps::ADT, lattice::MixedADTLattice1Order, corr::AbstractMixedCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=Defaults.alg_trunc_if())
+	hybriddynamics!(gmps::ADT, lattice::MixedADTLattice, corr::AbstractMixedCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=Defaults.alg_trunc_if())
 
-`hybriddynamics!` method for the mixed-time contour (`MixedADTLattice1Order`, containing both imaginary-time and real-time branches).
+`hybriddynamics!` method for the mixed-time contour (`MixedADTLattice`, containing both imaginary-time and real-time branches).
 
 On the mixed contour the correlation-function index `i` on every branch maps to the lattice index `i+1` (the same
 `lattice[BosonicContourIndex(i+1, branch)]` convention as the imaginary-time-only lattice): the branch lattice index 1 (`τ=0`, `t=0`) is the
 boundary/junction point glued by `boundarycondition!` and receives no influence-functional gates, while the lattice
-indices `2..kτ` (`2..kt`) carry the correlation indices `1..Nτ` (`1..Nt`). See the `MixedADTLattice1Order` docstring
+indices `2..kτ` (`2..kt`) carry the correlation indices `1..Nτ` (`1..Nt`). See the `MixedADTLattice` docstring
 for details.
 """
-function hybriddynamics!(gmps::ADT, lattice::MixedADTLattice1Order, corr::AbstractMixedCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=Defaults.alg_trunc_if())
+function hybriddynamics!(gmps::ADT, lattice::MixedADTLattice, corr::AbstractMixedCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=Defaults.alg_trunc_if())
 	op = hyb.op
 	(lattice.d == length(op)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
 	ds = [lattice.d for i in 1:length(lattice)]

@@ -3,7 +3,7 @@
 """
 	influenceoperators(lattice, corr, hyb; algexpan=Defaults.alg_expan())
 
-Construct the (translation-invariant) influence functional as an MPO. The ADT version supports `ImagADTLattice1Order`/`RealADTLattice1Order` lattices with `AdditiveHyb` coupling; the PT version supports `ImagPTLattice1Order`/`RealPTLattice1Order` lattices with `GeneralHybStyle` (e.g. `NonAdditiveHyb`, `NonDiagonalHyb`) coupling.
+Construct the (translation-invariant) influence functional as an MPO. The ADT version supports `ImagADTLattice`/`RealADTLattice` lattices with `AdditiveHyb` coupling; the PT version supports `ImagPTLattice`/`RealPTLattice` lattices with `GeneralHybStyle` (e.g. `NonAdditiveHyb`, `NonDiagonalHyb`) coupling.
 
 # Arguments
 - `lattice`: contour lattice (ADT or PT).
@@ -14,7 +14,7 @@ Construct the (translation-invariant) influence functional as an MPO. The ADT ve
 # Returns
 Tuple of the influence functional MPOs: a 1-tuple in imaginary time; a 4-tuple of branch MPOs ((+,+), (+,−), (−,+), (−,−)) in real time.
 """
-function influenceoperators(lattice::ImagADTLattice1Order, corr2::ImagCorrelationFunction, hyb::AdditiveHyb; algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
+function influenceoperators(lattice::ImagADTLattice, corr2::ImagCorrelationFunction, hyb::AdditiveHyb; algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = adt_ti_mpotensor(corr, op1, op2, algexpan)
@@ -38,7 +38,7 @@ Construct the influence-functional exponential-operator MPO of a single time ste
 # Returns
 Tuple of time-evolved influence functional MPOs.
 """
-function influenceoperatorsteppers(lattice::ImagADTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper;
+function influenceoperatorsteppers(lattice::ImagADTLattice, corr2::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper;
 										algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
@@ -47,7 +47,7 @@ function influenceoperatorsteppers(lattice::ImagADTLattice1Order, corr2::ImagCor
 	mpstensors = _tompsj.(_get_mpo3(mpoj′))
 	return (_fit_to_lattice(lattice, mpstensors), )
 end
-function influenceoperatorsteppers(lattice::ImagADTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper;
+function influenceoperatorsteppers(lattice::ImagADTLattice, corr2::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper;
 										algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
@@ -75,13 +75,13 @@ Construct the differential influence functional, i.e. the full influence functio
 # Returns
 The differential influence functional (`ADT` or `ProcessTensor`).
 """
-function influenceoperatorstepper(lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper,
+function influenceoperatorstepper(lattice::ImagADTLattice, corr::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper,
 											algmult::MPSAlgorithm;
 											algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	mpo1, = influenceoperatorsteppers(lattice, corr, dt, hyb, alg; algexpan=algexpan)
 	return mpo1
 end
-function influenceoperatorstepper(lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper,
+function influenceoperatorstepper(lattice::ImagADTLattice, corr::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper,
 											algmult::MPSAlgorithm;
 											algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	mpo1, mpo2 = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=algexpan)
@@ -89,7 +89,7 @@ function influenceoperatorstepper(lattice::ImagADTLattice1Order, corr::ImagCorre
 end
 
 
-function _fit_to_lattice(lattice::ImagADTLattice1Order, mpstensors)
+function _fit_to_lattice(lattice::ImagADTLattice, mpstensors)
 	L = length(lattice)
 	data = similar(mpstensors, L)
 	j = lattice.k

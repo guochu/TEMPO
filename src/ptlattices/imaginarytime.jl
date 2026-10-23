@@ -1,22 +1,8 @@
 """
     ImagPTLattice{O<:ImagFockOrdering} <: AbstractPTLattice{O}
 
-Abstract PT lattice type on the imaginary-time (Matsubara) contour: scalar type `Float64`, containing only the `:τ` branch.
-"""
-abstract type ImagPTLattice{O<:ImagFockOrdering} <: AbstractPTLattice{O} end
-TO.scalartype(::Type{<:ImagPTLattice}) = Float64
-"""
-    branches(::Type{<:ImagPTLattice})
-
-Tuple of branch symbols of the imaginary-time PT lattice, `(:τ,)`.
-"""
-branches(::Type{<:ImagPTLattice}) = (:τ,)
-TimeOrderingStyle(x::ImagPTLattice) = ImaginaryTimeOrderingStyle(x)
-
-"""
-    ImagPTLattice1Order{O<:ImagFockOrdering} <: ImagPTLattice{O}
-
-First-order PT lattice on the imaginary-time contour: discretizes the imaginary-time interval `[0, β]` into `N` steps of size `δτ = β/N`.
+PT lattice on the imaginary-time (Matsubara) contour: scalar type `Float64`, containing only the `:τ` branch.
+The lattice discretizes the imaginary-time interval `[0, β]` into `N` steps of size `δτ = β/N`.
 
 # Fields
 - `δτ::Float64`: imaginary-time step size.
@@ -29,39 +15,34 @@ First-order PT lattice on the imaginary-time contour: discretizes the imaginary-
 - `τs = 0:δτ:β`: imaginary-time grid.
 - `Nτ = N`: number of imaginary-time discretization steps (including boundary points `N + 1`).
 """
-struct ImagPTLattice1Order{O<:ImagFockOrdering} <: ImagPTLattice{O}
+struct ImagPTLattice{O<:ImagFockOrdering} <: AbstractPTLattice{O}
 	δτ::Float64
 	d::Int
 	N::Int
 	ordering::O
 
-	ImagPTLattice1Order(δτ::Real, d::Int, N::Int, ordering::ImagFockOrdering) = new{typeof(ordering)}(float(δτ), d, N, ordering)
+	ImagPTLattice(δτ::Real, d::Int, N::Int, ordering::ImagFockOrdering) = new{typeof(ordering)}(float(δτ), d, N, ordering)
 end
 
 """
-    ImagPTLattice1Order(; δτ::Real, N::Int, d::Int=2, ordering::ImagFockOrdering=M2M1())
+    ImagPTLattice(; δτ::Real, N::Int, d::Int=2, ordering::ImagFockOrdering=M2M1())
 
-Convenience constructor for a first-order imaginary-time PT lattice.
+Convenience constructor for an imaginary-time PT lattice.
 """
-ImagPTLattice1Order(; δτ::Real, N::Int, d::Int=2, ordering::ImagFockOrdering=M2M1()) = ImagPTLattice1Order(δτ, d, N, ordering)
-Base.similar(x::ImagPTLattice1Order; δτ::Real=x.δτ, d::Int=x.d, N::Int=x.N, ordering::ImagFockOrdering=x.ordering) = ImagPTLattice1Order(δτ, d, N, ordering)
+ImagPTLattice(; δτ::Real, N::Int, d::Int=2, ordering::ImagFockOrdering=M2M1()) = ImagPTLattice(δτ, d, N, ordering)
+Base.similar(x::ImagPTLattice; δτ::Real=x.δτ, d::Int=x.d, N::Int=x.N, ordering::ImagFockOrdering=x.ordering) = ImagPTLattice(δτ, d, N, ordering)
 
+TO.scalartype(::Type{<:ImagPTLattice}) = Float64
 """
-    ImagPTLattice(; order::Int=1, kwargs...)
+    branches(::Type{<:ImagPTLattice})
 
-Construct an imaginary-time PT lattice; `order` specifies the splitting order (currently only first order is supported, i.e. `order == 1`).
+Tuple of branch symbols of the imaginary-time PT lattice, `(:τ,)`.
 """
-function ImagPTLattice(; order::Int=1, kwargs...)
-	(order in (1, 2)) || throw(ArgumentError("order must be 1 or 2"))
-	if order == 1
-		return ImagPTLattice1Order(; kwargs...)
-	else
-		error("Second orderr ImagGrassmannLattice not implemented")
-	end
-end
+branches(::Type{<:ImagPTLattice}) = (:τ,)
+TimeOrderingStyle(x::ImagPTLattice) = ImaginaryTimeOrderingStyle(x)
 
 Base.length(x::ImagPTLattice) = x.N
-function Base.getproperty(x::ImagPTLattice1Order, s::Symbol)
+function Base.getproperty(x::ImagPTLattice, s::Symbol)
 	if s == :τs
 		return 0:x.δτ:x.N*x.δτ
 	elseif s == :β

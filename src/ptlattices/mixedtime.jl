@@ -1,23 +1,9 @@
 """
     MixedPTLattice{O<:MixedFockOrdering} <: AbstractPTLattice{O}
 
-Abstract PT lattice type on the mixed (Kadanoff-Baym, real-time + imaginary-time) contour: scalar type `ComplexF64`,
-containing the `:+`, `:-` and `:τ` branches.
-"""
-abstract type MixedPTLattice{O<:MixedFockOrdering} <: AbstractPTLattice{O} end
-TO.scalartype(::Type{<:MixedPTLattice}) = ComplexF64
-"""
-    branches(::Type{<:MixedPTLattice})
-
-Tuple of branch symbols of the mixed PT lattice, `(:+, :-, :τ)`.
-"""
-branches(::Type{<:MixedPTLattice}) = (:+, :-, :τ)
-
-"""
-	struct MixedPTLattice1Order{O<:MixedFockOrdering} <: MixedPTLattice{O}
-
-First-order PT lattice on the mixed contour: discretizes the real-time interval `[0, t]` into `Nt` steps (size `δt`) and
-the imaginary-time interval `[0, β]` into `Nτ` steps (size `δτ`).
+PT lattice on the mixed (Kadanoff-Baym, real-time + imaginary-time) contour: scalar type `ComplexF64`,
+containing the `:+`, `:-` and `:τ` branches. The lattice discretizes the real-time interval `[0, t]` into `Nt` steps
+(size `δt`) and the imaginary-time interval `[0, β]` into `Nτ` steps (size `δτ`).
 
 # Fields
 - `δt::Float64`: real-time step size.
@@ -40,7 +26,7 @@ inserted operator addresses the lattice point at contour time `(i-1)δ` on the c
 direct mapping as the pure imaginary-time/real-time PT lattices and is used uniformly in `partialif_naive` and the
 `ContourOperator` `apply!` on PT lattices.
 """
-struct MixedPTLattice1Order{O<:MixedFockOrdering} <: MixedPTLattice{O}
+struct MixedPTLattice{O<:MixedFockOrdering} <: AbstractPTLattice{O}
 	δt::Float64
 	Nt::Int
 	δτ::Float64
@@ -48,37 +34,30 @@ struct MixedPTLattice1Order{O<:MixedFockOrdering} <: MixedPTLattice{O}
 	d::Int
 	ordering::O
 
-	MixedPTLattice1Order(δt::Real, N::Int, δτ::Real, Ni::Int, d::Int, ordering::MixedFockOrdering) = new{typeof(ordering)}(
+	MixedPTLattice(δt::Real, N::Int, δτ::Real, Ni::Int, d::Int, ordering::MixedFockOrdering) = new{typeof(ordering)}(
 								convert(Float64, δt), N, convert(Float64, δτ), Ni, d, ordering)
 end
 
 # the default is that the system starts from 0 temperature (state 0)
 """
-    MixedPTLattice1Order(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, d::Int=2, ordering::MixedFockOrdering=M2M1_m1M1m2M2())
+    MixedPTLattice(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, d::Int=2, ordering::MixedFockOrdering=M2M1_m1M1m2M2())
 
-Convenience constructor for a first-order mixed PT lattice.
+Convenience constructor for a mixed PT lattice.
 """
-MixedPTLattice1Order(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, d::Int=2, ordering::MixedFockOrdering=M2M1_m1M1m2M2()) = MixedPTLattice1Order(
+MixedPTLattice(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, d::Int=2, ordering::MixedFockOrdering=M2M1_m1M1m2M2()) = MixedPTLattice(
 							δt, Nt, δτ, Nτ, d, ordering)
-Base.similar(x::MixedPTLattice1Order; δt::Real=x.δt, Nt::Int=x.Nt, δτ::Real=x.δτ, Nτ::Int=x.Nτ, d::Int=x.d, ordering::MixedFockOrdering=x.ordering) = MixedPTLattice1Order(
+Base.similar(x::MixedPTLattice; δt::Real=x.δt, Nt::Int=x.Nt, δτ::Real=x.δτ, Nτ::Int=x.Nτ, d::Int=x.d, ordering::MixedFockOrdering=x.ordering) = MixedPTLattice(
 			δt, Nt, δτ, Nτ, d, ordering)
 
-
+TO.scalartype(::Type{<:MixedPTLattice}) = ComplexF64
 """
-    MixedPTLattice(; order::Int=1, kwargs...)
+    branches(::Type{<:MixedPTLattice})
 
-Construct a mixed PT lattice; `order` specifies the splitting order (currently only first order is supported, i.e. `order == 1`).
+Tuple of branch symbols of the mixed PT lattice, `(:+, :-, :τ)`.
 """
-function MixedPTLattice(; order::Int=1, kwargs...)
-	(order in (1, 2)) || throw(ArgumentError("order must be 1 or 2"))
-	if order == 1
-		return MixedPTLattice1Order(; kwargs...)
-	else
-		error("Second orderr MixedGrassmannLattice not implemented")
-	end
-end
+branches(::Type{<:MixedPTLattice}) = (:+, :-, :τ)
 
-function Base.getproperty(x::MixedPTLattice1Order, s::Symbol)
+function Base.getproperty(x::MixedPTLattice, s::Symbol)
 	if s == :t
 		return x.Nt * x.δt
 	elseif s == :β
@@ -94,15 +73,15 @@ function Base.getproperty(x::MixedPTLattice1Order, s::Symbol)
 	end
 end
 
-Base.length(x::MixedPTLattice1Order) = 2 * x.Nt + x.Nτ
+Base.length(x::MixedPTLattice) = 2 * x.Nt + x.Nτ
 
 # acending order for real branch, descending order for imag time
 """
-    getindex(x::MixedPTLattice1Order{<:M2M1_m1M1m2M2}, a::BosonicContourIndex)
+    getindex(x::MixedPTLattice{<:M2M1_m1M1m2M2}, a::BosonicContourIndex)
 
 Map the contour index `a` (time step `a.j`, branch `:+`, `:-` or `:τ`) to the global lattice position.
 """
-function Base.getindex(x::MixedPTLattice1Order{<:M2M1_m1M1m2M2}, a::BosonicContourIndex)
+function Base.getindex(x::MixedPTLattice{<:M2M1_m1M1m2M2}, a::BosonicContourIndex)
 	b = branch(a)
 	@boundscheck begin
 		(b in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
@@ -126,11 +105,11 @@ end
 
 # key is timestep, conj, branch, band
 """
-    indexmappings(lattice::MixedPTLattice1Order)
+    indexmappings(lattice::MixedPTLattice)
 
 Return a `Dict{Tuple{Int, Symbol}, Int}` mapping `(time step, branch)` to the global index of the mixed PT lattice.
 """
-function indexmappings(lattice::MixedPTLattice1Order)
+function indexmappings(lattice::MixedPTLattice)
 	r = Dict{Tuple{Int, Symbol}, Int}()
 	for i in 1:lattice.Nτ
 		f = :τ

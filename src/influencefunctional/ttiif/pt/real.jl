@@ -1,10 +1,10 @@
 # real-time
 """
-	influenceoperators(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::GeneralHybStyle; algexpan=Defaults.alg_expan())
+	influenceoperators(lattice::RealPTLattice, corr::RealCorrelationFunction, hyb::GeneralHybStyle; algexpan=Defaults.alg_expan())
 
 `influenceoperators` method on real-time PT lattices, returning a tuple of 4 branch MPOs ((+,+), (+,−), (−,+), (−,−)).
 """
-function influenceoperators(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::GeneralHybStyle; algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
+function influenceoperators(lattice::RealPTLattice, corr::RealCorrelationFunction, hyb::GeneralHybStyle; algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr)
 	op1, op2 = pairop(hyb)
 	mpoj1 = pt_ti_mpotensor(η⁺⁺, op1, op2, :+, :+, algexpan)
@@ -20,11 +20,11 @@ function influenceoperators(lattice::RealPTLattice1Order, corr::RealCorrelationF
 end
 
 """
-	influenceoperatorsteppers(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm; algexpan=Defaults.alg_expan())
+	influenceoperatorsteppers(lattice::RealPTLattice, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm; algexpan=Defaults.alg_expan())
 
 `influenceoperatorsteppers` method on real-time PT lattices. `FirstOrderStepper` returns 4 MPOs and `ComplexStepper` returns 8 (one before and one after evolution for each branch).
 """
-function influenceoperatorsteppers(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper;
+function influenceoperatorsteppers(lattice::RealPTLattice, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper;
 										algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr)
 	op1, op2 = pairop(hyb)
@@ -41,7 +41,7 @@ function influenceoperatorsteppers(lattice::RealPTLattice1Order, corr::RealCorre
 	return mpo1, mpo2, mpo3, mpo4
 end
 
-function influenceoperatorsteppers(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper;
+function influenceoperatorsteppers(lattice::RealPTLattice, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper;
 										algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr)
 	op1, op2 = pairop(hyb)
@@ -66,11 +66,11 @@ end
 
 
 """
-	influenceoperatorstepper(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algmult::MPSAlgorithm; algexpan=Defaults.alg_expan())
+	influenceoperatorstepper(lattice::RealPTLattice, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algmult::MPSAlgorithm; algexpan=Defaults.alg_expan())
 
 `influenceoperatorstepper` method on real-time PT lattices: multiply the branch differential IFs in successively to construct the full differential influence functional.
 """
-function influenceoperatorstepper(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper,
+function influenceoperatorstepper(lattice::RealPTLattice, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper,
 											algmult::MPSAlgorithm; algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	h1, h2, h3, h4 = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=algexpan)
 	# trunc = algmult.trunc
@@ -83,7 +83,7 @@ function influenceoperatorstepper(lattice::RealPTLattice1Order, corr::RealCorrel
 	mps = mult(h4, mps, algmult)
 	return mps
 end
-function influenceoperatorstepper(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper,
+function influenceoperatorstepper(lattice::RealPTLattice, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper,
 											algmult::MPSAlgorithm; algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	h1a, h1b, h2a, h2b, h3a, h3b, h4a, h4b = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=algexpan)
 	# trunc = algmult.trunc
@@ -110,7 +110,7 @@ function influenceoperatorstepper(lattice::RealPTLattice1Order, corr::RealCorrel
 	return mps
 end
 
-function _get_signed_corr(lattice::RealPTLattice1Order, corr::RealCorrelationFunction)
+function _get_signed_corr(lattice::RealPTLattice, corr::RealCorrelationFunction)
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = branch(corr, :+, :+), branch(corr, :+, :-), branch(corr, :-, :+), branch(corr, :-, :-)
 	# if index(lattice, 1, branch=:+) > index(lattice, 1, branch=:+)
 	# 	η⁺⁺ = transpose(η⁺⁺)
@@ -145,7 +145,7 @@ function fused_op(op1::AbstractMatrix, f1::Symbol)
 	return a
 end
 
-function _fit_to_lattice_diag(lattice::RealPTLattice1Order, mpotensors, f1::Symbol, f2::Symbol, trunc::TruncationScheme=Defaults.alg_trunc_sys())
+function _fit_to_lattice_diag(lattice::RealPTLattice, mpotensors, f1::Symbol, f2::Symbol, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	@assert length(mpotensors) == 3
 	L = length(lattice)
 	data2 = similar(mpotensors, L)
@@ -204,7 +204,7 @@ function _fit_to_lattice_diag(lattice::RealPTLattice1Order, mpotensors, f1::Symb
 	return ProcessTensor(data2)
 end
 
-function _fit_to_lattice_offdiag(lattice::RealPTLattice1Order, mpotensors, f1::Symbol, f2::Symbol, trunc::TruncationScheme=Defaults.alg_trunc_sys())
+function _fit_to_lattice_offdiag(lattice::RealPTLattice, mpotensors, f1::Symbol, f2::Symbol, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	@assert length(mpotensors) == 3
 	L = length(lattice)
 	data2 = similar(mpotensors, L)
@@ -300,7 +300,7 @@ function _fit_to_lattice_offdiag(lattice::RealPTLattice1Order, mpotensors, f1::S
 	return ProcessTensor(data2)
 end
 
-band_boundary(lattice::RealPTLattice1Order, j::Int) = lattice[BosonicContourIndex(j, :+)], lattice[BosonicContourIndex(j, :-)]
+band_boundary(lattice::RealPTLattice, j::Int) = lattice[BosonicContourIndex(j, :+)], lattice[BosonicContourIndex(j, :-)]
 
 
 function split_mpotensor(mpoj::DenseMPOTensor, trunc)

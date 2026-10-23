@@ -1,4 +1,4 @@
-# function hybriddynamics!(gmps::ProcessTensor, lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, hyb::NonAdditiveHyb; trunc::TruncationScheme=Defaults.alg_trunc_if())
+# function hybriddynamics!(gmps::ProcessTensor, lattice::ImagPTLattice, corr::ImagCorrelationFunction, hyb::NonAdditiveHyb; trunc::TruncationScheme=Defaults.alg_trunc_if())
 # 	k = lattice.N
 # 	op = hyb.op
 # 	(lattice.d == size(op, 1)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))

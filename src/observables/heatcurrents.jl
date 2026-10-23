@@ -1,11 +1,11 @@
 
 
-# function heatcurrent(lattice::RealADTLattice1Order)
+# function heatcurrent(lattice::RealADTLattice)
 	
 # end
 
 
-# function build_current_op(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, hyb::AdditiveHyb, k::Int)
+# function build_current_op(lattice::RealADTLattice, corr::RealCorrelationFunction, hyb::AdditiveHyb, k::Int)
 # 	row = index(lattice, k, branch=:+)
 # 	cols = Int[]
 # 	T = promote_type(scalartype(lattice), scalartype(corr))
@@ -20,6 +20,6 @@
 # end
 
 
-# function build_current_op(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::NonAdditiveHyb, k::Int)
+# function build_current_op(lattice::RealPTLattice, corr::RealCorrelationFunction, hyb::NonAdditiveHyb, k::Int)
 	
 # end

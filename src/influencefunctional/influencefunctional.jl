@@ -54,7 +54,7 @@ IF = exp(H) of the influence operator H (the MPO returned by `influenceoperators
 and computed by evolving the identity influence functional (β = 0) along the
 imaginary-time flow dz/dτ = H·z from τ = 0 to τ = 1.
 
-On real-time lattices (`RealADTLattice1Order` with `AdditiveHyb`, `RealPTLattice1Order` with `GeneralHybStyle`) the influence operator driving the flow is the sum (direct sum) of the 4 branch MPOs returned by `influenceoperators`, since the site-wise product algebra satisfies e^a∘e^b = e^{a+b}.
+On real-time lattices (`RealADTLattice` with `AdditiveHyb`, `RealPTLattice` with `GeneralHybStyle`) the influence operator driving the flow is the sum (direct sum) of the 4 branch MPOs returned by `influenceoperators`, since the site-wise product algebra satisfies e^a∘e^b = e^{a+b}.
 
 Both algorithms are recommended for constructing the influence functional on pure imaginary-time or pure real-time contours. Mixed-contour lattices (`MixedADTLattice` / `MixedPTLattice`) are currently not supported; use `PartialIF` there.
 """

@@ -1,11 +1,11 @@
 # imaginary-time
 
 """
-	influenceoperators(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle; algexpan=Defaults.alg_expan())
+	influenceoperators(lattice::ImagPTLattice, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle; algexpan=Defaults.alg_expan())
 
 `influenceoperators` method on imaginary-time PT lattices: construct ΣᵢⱼΔᵢⱼ āᵢaⱼ as an MPO (`ProcessTensor`), whose bond dimension is 2n, with n the number of Prony expansion terms. Returned as a 1-tuple.
 """
-function influenceoperators(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle; algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
+function influenceoperators(lattice::ImagPTLattice, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle; algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = pt_ti_mpotensor(corr, op1, op2, :τ, :τ, algexpan)
@@ -15,11 +15,11 @@ function influenceoperators(lattice::ImagPTLattice1Order, corr2::ImagCorrelation
 end
 
 """
-	influenceoperatorsteppers(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm; algexpan=Defaults.alg_expan())
+	influenceoperatorsteppers(lattice::ImagPTLattice, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm; algexpan=Defaults.alg_expan())
 
 `influenceoperatorsteppers` method on imaginary-time PT lattices. `FirstOrderStepper` returns 1 MPO and `ComplexStepper` returns 2 (one before and one after evolution).
 """
-function influenceoperatorsteppers(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper;
+function influenceoperatorsteppers(lattice::ImagPTLattice, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper;
 										algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
@@ -28,7 +28,7 @@ function influenceoperatorsteppers(lattice::ImagPTLattice1Order, corr2::ImagCorr
 	mpotensors = _get_mpo3(mpoj′)
 	return (_fit_to_lattice(lattice, mpotensors),)
 end
-function influenceoperatorsteppers(lattice::ImagPTLattice1Order, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper;
+function influenceoperatorsteppers(lattice::ImagPTLattice, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper;
 										algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
@@ -40,24 +40,24 @@ end
 
 
 """
-	influenceoperatorstepper(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algmult::MPSAlgorithm; algexpan=Defaults.alg_expan())
+	influenceoperatorstepper(lattice::ImagPTLattice, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algmult::MPSAlgorithm; algexpan=Defaults.alg_expan())
 
 `influenceoperatorstepper` method on imaginary-time PT lattices.
 """
-function influenceoperatorstepper(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper,
+function influenceoperatorstepper(lattice::ImagPTLattice, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper,
 											algmult::MPSAlgorithm;
 											algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	mpo1, = influenceoperatorsteppers(lattice, corr, dt, hyb, alg; algexpan=algexpan)
 	return mpo1
 end
-function influenceoperatorstepper(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper,
+function influenceoperatorstepper(lattice::ImagPTLattice, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper,
 											algmult::MPSAlgorithm;
 											algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	mpo1, mpo2 = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=algexpan)
 	return mult(mpo1, mpo2, algmult)
 end
 
-function _fit_to_lattice(lattice::ImagPTLattice1Order, mpotensors)
+function _fit_to_lattice(lattice::ImagPTLattice, mpotensors)
 	L = length(lattice)
 	data = similar(mpotensors, L)
 	data[1] = mpotensors[1]

@@ -179,7 +179,7 @@ function _tdvpif_hybriddynamics_adt!(z::ADT, H::ADT, alg::AbstractTDVPIFAlgorith
 end
 
 """
-	hybriddynamics(lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, hyb::AdditiveHyb, alg::AbstractTDVPIFAlgorithm)
+	hybriddynamics(lattice::ImagADTLattice, corr::ImagCorrelationFunction, hyb::AdditiveHyb, alg::AbstractTDVPIFAlgorithm)
 
 Construct the influence functional on an imaginary-time ADT lattice with the `TDVPIF` (single-site) or `TDVP2IF` (two-site) algorithm: evolve the identity influence functional along the imaginary-time flow dz/dτ = H·z (H = influence operator) from τ = 0 to τ = 1 with second-order TDVP sweeps.
 
@@ -188,28 +188,28 @@ The influence functional, represented as an `ADT`.
 
 See also [`TDVPIF`](@ref), [`TDVP2IF`](@ref).
 """
-function hybriddynamics(lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, hyb::AdditiveHyb, alg::AbstractTDVPIFAlgorithm)
+function hybriddynamics(lattice::ImagADTLattice, corr::ImagCorrelationFunction, hyb::AdditiveHyb, alg::AbstractTDVPIFAlgorithm)
 	T = promote_type(scalartype(corr), scalartype(hyb), Float64)
 	z = vacuumstate(T, lattice)
 	return hybriddynamics!(z, lattice, corr, hyb, alg)
 end
 
 """
-	hybriddynamics!(gmps::ADT, lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, hyb::AdditiveHyb, alg::AbstractTDVPIFAlgorithm)
+	hybriddynamics!(gmps::ADT, lattice::ImagADTLattice, corr::ImagCorrelationFunction, hyb::AdditiveHyb, alg::AbstractTDVPIFAlgorithm)
 
 In-place version of the `TDVPIF`/`TDVP2IF` algorithms on ADT lattices: the influence operator H drives the TDVP flow directly on `gmps`, i.e. the flow evolves `z(τ=1) = e^H·gmps` from `z(0) = gmps` in place. This allows merging the influence functional into an arbitrary initial MPO — e.g. the pure impurity dynamics (with Lindblad dissipation) obtained from `sysdynamics` — in a single flow instead of constructing the IF separately and multiplying it in afterwards.
 
 # Returns
 The modified `gmps`.
 """
-function hybriddynamics!(gmps::ADT, lattice::ImagADTLattice1Order, corr::ImagCorrelationFunction, hyb::AdditiveHyb, alg::AbstractTDVPIFAlgorithm)
+function hybriddynamics!(gmps::ADT, lattice::ImagADTLattice, corr::ImagCorrelationFunction, hyb::AdditiveHyb, alg::AbstractTDVPIFAlgorithm)
 	# influence operator H in MPO (fused-leg MPS) form
 	H = only(influenceoperators(lattice, corr, hyb, algexpan=alg.alg_expan))
 	return _tdvpif_hybriddynamics_adt!(gmps, H, alg)
 end
 
 """
-	hybriddynamics(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, hyb::AdditiveHyb, alg::AbstractTDVPIFAlgorithm)
+	hybriddynamics(lattice::RealADTLattice, corr::RealCorrelationFunction, hyb::AdditiveHyb, alg::AbstractTDVPIFAlgorithm)
 
 Construct the influence functional on a real-time ADT lattice with the `TDVPIF` (single-site) or `TDVP2IF` (two-site) algorithm: the 4 branch influence operators returned by `influenceoperators` ((+,+), (+,−), (−,+), (−,−)) are summed one by one into a single influence operator H (each partial sum compressed by SVD canonicalization with `Defaults.alg_trunc_sys()`), which then drives the same TDVP imaginary-time flow as in the imaginary-time case.
 
@@ -218,21 +218,21 @@ The influence functional, represented as an `ADT`.
 
 See also [`TDVPIF`](@ref), [`TDVP2IF`](@ref).
 """
-function hybriddynamics(lattice::RealADTLattice1Order, corr::RealCorrelationFunction, hyb::AdditiveHyb, alg::AbstractTDVPIFAlgorithm)
+function hybriddynamics(lattice::RealADTLattice, corr::RealCorrelationFunction, hyb::AdditiveHyb, alg::AbstractTDVPIFAlgorithm)
 	T = promote_type(scalartype(corr), scalartype(hyb), Float64)
 	z = vacuumstate(T, lattice)
 	return hybriddynamics!(z, lattice, corr, hyb, alg)
 end
 
 """
-	hybriddynamics!(gmps::ADT, lattice::RealADTLattice1Order, corr::RealCorrelationFunction, hyb::AdditiveHyb, alg::AbstractTDVPIFAlgorithm)
+	hybriddynamics!(gmps::ADT, lattice::RealADTLattice, corr::RealCorrelationFunction, hyb::AdditiveHyb, alg::AbstractTDVPIFAlgorithm)
 
 In-place version of the `TDVPIF`/`TDVP2IF` algorithms on real-time ADT lattices: the influence operator H (the sum of the 4 branch operators, see [`hybriddynamics`](@ref)) drives the TDVP flow directly on `gmps`, i.e. the flow evolves `z(τ=1) = e^H·gmps` from `z(0) = gmps` in place, merging the influence functional into an arbitrary initial MPO in a single flow.
 
 # Returns
 The modified `gmps`.
 """
-function hybriddynamics!(gmps::ADT, lattice::RealADTLattice1Order, corr::RealCorrelationFunction, hyb::AdditiveHyb, alg::AbstractTDVPIFAlgorithm)
+function hybriddynamics!(gmps::ADT, lattice::RealADTLattice, corr::RealCorrelationFunction, hyb::AdditiveHyb, alg::AbstractTDVPIFAlgorithm)
 	H = _tdvpif_hamiltonian(lattice, corr, hyb, alg)
 	return _tdvpif_hybriddynamics_adt!(gmps, H, alg)
 end
@@ -256,7 +256,7 @@ function _tdvpif_hybriddynamics_pt!(z::ProcessTensor, H::ProcessTensor, alg::Abs
 end
 
 """
-	hybriddynamics(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, hyb::GeneralHybStyle, alg::AbstractTDVPIFAlgorithm)
+	hybriddynamics(lattice::ImagPTLattice, corr::ImagCorrelationFunction, hyb::GeneralHybStyle, alg::AbstractTDVPIFAlgorithm)
 
 Construct the influence functional on an imaginary-time PT lattice with the `TDVPIF` (single-site) or `TDVP2IF` (two-site) algorithm, supporting `GeneralHybStyle` (e.g. `NonAdditiveHyb`, `NonDiagonalHyb`) coupling.
 
@@ -265,28 +265,28 @@ The influence functional, represented as a `ProcessTensor`.
 
 See also [`TDVPIF`](@ref), [`TDVP2IF`](@ref).
 """
-function hybriddynamics(lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, hyb::GeneralHybStyle, alg::AbstractTDVPIFAlgorithm)
+function hybriddynamics(lattice::ImagPTLattice, corr::ImagCorrelationFunction, hyb::GeneralHybStyle, alg::AbstractTDVPIFAlgorithm)
 	T = promote_type(scalartype(corr), scalartype(hyb), Float64)
 	z = vacuumstate(T, lattice)
 	return hybriddynamics!(z, lattice, corr, hyb, alg)
 end
 
 """
-	hybriddynamics!(gmps::ProcessTensor, lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, hyb::GeneralHybStyle, alg::AbstractTDVPIFAlgorithm)
+	hybriddynamics!(gmps::ProcessTensor, lattice::ImagPTLattice, corr::ImagCorrelationFunction, hyb::GeneralHybStyle, alg::AbstractTDVPIFAlgorithm)
 
 In-place version of the `TDVPIF`/`TDVP2IF` algorithms on PT lattices: the influence operator H drives the TDVP flow directly on `gmps`, i.e. the flow evolves `z(τ=1) = e^H·gmps` from `z(0) = gmps` in place. This allows merging the influence functional into an arbitrary initial MPO — e.g. the pure impurity dynamics (with Lindblad dissipation) obtained from `sysdynamics` — in a single flow instead of constructing the IF separately and multiplying it in afterwards.
 
 # Returns
 The modified `gmps`.
 """
-function hybriddynamics!(gmps::ProcessTensor, lattice::ImagPTLattice1Order, corr::ImagCorrelationFunction, hyb::GeneralHybStyle, alg::AbstractTDVPIFAlgorithm)
+function hybriddynamics!(gmps::ProcessTensor, lattice::ImagPTLattice, corr::ImagCorrelationFunction, hyb::GeneralHybStyle, alg::AbstractTDVPIFAlgorithm)
 	# influence operator H in MPO form
 	H = only(influenceoperators(lattice, corr, hyb, algexpan=alg.alg_expan))
 	return _tdvpif_hybriddynamics_pt!(gmps, H, alg)
 end
 
 """
-	hybriddynamics(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::GeneralHybStyle, alg::AbstractTDVPIFAlgorithm)
+	hybriddynamics(lattice::RealPTLattice, corr::RealCorrelationFunction, hyb::GeneralHybStyle, alg::AbstractTDVPIFAlgorithm)
 
 Construct the influence functional on a real-time PT lattice with the `TDVPIF` (single-site) or `TDVP2IF` (two-site) algorithm: the 4 branch influence operators returned by `influenceoperators` ((+,+), (+,−), (−,+), (−,−)) are summed one by one into a single influence operator H (each partial sum compressed by SVD canonicalization with `Defaults.alg_trunc_sys()`), which then drives the same TDVP imaginary-time flow as in the imaginary-time case.
 
@@ -295,21 +295,21 @@ The influence functional, represented as a `ProcessTensor`.
 
 See also [`TDVPIF`](@ref), [`TDVP2IF`](@ref).
 """
-function hybriddynamics(lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::GeneralHybStyle, alg::AbstractTDVPIFAlgorithm)
+function hybriddynamics(lattice::RealPTLattice, corr::RealCorrelationFunction, hyb::GeneralHybStyle, alg::AbstractTDVPIFAlgorithm)
 	T = promote_type(scalartype(corr), scalartype(hyb), Float64)
 	z = vacuumstate(T, lattice)
 	return hybriddynamics!(z, lattice, corr, hyb, alg)
 end
 
 """
-	hybriddynamics!(gmps::ProcessTensor, lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::GeneralHybStyle, alg::AbstractTDVPIFAlgorithm)
+	hybriddynamics!(gmps::ProcessTensor, lattice::RealPTLattice, corr::RealCorrelationFunction, hyb::GeneralHybStyle, alg::AbstractTDVPIFAlgorithm)
 
 In-place version of the `TDVPIF`/`TDVP2IF` algorithms on real-time PT lattices: the influence operator H (the sum of the 4 branch operators, see [`hybriddynamics`](@ref)) drives the TDVP flow directly on `gmps`, i.e. the flow evolves `z(τ=1) = e^H·gmps` from `z(0) = gmps` in place, merging the influence functional into an arbitrary initial MPO in a single flow.
 
 # Returns
 The modified `gmps`.
 """
-function hybriddynamics!(gmps::ProcessTensor, lattice::RealPTLattice1Order, corr::RealCorrelationFunction, hyb::GeneralHybStyle, alg::AbstractTDVPIFAlgorithm)
+function hybriddynamics!(gmps::ProcessTensor, lattice::RealPTLattice, corr::RealCorrelationFunction, hyb::GeneralHybStyle, alg::AbstractTDVPIFAlgorithm)
 	H = _tdvpif_hamiltonian(lattice, corr, hyb, alg)
 	return _tdvpif_hybriddynamics_pt!(gmps, H, alg)
 end
