@@ -8,6 +8,7 @@ using Random
 
 using TEMPO
 using TEMPO: QR, QRpos, LQ, LQpos, SVD, SDD, Polar, TimeAscending, TimeDscending, Zvalue2
+import TEMPO: branches          # TEMPO 与 QuAPI 都导出 branches，这里取 TEMPO 的
 
 Random.seed!(20260916)
 
