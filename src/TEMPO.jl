@@ -25,7 +25,7 @@ export AbstractFockTerm, FockTermS, FockTerm, ProdFockTerm
 # ADT Lattices
 export FockOrdering, ImagFockOrdering, RealFockOrdering, MixedFockOrdering, TimeOrderingStyle
 export M2M1, M2m2M1m1, M2M1_m1M1m2M2, TimeLocalLayout
-export index, OrderingStyle, LayoutStyle, ImaginaryTimeOrderingStyle, RealTimeOrderingStyle
+export OrderingStyle, LayoutStyle, ImaginaryTimeOrderingStyle, RealTimeOrderingStyle
 export AbstractADTLattice, branches, ADTLattice, vacuumstate, indexmappings
 export ImagADTLattice, RealADTLattice
 export MixedADTLattice
@@ -56,7 +56,7 @@ using Reexport
 
 using ImpurityModelBase, QuAPI
 using KrylovKit: exponentiate, Arnoldi
-import QuAPI: branch, index
+import QuAPI: branch
 using LinearAlgebra
 using Base: @boundscheck
 using TensorOperations,TupleTools
