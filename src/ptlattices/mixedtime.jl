@@ -1,5 +1,20 @@
 """
-    MixedPTLattice{O<:MixedFockOrdering} <: AbstractPTLattice{O}
+    AbstractMixedPTLattice{O<:MixedFockOrdering} <: AbstractPTLattice{O}
+
+Abstract PT lattice type on the mixed (Kadanoff-Baym, real-time + imaginary-time) contour: scalar type `ComplexF64`,
+containing the `:+`, `:-` and `:τ` branches.
+"""
+abstract type AbstractMixedPTLattice{O<:MixedFockOrdering} <: AbstractPTLattice{O} end
+TO.scalartype(::Type{<:AbstractMixedPTLattice}) = ComplexF64
+"""
+    branches(::Type{<:AbstractMixedPTLattice})
+
+Tuple of branch symbols of the mixed PT lattice, `(:+, :-, :τ)`.
+"""
+branches(::Type{<:AbstractMixedPTLattice}) = (:+, :-, :τ)
+
+"""
+    MixedPTLattice{O<:MixedFockOrdering} <: AbstractMixedPTLattice{O}
 
 PT lattice on the mixed (Kadanoff-Baym, real-time + imaginary-time) contour: scalar type `ComplexF64`,
 containing the `:+`, `:-` and `:τ` branches. The lattice discretizes the real-time interval `[0, t]` into `Nt` steps
@@ -26,7 +41,7 @@ inserted operator addresses the lattice point at contour time `(i-1)δ` on the c
 direct mapping as the pure imaginary-time/real-time PT lattices and is used uniformly in `partialif_naive` and the
 `ContourOperator` `apply!` on PT lattices.
 """
-struct MixedPTLattice{O<:MixedFockOrdering} <: AbstractPTLattice{O}
+struct MixedPTLattice{O<:MixedFockOrdering} <: AbstractMixedPTLattice{O}
 	δt::Float64
 	Nt::Int
 	δτ::Float64
@@ -48,14 +63,6 @@ MixedPTLattice(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, d::Int=2, ordering::M
 							δt, Nt, δτ, Nτ, d, ordering)
 Base.similar(x::MixedPTLattice; δt::Real=x.δt, Nt::Int=x.Nt, δτ::Real=x.δτ, Nτ::Int=x.Nτ, d::Int=x.d, ordering::MixedFockOrdering=x.ordering) = MixedPTLattice(
 			δt, Nt, δτ, Nτ, d, ordering)
-
-TO.scalartype(::Type{<:MixedPTLattice}) = ComplexF64
-"""
-    branches(::Type{<:MixedPTLattice})
-
-Tuple of branch symbols of the mixed PT lattice, `(:+, :-, :τ)`.
-"""
-branches(::Type{<:MixedPTLattice}) = (:+, :-, :τ)
 
 function Base.getproperty(x::MixedPTLattice, s::Symbol)
 	if s == :t

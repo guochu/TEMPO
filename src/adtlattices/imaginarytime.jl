@@ -1,5 +1,20 @@
 """
-    ImagADTLattice{O<:ImagFockOrdering} <: AbstractADTLattice{O}
+    AbstractImagADTLattice{O<:ImagFockOrdering} <: AbstractADTLattice{O}
+
+Abstract ADT lattice type on the imaginary-time (Matsubara) contour: scalar type `Float64`, containing only the `:τ` branch.
+"""
+abstract type AbstractImagADTLattice{O<:ImagFockOrdering} <: AbstractADTLattice{O} end
+TO.scalartype(::Type{<:AbstractImagADTLattice}) = Float64
+"""
+    branches(::Type{<:AbstractImagADTLattice})
+
+Tuple of branch symbols of the imaginary-time ADT lattice, `(:τ,)`.
+"""
+branches(::Type{<:AbstractImagADTLattice}) = (:τ,)
+TimeOrderingStyle(x::AbstractImagADTLattice) = ImaginaryTimeOrderingStyle(x)
+
+"""
+    ImagADTLattice{O<:ImagFockOrdering} <: AbstractImagADTLattice{O}
 
 ADT lattice on the imaginary-time (Matsubara) contour: scalar type `Float64`, containing only the `:τ` branch.
 The lattice discretizes the imaginary-time interval `[0, β]` into `N` steps of size `δτ = β/N`.
@@ -15,7 +30,7 @@ The lattice discretizes the imaginary-time interval `[0, β]` into `N` steps of 
 - `τs = 0:δτ:β`: imaginary-time grid.
 - `k = kτ = N + 1`: number of lattice indices (including boundary points).
 """
-struct ImagADTLattice{O<:ImagFockOrdering} <: AbstractADTLattice{O}
+struct ImagADTLattice{O<:ImagFockOrdering} <: AbstractImagADTLattice{O}
 	δτ::Float64
 	d::Int
 	N::Int
@@ -31,15 +46,6 @@ Convenience constructor for an imaginary-time ADT lattice.
 """
 ImagADTLattice(; δτ::Real, N::Int, d::Int=2, ordering::ImagFockOrdering=M2M1()) = ImagADTLattice(δτ, d, N, ordering)
 Base.similar(x::ImagADTLattice; δτ::Real=x.δτ, d::Int=x.d, N::Int=x.N, ordering::ImagFockOrdering=x.ordering) = ImagADTLattice(δτ, d, N, ordering)
-
-TO.scalartype(::Type{<:ImagADTLattice}) = Float64
-"""
-    branches(::Type{<:ImagADTLattice})
-
-Tuple of branch symbols of the imaginary-time ADT lattice, `(:τ,)`.
-"""
-branches(::Type{<:ImagADTLattice}) = (:τ,)
-TimeOrderingStyle(x::ImagADTLattice) = ImaginaryTimeOrderingStyle(x)
 
 Base.length(x::ImagADTLattice) = x.k
 function Base.getproperty(x::ImagADTLattice, s::Symbol)

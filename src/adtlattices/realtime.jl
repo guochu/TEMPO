@@ -1,5 +1,20 @@
 """
-    RealADTLattice{O<:RealFockOrdering} <: AbstractADTLattice{O}
+    AbstractRealADTLattice{O<:RealFockOrdering} <: AbstractADTLattice{O}
+
+Abstract ADT lattice type on the real-time (Keldysh) contour: scalar type `ComplexF64`, containing the `:+` and `:-` branches.
+"""
+abstract type AbstractRealADTLattice{O<:RealFockOrdering} <: AbstractADTLattice{O} end
+TO.scalartype(::Type{<:AbstractRealADTLattice}) = ComplexF64
+"""
+    branches(::Type{<:AbstractRealADTLattice})
+
+Tuple of branch symbols of the real-time ADT lattice, `(:+, :-)`.
+"""
+branches(::Type{<:AbstractRealADTLattice}) = (:+, :-)
+TimeOrderingStyle(x::AbstractRealADTLattice) = RealTimeOrderingStyle(x)
+
+"""
+    RealADTLattice{O<:RealFockOrdering} <: AbstractRealADTLattice{O}
 
 ADT lattice on the real-time (Keldysh) contour: scalar type `ComplexF64`, containing the `:+` and `:-` branches.
 The lattice discretizes the real-time interval `[0, t]` into `N` steps of size `δt = t/N`.
@@ -14,7 +29,7 @@ The lattice discretizes the real-time interval `[0, t]` into `N` steps of size `
 - `t = N * δt`: total evolution time; `ts = 0:δt:t`: real-time grid.
 - `Nt = N`; `k = kt = N + 1`: number of lattice indices (including boundary points).
 """
-struct RealADTLattice{O<:RealFockOrdering} <: AbstractADTLattice{O}
+struct RealADTLattice{O<:RealFockOrdering} <: AbstractRealADTLattice{O}
 	δt::Float64
 	d::Int
 	N::Int
@@ -31,15 +46,6 @@ Convenience constructor for a real-time ADT lattice.
 """
 RealADTLattice(; δt::Real, N::Int, d::Int=2, ordering::RealFockOrdering=M2m2M1m1()) = RealADTLattice(δt, d, N, ordering)
 Base.similar(x::RealADTLattice; δt::Real=x.δt, d::Int=x.d, N::Int=x.N, ordering::RealFockOrdering=x.ordering) = RealADTLattice(δt, d, N, ordering)
-
-TO.scalartype(::Type{<:RealADTLattice}) = ComplexF64
-"""
-    branches(::Type{<:RealADTLattice})
-
-Tuple of branch symbols of the real-time ADT lattice, `(:+, :-)`.
-"""
-branches(::Type{<:RealADTLattice}) = (:+, :-)
-TimeOrderingStyle(x::RealADTLattice) = RealTimeOrderingStyle(x)
 
 # k is the number of discretization, nbands is the number of bands
 # pos is the position within a band

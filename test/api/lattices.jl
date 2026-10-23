@@ -28,8 +28,10 @@ for (name, LatticeC) in (("ADT", ADTLattice), ("PT", PTLattice))
 		@test TimeOrderingStyle(lattice) isa TimeDscending
 		@test lattice isa (name == "ADT" ? AbstractADTLattice : AbstractPTLattice)
 		if name == "ADT"
+			@test lattice isa AbstractImagADTLattice
 			@test lattice isa ImagADTLattice
 		else
+			@test lattice isa AbstractImagPTLattice
 			@test lattice isa ImagPTLattice
 		end
 		@test scalartype(lattice) == Float64
@@ -60,8 +62,10 @@ for (name, LatticeC) in (("ADT", ADTLattice), ("PT", PTLattice))
 		@test OrderingStyle(lattice) == M2m2M1m1()
 		@test TimeOrderingStyle(lattice) isa TimeDscending
 		if name == "ADT"
+			@test lattice isa AbstractRealADTLattice
 			@test lattice isa RealADTLattice
 		else
+			@test lattice isa AbstractRealPTLattice
 			@test lattice isa RealPTLattice
 		end
 		@test scalartype(lattice) == ComplexF64
@@ -100,8 +104,10 @@ for (name, LatticeC) in (("ADT", ADTLattice), ("PT", PTLattice))
 		@test ImaginaryTimeOrderingStyle(lattice) isa TimeDscending
 		@test RealTimeOrderingStyle(lattice) isa TimeAscending
 		if name == "ADT"
+			@test lattice isa AbstractMixedADTLattice
 			@test lattice isa MixedADTLattice
 		else
+			@test lattice isa AbstractMixedPTLattice
 			@test lattice isa MixedPTLattice
 		end
 		@test scalartype(lattice) == ComplexF64

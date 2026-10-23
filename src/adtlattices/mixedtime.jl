@@ -1,5 +1,20 @@
 """
-    MixedADTLattice{O<:MixedFockOrdering} <: AbstractADTLattice{O}
+    AbstractMixedADTLattice{O<:MixedFockOrdering} <: AbstractADTLattice{O}
+
+Abstract ADT lattice type on the mixed (Kadanoff-Baym, real-time + imaginary-time) contour: scalar type `ComplexF64`,
+containing the `:+`, `:-` and `:τ` branches.
+"""
+abstract type AbstractMixedADTLattice{O<:MixedFockOrdering} <: AbstractADTLattice{O} end
+TO.scalartype(::Type{<:AbstractMixedADTLattice}) = ComplexF64
+"""
+    branches(::Type{<:AbstractMixedADTLattice})
+
+Tuple of branch symbols of the mixed ADT lattice, `(:+, :-, :τ)`.
+"""
+branches(::Type{<:AbstractMixedADTLattice}) = (:+, :-, :τ)
+
+"""
+    MixedADTLattice{O<:MixedFockOrdering} <: AbstractMixedADTLattice{O}
 
 ADT lattice on the mixed (Kadanoff-Baym, real-time + imaginary-time) contour: scalar type `ComplexF64`,
 containing the `:+`, `:-` and `:τ` branches. The lattice discretizes the real-time interval `[0, t]` into `Nt` steps
@@ -32,7 +47,7 @@ of each branch is the boundary/junction point and receives no influence-function
 This convention is applied uniformly in `partialif`/`partialif_naive`/`hybriddynamics!` on the mixed contour
 (see `src/influencefunctional/partialif/util.jl`, `partialif.jl` and `mixedtime.jl`).
 """
-struct MixedADTLattice{O<:MixedFockOrdering} <: AbstractADTLattice{O}
+struct MixedADTLattice{O<:MixedFockOrdering} <: AbstractMixedADTLattice{O}
 	δt::Float64
 	Nt::Int
 	δτ::Float64
@@ -54,14 +69,6 @@ MixedADTLattice(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, d::Int=2, ordering::
 							δt, Nt, δτ, Nτ, d, ordering)
 Base.similar(x::MixedADTLattice; δt::Real=x.δt, Nt::Int=x.Nt, δτ::Real=x.δτ, Nτ::Int=x.Nτ, d::Int=x.d, ordering::MixedFockOrdering=x.ordering) = MixedADTLattice(
 			δt, Nt, δτ, Nτ, d, ordering)
-
-TO.scalartype(::Type{<:MixedADTLattice}) = ComplexF64
-"""
-    branches(::Type{<:MixedADTLattice})
-
-Tuple of branch symbols of the mixed ADT lattice, `(:+, :-, :τ)`.
-"""
-branches(::Type{<:MixedADTLattice}) = (:+, :-, :τ)
 
 function Base.getproperty(x::MixedADTLattice, s::Symbol)
 	if s == :t

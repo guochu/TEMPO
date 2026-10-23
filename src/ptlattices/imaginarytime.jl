@@ -1,5 +1,20 @@
 """
-    ImagPTLattice{O<:ImagFockOrdering} <: AbstractPTLattice{O}
+    AbstractImagPTLattice{O<:ImagFockOrdering} <: AbstractPTLattice{O}
+
+Abstract PT lattice type on the imaginary-time (Matsubara) contour: scalar type `Float64`, containing only the `:τ` branch.
+"""
+abstract type AbstractImagPTLattice{O<:ImagFockOrdering} <: AbstractPTLattice{O} end
+TO.scalartype(::Type{<:AbstractImagPTLattice}) = Float64
+"""
+    branches(::Type{<:AbstractImagPTLattice})
+
+Tuple of branch symbols of the imaginary-time PT lattice, `(:τ,)`.
+"""
+branches(::Type{<:AbstractImagPTLattice}) = (:τ,)
+TimeOrderingStyle(x::AbstractImagPTLattice) = ImaginaryTimeOrderingStyle(x)
+
+"""
+    ImagPTLattice{O<:ImagFockOrdering} <: AbstractImagPTLattice{O}
 
 PT lattice on the imaginary-time (Matsubara) contour: scalar type `Float64`, containing only the `:τ` branch.
 The lattice discretizes the imaginary-time interval `[0, β]` into `N` steps of size `δτ = β/N`.
@@ -15,7 +30,7 @@ The lattice discretizes the imaginary-time interval `[0, β]` into `N` steps of 
 - `τs = 0:δτ:β`: imaginary-time grid.
 - `Nτ = N`: number of imaginary-time discretization steps (including boundary points `N + 1`).
 """
-struct ImagPTLattice{O<:ImagFockOrdering} <: AbstractPTLattice{O}
+struct ImagPTLattice{O<:ImagFockOrdering} <: AbstractImagPTLattice{O}
 	δτ::Float64
 	d::Int
 	N::Int
@@ -31,15 +46,6 @@ Convenience constructor for an imaginary-time PT lattice.
 """
 ImagPTLattice(; δτ::Real, N::Int, d::Int=2, ordering::ImagFockOrdering=M2M1()) = ImagPTLattice(δτ, d, N, ordering)
 Base.similar(x::ImagPTLattice; δτ::Real=x.δτ, d::Int=x.d, N::Int=x.N, ordering::ImagFockOrdering=x.ordering) = ImagPTLattice(δτ, d, N, ordering)
-
-TO.scalartype(::Type{<:ImagPTLattice}) = Float64
-"""
-    branches(::Type{<:ImagPTLattice})
-
-Tuple of branch symbols of the imaginary-time PT lattice, `(:τ,)`.
-"""
-branches(::Type{<:ImagPTLattice}) = (:τ,)
-TimeOrderingStyle(x::ImagPTLattice) = ImaginaryTimeOrderingStyle(x)
 
 Base.length(x::ImagPTLattice) = x.N
 function Base.getproperty(x::ImagPTLattice, s::Symbol)

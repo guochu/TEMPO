@@ -1,5 +1,20 @@
 """
-    RealPTLattice{O<:RealFockOrdering} <: AbstractPTLattice{O}
+    AbstractRealPTLattice{O<:RealFockOrdering} <: AbstractPTLattice{O}
+
+Abstract PT lattice type on the real-time (Keldysh) contour: scalar type `ComplexF64`, containing the `:+` and `:-` branches.
+"""
+abstract type AbstractRealPTLattice{O<:RealFockOrdering} <: AbstractPTLattice{O} end
+TO.scalartype(::Type{<:AbstractRealPTLattice}) = ComplexF64
+"""
+    branches(::Type{<:AbstractRealPTLattice})
+
+Tuple of branch symbols of the real-time PT lattice, `(:+, :-)`.
+"""
+branches(::Type{<:AbstractRealPTLattice}) = (:+, :-)
+TimeOrderingStyle(x::AbstractRealPTLattice) = RealTimeOrderingStyle(x)
+
+"""
+    RealPTLattice{O<:RealFockOrdering} <: AbstractRealPTLattice{O}
 
 PT lattice on the real-time (Keldysh) contour: scalar type `ComplexF64`, containing the `:+` and `:-` branches.
 The lattice discretizes the real-time interval `[0, t]` into `N` steps of size `δt = t/N`.
@@ -14,7 +29,7 @@ The lattice discretizes the real-time interval `[0, t]` into `N` steps of size `
 - `t = N * δt`: total evolution time; `ts = 0:δt:t`: real-time grid.
 - `Nt = N`: number of real-time discretization steps.
 """
-struct RealPTLattice{O<:RealFockOrdering} <: AbstractPTLattice{O}
+struct RealPTLattice{O<:RealFockOrdering} <: AbstractRealPTLattice{O}
 	δt::Float64
 	d::Int
 	N::Int
@@ -31,15 +46,6 @@ Convenience constructor for a real-time PT lattice.
 """
 RealPTLattice(; δt::Real, N::Int, d::Int=2, ordering::RealFockOrdering=M2m2M1m1()) = RealPTLattice(δt, d, N, ordering)
 Base.similar(x::RealPTLattice; δt::Real=x.δt, d::Int=x.d, N::Int=x.N, ordering::RealFockOrdering=x.ordering) = RealPTLattice(δt, d, N, ordering)
-
-TO.scalartype(::Type{<:RealPTLattice}) = ComplexF64
-"""
-    branches(::Type{<:RealPTLattice})
-
-Tuple of branch symbols of the real-time PT lattice, `(:+, :-)`.
-"""
-branches(::Type{<:RealPTLattice}) = (:+, :-)
-TimeOrderingStyle(x::RealPTLattice) = RealTimeOrderingStyle(x)
 
 # k is the number of discretization, nbands is the number of bands
 # pos is the position within a band
