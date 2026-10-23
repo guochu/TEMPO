@@ -77,18 +77,18 @@ end
 	op1 = adag'
 	op2 = adag
 
-	c1 = ContourIndex(1)
+	c1 = BosonicContourIndex(1)
 
 	ct = ContourOperator(c1, op1 * op2)
 	adt2 = apply!(ct, lattice, copy(adt))
 	v = integrate(lattice, adt2) / Zval
 
 	corrs = [v]
-	c2 = ContourIndex(1)
+	c2 = BosonicContourIndex(1)
 	ids2N = [k for k in sampleidx(N) if k > 1]
 	idsallN = [1; ids2N]
 	for i in ids2N
-		c1 = ContourIndex(i)
+		c1 = BosonicContourIndex(i)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
 		adt2 = apply!(ct, lattice, copy(adt))
@@ -153,7 +153,7 @@ end
 	op1 = adag'
 	op2 = adag
 
-	c1 = ContourIndex(1, :+)
+	c1 = BosonicContourIndex(1, :+)
 
 	ct = ContourOperator(c1, op1 * op2)
 	adt2 = apply!(ct, lattice, copy(adt))
@@ -161,11 +161,11 @@ end
 	v = integrate(lattice, adt2) / Zval
 
 	gt_corrs = [v]
-	c2 = ContourIndex(1, :+)
+	c2 = BosonicContourIndex(1, :+)
 	ids2N = [k for k in sampleidx(N) if k > 1]
 	idsallN = [1; ids2N]
 	for i in ids2N
-		c1 = ContourIndex(i, :+)
+		c1 = BosonicContourIndex(i, :+)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
 		adt2 = apply!(ct, lattice, copy(adt))
@@ -175,7 +175,7 @@ end
 	end
 	gt_corrs = -im * gt_corrs
 
-	c1 = ContourIndex(1, :-)
+	c1 = BosonicContourIndex(1, :-)
 	ct = ContourOperator(c1, op2 * op1)
 	adt2 = apply!(ct, lattice, copy(adt))
 	adt2 = initialstate!(adt2, lattice, ρimp)
@@ -183,7 +183,7 @@ end
 
 	lt_corrs = [v]	
 	for i in ids2N
-		c2 = ContourIndex(i, :+)
+		c2 = BosonicContourIndex(i, :+)
 		ct = ContourOperator([c1, c2], [op2, op1])
 
 		adt2 = apply!(ct, lattice, copy(adt))

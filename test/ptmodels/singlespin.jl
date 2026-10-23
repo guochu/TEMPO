@@ -24,7 +24,7 @@ println("------------------------------------")
 	z = [1 0; 0 0]
 	
 
-	ind1 = ContourIndex(1)
+	ind1 = BosonicContourIndex(1)
 	t = ContourOperator(ind1, z  )
 
 	mps2 = apply!(t, lattice, copy(mps))
@@ -37,7 +37,7 @@ println("------------------------------------")
 	op1 = [0 0; 1 0]
 	op2 = [0 1; 0 0]
 
-	ind1 = ContourIndex(1)
+	ind1 = BosonicContourIndex(1)
 
 	t = ContourOperator(ind1, op1 * op2)
 	mps2 = apply!(t, lattice, copy(mps))
@@ -48,7 +48,7 @@ println("------------------------------------")
 	ids2N = [k for k in sampleidx(N) if k > 1]
 	idsallN = [1; ids2N]
 	for i in ids2N
-		ind2 = ContourIndex(i)
+		ind2 = BosonicContourIndex(i)
 
 		t = ContourOperator([ind2, ind1], [op2, op1])
 		mps2 = apply!(t, lattice, copy(mps))
@@ -92,7 +92,7 @@ end
 		mps = sysdynamics(lattice, model, trunc=trunc)
 		# mps = initialstate!(mps, lattice, ρimp)
 
-		ind1 = ContourIndex(1, branch=:+)
+		ind1 = BosonicContourIndex(1, branch=:+)
 		m = ContourOperator(ind1, z * z )
 
 		mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
@@ -108,7 +108,7 @@ end
 		op1 = [0 0.8; 0 0]
 		op2 = [0 0; 0.7 0]
 
-		ind1 = ContourIndex(1, branch=:+)
+		ind1 = BosonicContourIndex(1, branch=:+)
 
 		m = ContourOperator(ind1, op1 * op2)
 		mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
@@ -116,11 +116,11 @@ end
 		v = integrate(lattice, mps2) / Zval
 
 		corrs = [v]
-		ind2 = ContourIndex(1, branch=:+)
+		ind2 = BosonicContourIndex(1, branch=:+)
 		ids2N = [k for k in sampleidx(N) if k > 1]
 		idsallN = [1; ids2N]
 		for i in ids2N
-			ind1 = ContourIndex(i, branch=:+)
+			ind1 = BosonicContourIndex(i, branch=:+)
 			m = ContourOperator([ind1, ind2], [op1, op2])
 
 			mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
@@ -136,7 +136,7 @@ end
 		@test norm(corrs - corrs2) / norm(corrs2) < tol
 
 
-		ind1 = ContourIndex(1, branch=:-) 
+		ind1 = BosonicContourIndex(1, branch=:-) 
 
 		m = ContourOperator(ind1, op1 * op2)
 		mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
@@ -145,7 +145,7 @@ end
 
 		corrs = [v]
 		for i in ids2N
-			ind2 = ContourIndex(i, branch=:+)
+			ind2 = BosonicContourIndex(i, branch=:+)
 
 			m = ContourOperator([ind1, ind2], [op1, op2])
 			mps2 = apply!(m, lattice, deepcopy(mps))
@@ -193,7 +193,7 @@ end
 	op1 = [0 0.8; 0 0]
 	op2 = [0 0; 0.7 0]
 
-	c1 = ContourIndex(1, branch=:+)
+	c1 = BosonicContourIndex(1, branch=:+)
 
 	ct = ContourOperator(c1, op1 * op2)
 	mps2 = apply!(ct, lattice, deepcopy(mps))
@@ -201,11 +201,11 @@ end
 	v = integrate(lattice, mps2) / Zval
 
 	corrs = [v]
-	c2 = ContourIndex(1, branch=:+)
+	c2 = BosonicContourIndex(1, branch=:+)
 	ids2Nt = [k for k in sampleidx(Nt) if k > 1]
 	idsallNt = [1; ids2Nt]
 	for i in ids2Nt
-		c1 = ContourIndex(i, branch=:+)
+		c1 = BosonicContourIndex(i, branch=:+)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
 		mps2 = apply!(ct, lattice, deepcopy(mps))
@@ -220,7 +220,7 @@ end
 	@test norm(corrs - corrs2) / norm(corrs2) < tol
 
 
-	c1 = ContourIndex(1, branch=:-)
+	c1 = BosonicContourIndex(1, branch=:-)
 
 	ct = ContourOperator(c1, op1 * op2)
 	mps2 = apply!(ct, lattice, deepcopy(mps))
@@ -228,7 +228,7 @@ end
 
 	corrs = [v]
 	for i in ids2Nt
-		c2 = ContourIndex(i, branch=:+)
+		c2 = BosonicContourIndex(i, branch=:+)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
 		mps2 = apply!(ct, lattice, deepcopy(mps))
@@ -276,7 +276,7 @@ println("------------------------------------")
 	mps = sysdynamics(lattice, model, trunc=trunc)
 	# mps = initialstate!(mps, lattice, ρimp)
 
-	ind1 = ContourIndex(1, branch=:+)
+	ind1 = BosonicContourIndex(1, branch=:+)
 	m = ContourOperator(ind1, z * z )
 
 	mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
@@ -292,7 +292,7 @@ println("------------------------------------")
 	op1 = [0 0.8; 0 0]
 	op2 = [0 0; 0.7 0]
 
-	ind1 = ContourIndex(1, branch=:+)
+	ind1 = BosonicContourIndex(1, branch=:+)
 
 	m = ContourOperator(ind1, op1 * op2)
 	mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
@@ -300,11 +300,11 @@ println("------------------------------------")
 	v = integrate(lattice, mps2) / Zval
 
 	corrs = [v]
-	ind2 = ContourIndex(1, branch=:+)
+	ind2 = BosonicContourIndex(1, branch=:+)
 	ids2N = [k for k in sampleidx(N) if k > 1]
 	idsallN = [1; ids2N]
 	for i in ids2N
-		ind1 = ContourIndex(i, branch=:+)
+		ind1 = BosonicContourIndex(i, branch=:+)
 		m = ContourOperator([ind1, ind2], [op1, op2])
 
 		mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
@@ -320,7 +320,7 @@ println("------------------------------------")
 	@test norm(corrs - corrs2) / norm(corrs2) < tol
 
 
-	ind1 = ContourIndex(1, branch=:-) 
+	ind1 = BosonicContourIndex(1, branch=:-) 
 
 	m = ContourOperator(ind1, op1 * op2)
 	mps2 = apply!(m, lattice, deepcopy(mps), aheads=true)
@@ -329,7 +329,7 @@ println("------------------------------------")
 
 	corrs = [v]
 	for i in ids2N
-		ind2 = ContourIndex(i, branch=:+)
+		ind2 = BosonicContourIndex(i, branch=:+)
 
 		m = ContourOperator([ind1, ind2], [op1, op2])
 		mps2 = apply!(m, lattice, deepcopy(mps))

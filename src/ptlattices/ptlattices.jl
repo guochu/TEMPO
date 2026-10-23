@@ -1,6 +1,5 @@
 abstract type AbstractPTLattice{O <: FockOrdering} end
 
-index(x::AbstractPTLattice, args...; kwargs...) = error("index not implemented for pt lattice type $(typeof(x))")
 """
     OrderingStyle(::Type{<:AbstractPTLattice{O}}) where O
 
@@ -66,8 +65,6 @@ function PTLattice(; contour::Symbol, kwargs...)
 		return MixedPTLattice(; kwargs...)
 	end
 end
-
-Base.getindex(lat::AbstractPTLattice, a::ContourIndex) = index(lat, a.j, branch=branch(a))
 
 """
     vacuumstate(::Type{T}, x::AbstractPTLattice) where {T<:Number}

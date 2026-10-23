@@ -185,14 +185,14 @@ end
 	map_ = indexmappings(lattice)
 	@test length(map_) == 2 * lattice.k
 	for i in 1:lattice.k, f in (:+, :-)
-		@test map_[(i, f)] == index(lattice, i, branch=f)
+		@test map_[(i, f)] == lattice[BosonicContourIndex(i, f)]
 	end
 
 	latt2 = ADTLattice(N=3, δτ=0.1, contour=:imag)
 	map2 = indexmappings(latt2)
 	@test length(map2) == latt2.k
 	for i in 1:latt2.k
-		@test map2[(i, :τ)] == index(latt2, i)
+		@test map2[(i, :τ)] == latt2[BosonicContourIndex(i, :τ)]
 	end
 
 	mps2 = randomadt(ComplexF64, length(lattice), D=3, d=2)

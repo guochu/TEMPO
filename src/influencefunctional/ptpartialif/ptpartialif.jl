@@ -50,7 +50,7 @@ function hybriddynamics!(gmps::ProcessTensor, lattice::AbstractPTLattice, corr::
 	for b1 in branches(lattice)
 		k1 = (b1 == :τ) ? lattice.Nτ : lattice.Nt
 		for i in 1:k1
-			ind1 = ContourIndex(i, branch=b1)
+			ind1 = BosonicContourIndex(i, branch=b1)
 			tmp = partialif(lattice, ind1, corr, hyb)
 			gmps = mult!(gmps, tmp, trunc=trunc)
 		end
@@ -124,12 +124,12 @@ end
 # 		k1 = (b1 == :τ) ? lattice.Nτ : lattice.Nt
 # 		for i in 1:k1
 # 			tmp = vacuumstate(lattice)
-# 			ind1 = ContourIndex(i, b1) 
+# 			ind1 = BosonicContourIndex(i, b1) 
 # 			for b2 in branches(lattice)
 # 				k2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt
 # 				for j in 1:k2
 # 					coef = index(corr, i, j, b1=b1, b2=b2)
-# 					ind2 = ContourIndex(j, b2) 
+# 					ind2 = BosonicContourIndex(j, b2) 
 # 					if ind1 == ind2
 # 						m = exp(coef .* z2)
 # 						# t = ContourOperator(ind1, m)
@@ -154,7 +154,7 @@ function hybriddynamics_naive!(gmps::ProcessTensor, lattice::AbstractPTLattice, 
 	for b1 in branches(lattice)
 		k1 = (b1 == :τ) ? lattice.Nτ : lattice.Nt
 		for i in 1:k1
-			ind1 = ContourIndex(i, branch=b1)
+			ind1 = BosonicContourIndex(i, branch=b1)
 			tmp = partialif_naive(lattice, ind1, corr, hyb, trunc=trunc)
 			gmps = mult!(gmps, tmp, trunc=trunc)			
 		end

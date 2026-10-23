@@ -8,17 +8,17 @@
 
 	# single-site diagonal term (vector form) on a lattice position
 	z = [0.6, -0.4]
-	pos = index(lattice, 2, branch=:+)
+	pos = lattice[BosonicContourIndex(2, :+)]
 	t = ADTTerm((pos,), z)
 	@test t isa ADTTerm
 	v1 = integrate(apply!(t, copy(mps))) / Zval
 	# inserting the identity at a second position must not change the value
-	pos2 = index(lattice, 1, branch=:+)
+	pos2 = lattice[BosonicContourIndex(1, :+)]
 	v2 = integrate(apply!(ADTTerm((pos, pos2), (z, [1.0, 1.0])), copy(mps))) / Zval
 	@test v1 ≈ v2 rtol = 1.0e-12
 	# two-site term (tuple of diagonal vectors)
 	z2 = [-0.3, 0.8]
-        pos3 = index(lattice, 1, branch=:-)
+        pos3 = lattice[BosonicContourIndex(1, :-)]
         t2 = ADTTerm((pos, pos3), (z, z2))
         @test t2 isa ADTTerm
         v3 = integrate(apply!(t2, copy(mps))) / Zval
@@ -68,7 +68,7 @@ end
 	ref = integrate(lattice, apply!(ft, copy(mps))) / Zval
 	@test abs(v1 - ref) / abs(ref) < 1.0e-6
 	# a ContourOperator maps to a ProdFockTerm at the same lattice position
-	c = ContourIndex(1, branch=:τ)
+	c = BosonicContourIndex(1, branch=:τ)
 	p1 = lattice[c]
 	@test expectationvalue(ContourOperator(c, z), cache) ≈ expectationvalue(ProdFockTerm(p1, z), cache)
 end

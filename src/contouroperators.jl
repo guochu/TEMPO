@@ -1,34 +1,34 @@
 """
 	ContourOperator{T<:Number}
 
-A set of operator matrices indexed by `ContourIndex`, representing a multi-local operator acting on a `ProcessTensor`.
+A set of operator matrices indexed by `BosonicContourIndex`, representing a multi-local operator acting on a `ProcessTensor`.
 
-Each operator matrix (2×2) corresponds to a `ContourIndex` (with branch `:τ`, `:+`, or `:-`) and is applied to the `ProcessTensor` via `apply!`.
+Each operator matrix (2×2) corresponds to a `BosonicContourIndex` (with branch `:τ`, `:+`, or `:-`) and is applied to the `ProcessTensor` via `apply!`.
 
 # Fields
-- `indices::Vector{ContourIndex}`: contour indices of the operators
+- `indices::Vector{BosonicContourIndex}`: contour indices of the operators
 - `ops::Vector{Matrix{T}}`: list of local operator matrices
 
-Main constructor: `ContourOperator(idx::AbstractVector{ContourIndex}, data::AbstractVector{<:AbstractMatrix{T}})`.
+Main constructor: `ContourOperator(idx::AbstractVector{BosonicContourIndex}, data::AbstractVector{<:AbstractMatrix{T}})`.
 """
 struct ContourOperator{T<:Number}
-	indices::Vector{ContourIndex}
+	indices::Vector{BosonicContourIndex}
 	ops::Vector{Matrix{T}}
 end
 
-function ContourOperator(idx::AbstractVector{ContourIndex}, data::AbstractVector{<:AbstractMatrix{T}}) where {T}
-	(length(Set(idx)) == length(idx)) || throw(ArgumentError("multiple op with the same ContourIndex not allowed"))
-	(length(idx) == length(data)) || throw(DimensionMismatch("op size mismatch with number of ContourIndexes"))
-	return ContourOperator(convert(Vector{ContourIndex}, idx), convert(Vector{Matrix{T}}, data))
+function ContourOperator(idx::AbstractVector{BosonicContourIndex}, data::AbstractVector{<:AbstractMatrix{T}}) where {T}
+	(length(Set(idx)) == length(idx)) || throw(ArgumentError("multiple op with the same BosonicContourIndex not allowed"))
+	(length(idx) == length(data)) || throw(DimensionMismatch("op size mismatch with number of BosonicContourIndexes"))
+	return ContourOperator(convert(Vector{BosonicContourIndex}, idx), convert(Vector{Matrix{T}}, data))
 end
-ContourOperator(p::ContourIndex, data::AbstractMatrix) = ContourOperator([p], [data])
+ContourOperator(p::BosonicContourIndex, data::AbstractMatrix) = ContourOperator([p], [data])
 
 TO.scalartype(::Type{ContourOperator{T}}) where {T} = T
 
 """
 	apply!(x::ContourOperator, lat::AbstractPTLattice, mps::ProcessTensor; aheads::Union{AbstractVector{Bool},Bool}=true)
 
-Map the operators in `ContourOperator` to their positions on the lattice `lat` via their `ContourIndex`, apply them to the `ProcessTensor` (MPO), modify `mps` in place, and return it.
+Map the operators in `ContourOperator` to their positions on the lattice `lat` via their `BosonicContourIndex`, apply them to the `ProcessTensor` (MPO), modify `mps` in place, and return it.
 
 Operators on the negative branch (`:-`) are automatically transposed to match the time ordering.
 

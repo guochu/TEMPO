@@ -92,11 +92,11 @@ end
 				t = (j - 1) * lattice_real.δt
 				U = exp(-im * lattice_real.δt .* (ht .+ f(t) .* m))
 				if name == "ADT"
-					term = ADTTerm((index(lattice_real, j + 1, branch=:+), index(lattice_real, j, branch=:+)), U)
+					term = ADTTerm((lattice_real[BosonicContourIndex(j + 1, :+)], lattice_real[BosonicContourIndex(j, :+)]), U)
 					apply!(term, g)
 					canonicalize!(g, alg=alg)
 				else
-					apply!(ContourOperator(ContourIndex(j, :+), U), lattice_real, g)
+					apply!(ContourOperator(BosonicContourIndex(j, :+), U), lattice_real, g)
 				end
 			end
 			name == "ADT" || canonicalize!(g, alg=alg)

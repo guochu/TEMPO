@@ -1,11 +1,11 @@
 """
-	partialif_naive(lattice::AbstractPTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; trunc::TruncationScheme=Defaults.alg_trunc_if())
+	partialif_naive(lattice::AbstractPTLattice, rowind::BosonicContourIndex, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; trunc::TruncationScheme=Defaults.alg_trunc_if())
 
 Naive partial influence functional construction on PT lattices: apply the exp(ηᵢⱼ op⊗op) gates successively for each column index (`_get_contour_op` handles the transpose of op according to the contour branch), orthogonalizing/truncating along the way.
 
 # Arguments
 - `lattice::AbstractPTLattice`: PT contour lattice.
-- `rowind::ContourIndex`: contour index (row) associated with the partial IF.
+- `rowind::BosonicContourIndex`: contour index (row) associated with the partial IF.
 - `corr::AbstractCorrelationFunction`: bath correlation function.
 - `hyb::NonAdditiveHyb`: non-additive (symmetric) system-bath coupling.
 - `trunc::TruncationScheme=Defaults.alg_trunc_if()`: truncation scheme used during orthogonalization.
@@ -13,7 +13,7 @@ Naive partial influence functional construction on PT lattices: apply the exp(η
 # Returns
 The partial IF, represented as a `ProcessTensor`.
 """
-function partialif_naive(lattice::AbstractPTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; 
+function partialif_naive(lattice::AbstractPTLattice, rowind::BosonicContourIndex, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb; 
 							trunc::TruncationScheme=Defaults.alg_trunc_if())
 	z = hyb.op
 	(lattice.d == size(z, 1) == size(z, 2)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
@@ -31,8 +31,8 @@ function partialif_naive(lattice::AbstractPTLattice, rowind::ContourIndex, corr:
 	for b2 in branches(lattice)
 		k2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt
 		for j in 1:k2
-			coef = index(corr, i, j, b1=b1, b2=b2)
-			ind2 = ContourIndex(j, b2) 
+			coef = corr[BosonicContourIndex(i, b1), BosonicContourIndex(j, b2)]
+			ind2 = BosonicContourIndex(j, b2) 
 			# pos2 = lattice[ind2]
 			# if pos1 == pos2
 			# 	m = exp(coef .* z2)
@@ -50,7 +50,7 @@ function partialif_naive(lattice::AbstractPTLattice, rowind::ContourIndex, corr:
 	return tmp
 end
 
-function _get_contour_op(lattice, ind1::ContourIndex, ind2::ContourIndex, z::AbstractMatrix, coef)
+function _get_contour_op(lattice, ind1::BosonicContourIndex, ind2::BosonicContourIndex, z::AbstractMatrix, coef)
 	d = lattice.d
 	z1 = z
 	z2 = z
@@ -73,7 +73,7 @@ function _get_contour_op(lattice, ind1::ContourIndex, ind2::ContourIndex, z::Abs
 end
 
 """
-	partialif(lattice::AbstractPTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb)
+	partialif(lattice::AbstractPTLattice, rowind::BosonicContourIndex, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb)
 
 Construct the partial influence functional (partial IF) associated with the contour index `rowind` as a `ProcessTensor` with exact bond dimension `d` (the physical dimension), generalizing the algorithm of Strathearn et al. (2018) to non-additive couplings.
 
@@ -85,20 +85,20 @@ i.e. an MPO whose bond index is the eigenindex `a`.
 
 # Arguments
 - `lattice::AbstractPTLattice`: PT contour lattice.
-- `rowind::ContourIndex`: contour index (row) associated with the partial IF.
+- `rowind::BosonicContourIndex`: contour index (row) associated with the partial IF.
 - `corr::AbstractCorrelationFunction`: bath correlation function.
 - `hyb::NonAdditiveHyb`: non-additive Hermitian system-bath coupling.
 
 # Returns
 The partial IF, represented as a `ProcessTensor`.
 """
-function partialif(lattice::AbstractPTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb)
+function partialif(lattice::AbstractPTLattice, rowind::BosonicContourIndex, corr::AbstractCorrelationFunction, hyb::NonAdditiveHyb)
 	z = hyb.op
 	(lattice.d == size(z, 1) == size(z, 2)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
 
 	b1 = branch(rowind)
 	i = rowind.j
-	pos1 = index(lattice, i, branch=b1)
+	pos1 = lattice[BosonicContourIndex(i, b1)]
 
 	T = promote_type(scalartype(lattice), scalartype(hyb), scalartype(corr))
 	colsites = Tuple{Int, Symbol}[]
@@ -106,8 +106,8 @@ function partialif(lattice::AbstractPTLattice, rowind::ContourIndex, corr::Abstr
 	for b2 in branches(lattice)
 		k2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt
 		for j in 1:k2
-			pos2 = index(lattice, j, branch=b2)
-			coef = index(corr, i, j, b1=b1, b2=b2)
+			pos2 = lattice[BosonicContourIndex(j, b2)]
+			coef = corr[BosonicContourIndex(i, b1), BosonicContourIndex(j, b2)]
 			push!(colsites, (pos2, b2))
 			push!(coefs, coef)
 		end

@@ -83,13 +83,18 @@ function RealADTLattice(; order::Int=1, kwargs...)
 end
 
 
-function index(x::RealADTLattice{<:M2m2M1m1}, i::Int; branch::Symbol=:+)
+"""
+    getindex(x::RealADTLattice{<:M2m2M1m1}, a::BosonicContourIndex)
+
+Map the contour index `a` (time step `a.j`, branch `:+` or `:-`) to the global lattice position.
+"""
+function Base.getindex(x::RealADTLattice{<:M2m2M1m1}, a::BosonicContourIndex)
 	@boundscheck begin
-		(1 <= i <= x.k) || throw(BoundsError(1:x.k, i))
-		(branch in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
+		(1 <= a.j <= x.k) || throw(BoundsError(1:x.k, a.j))
+		(branch(a) in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
 	end
 	TL = length(x)
-	ifelse(branch == :+, TL-2i+1, TL-2i+2)
+	ifelse(branch(a) == :+, TL-2a.j+1, TL-2a.j+2)
 end
 
 
@@ -103,7 +108,7 @@ function indexmappings(lattice::RealADTLattice)
 	r = Dict{Tuple{Int, Symbol}, Int}()
 	for i in 1:lattice.k
 		for f in (:+, :-)
-			r[(i, f)] = index(lattice, i, branch=f)
+			r[(i, f)] = lattice[BosonicContourIndex(i, f)]
 		end
 	end
 	return r

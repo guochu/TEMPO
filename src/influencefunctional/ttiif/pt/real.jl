@@ -155,7 +155,7 @@ function _fit_to_lattice_diag(lattice::RealPTLattice1Order, mpotensors, f1::Symb
 
 	leftspace = 1
 	j = lattice.N
-	pos1, pos2 = index(lattice, j, branch=:+), index(lattice, j, branch=:-)
+	pos1, pos2 = lattice[BosonicContourIndex(j, :+)], lattice[BosonicContourIndex(j, :-)]
 	@assert pos1 + 1 == pos2 == 2
 	if f1 == :+
 		data2[pos1] = mpotensors[1]
@@ -169,7 +169,7 @@ function _fit_to_lattice_diag(lattice::RealPTLattice1Order, mpotensors, f1::Symb
 	end
 	leftspace = space_r(data2[pos2])
 	for j in lattice.N-1:-1:2
-		pos1, pos2 = index(lattice, j, branch=:+), index(lattice, j, branch=:-)
+		pos1, pos2 = lattice[BosonicContourIndex(j, :+)], lattice[BosonicContourIndex(j, :-)]
 		@assert pos1 + 1 == pos2
 		if f1 == :+
 			data2[pos1] = mpotensors[2]
@@ -184,7 +184,7 @@ function _fit_to_lattice_diag(lattice::RealPTLattice1Order, mpotensors, f1::Symb
 		leftspace = space_r(data2[pos2])
 	end
 	j = 1
-	pos1, pos2 = index(lattice, j, branch=:+), index(lattice, j, branch=:-)
+	pos1, pos2 = lattice[BosonicContourIndex(j, :+)], lattice[BosonicContourIndex(j, :-)]
 	@assert pos1 + 1 == pos2 == L
 	if f1 == :+
 		data2[pos1] = mpotensors[3]
@@ -220,7 +220,7 @@ function _fit_to_lattice_offdiag(lattice::RealPTLattice1Order, mpotensors, f1::S
 	leftspace = 1
 
 	j = lattice.N
-	pos1, pos2 = index(lattice, j, branch=f1), index(lattice, j, branch=f2)
+	pos1, pos2 = lattice[BosonicContourIndex(j, f1)], lattice[BosonicContourIndex(j, f2)]
 	if pos1 > pos2 # this sign has already been taken care of
 		# println("here----xxxxx", f1, " ", f2)
 		pos1, pos2 = pos2, pos1
@@ -247,7 +247,7 @@ function _fit_to_lattice_offdiag(lattice::RealPTLattice1Order, mpotensors, f1::S
 	end
 	for j in lattice.N-1:-1:2
 		posa, posb = band_boundary(lattice, j)
-		pos1, pos2 = index(lattice, j, branch=f1), index(lattice, j, branch=f2)
+		pos1, pos2 = lattice[BosonicContourIndex(j, f1)], lattice[BosonicContourIndex(j, f2)]
 		if pos1 > pos2 # this sign has already been taken care of
 			pos1, pos2 = pos2, pos1
 		end
@@ -271,7 +271,7 @@ function _fit_to_lattice_offdiag(lattice::RealPTLattice1Order, mpotensors, f1::S
 	end
 	j = 1
 	posa, posb = band_boundary(lattice, j)
-	pos1, pos2 = index(lattice, j, branch=f1), index(lattice, j, branch=f2)
+	pos1, pos2 = lattice[BosonicContourIndex(j, f1)], lattice[BosonicContourIndex(j, f2)]
 	if pos1 > pos2 # this sign has already been taken care of
 		pos1, pos2 = pos2, pos1
 	end
@@ -300,7 +300,7 @@ function _fit_to_lattice_offdiag(lattice::RealPTLattice1Order, mpotensors, f1::S
 	return ProcessTensor(data2)
 end
 
-band_boundary(lattice::RealPTLattice1Order, j::Int) = index(lattice, j, branch=:+), index(lattice, j, branch=:-)
+band_boundary(lattice::RealPTLattice1Order, j::Int) = lattice[BosonicContourIndex(j, :+)], lattice[BosonicContourIndex(j, :-)]
 
 
 function split_mpotensor(mpoj::DenseMPOTensor, trunc)

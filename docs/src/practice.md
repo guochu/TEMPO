@@ -48,7 +48,7 @@ Rules of thumb from practice (use them as starting points; still verify with you
 ### ADT path: `ADTTerm` is a single-point diagonal operator; use operator insertion for non-diagonal quantities
 
 ```julia
-m = ADTTerm(index(lattice, i, branch=:+), zdiag)   # zdiag is the vector of diagonal elements
+m = ADTTerm(lattice[BosonicContourIndex(i, :+)], zdiag)   # zdiag is the vector of diagonal elements
 v = expectationvalue(m, cache)                     # already normalized
 ```
 
@@ -58,7 +58,7 @@ v = expectationvalue(m, cache)                     # already normalized
 - For **off-diagonal single-point operators or arbitrary two-point correlations**, use operator insertion (works for both ADT and PT; see `test/models/rabimodel.jl`):
 
   ```julia
-  ct   = ContourOperator([ContourIndex(i), ContourIndex(1)], [op2, op1])  # op can be an arbitrary matrix
+  ct   = ContourOperator([BosonicContourIndex(i), BosonicContourIndex(1)], [op2, op1])  # op can be an arbitrary matrix
   mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
   mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp)   # real time needs ρ₀; imaginary time does not
   mps2 = mult!(mpsK, mpsI, trunc=trunc)
@@ -71,7 +71,7 @@ v = expectationvalue(m, cache)                     # already normalized
 
 ```julia
 cache = environments(lattice, mps, ρ₀=ρimp)        # real-time PT requires ρ₀!
-m = ContourOperator(ContourIndex(i, :+), x)        # x is an arbitrary matrix
+m = ContourOperator(BosonicContourIndex(i, :+), x)        # x is an arbitrary matrix
 v = expectationvalue(m, cache)
 ```
 

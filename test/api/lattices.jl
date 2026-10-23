@@ -44,7 +44,7 @@ for (name, LatticeC) in (("ADT", ADTLattice), ("PT", PTLattice))
 		@test lattice.T == 5
 		# index conventions: boundary site is the last lattice position
 		for i in 1:length(lattice)
-			@test index(lattice, i) == length(lattice) - i + 1
+			@test lattice[BosonicContourIndex(i, :τ)] == length(lattice) - i + 1
 		end
 
 		mps = vacuumstate(scalartype(lattice), lattice)
@@ -80,11 +80,11 @@ for (name, LatticeC) in (("ADT", ADTLattice), ("PT", PTLattice))
 		for i in 1:k
 			if name == "ADT"
 				# the boundary step (i = k) is the first lattice position
-				@test index(lattice, i, branch=:+) == 2 * (k - i) + 1
-				@test index(lattice, i, branch=:-) == 2 * (k - i) + 2
+				@test lattice[BosonicContourIndex(i, :+)] == 2 * (k - i) + 1
+				@test lattice[BosonicContourIndex(i, :-)] == 2 * (k - i) + 2
 			else
-				@test index(lattice, i, branch=:+) == 2 * i - 1
-				@test index(lattice, i, branch=:-) == 2 * i
+				@test lattice[BosonicContourIndex(i, :+)] == 2 * i - 1
+				@test lattice[BosonicContourIndex(i, :-)] == 2 * i
 			end
 		end
 
@@ -123,11 +123,11 @@ for (name, LatticeC) in (("ADT", ADTLattice), ("PT", PTLattice))
 		# imaginary time axis: the boundary point is the last τ position
 		kτ = name == "ADT" ? lattice.Nτ + 1 : lattice.Nτ
 		for i in 1:lattice.Nτ
-			@test index(lattice, i, branch=:τ) == kτ + 1 - i
+			@test lattice[BosonicContourIndex(i, :τ)] == kτ + 1 - i
 		end
 		# real time axis
-		@test index(lattice, 1, branch=:-) == kτ + 1
-		@test index(lattice, 1, branch=:+) == kτ + 2
+		@test lattice[BosonicContourIndex(1, :-)] == kτ + 1
+		@test lattice[BosonicContourIndex(1, :+)] == kτ + 2
 
 		mps = vacuumstate(scalartype(lattice), lattice)
 		if name == "ADT"

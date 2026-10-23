@@ -60,7 +60,7 @@ sysdynamics_backward!(mps::ADT, lattice::AbstractADTLattice, model::AbstractImpu
 sysdynamics_imaginary!(mps::ADT, lattice::AbstractADTLattice, model::AbstractImpurityHamiltonian, args...; trunc::TruncationScheme=Defaults.alg_trunc_sys()) = _sysdynamics_util!(
 						mps, lattice, model, :τ, lattice.Nτ, args...; trunc=trunc)
 
-# function sysdynamics!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, ind::ContourIndex, op::AbstractMatrix; 
+# function sysdynamics!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, ind::BosonicContourIndex, op::AbstractMatrix; 
 # 						trunc::TruncationScheme=Defaults.alg_trunc_sys())
 # 	bh = branch(ind)
 # 	U = propagator(model, lattice, bh)
@@ -78,7 +78,7 @@ sysdynamics_imaginary!(mps::ADT, lattice::AbstractADTLattice, model::AbstractImp
 # 	canonicalize!(mps, alg=alg)
 # 	return mps
 # end
-# function sysdynamics!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, ind::ContourIndex; 
+# function sysdynamics!(mps::ADT, lattice::AbstractADTLattice, model::ImpurityHamiltonian, ind::BosonicContourIndex; 
 # 						trunc::TruncationScheme=Defaults.alg_trunc_sys())
 # 	bh = branch(ind)
 # 	U = propagator(model, lattice, bh)
@@ -103,7 +103,7 @@ function _sysdynamics_util!(gmps::ADT, lattice::AbstractADTLattice, model::Impur
 	alg = Orthogonalize(SVD(), trunc)
 	for j in 1:N
 		a, b = (branch == :-) ? (j, j+1) : (j+1, j)
-        pos1, pos2 = index(lattice, a, branch=branch), index(lattice, b, branch=branch)
+        pos1, pos2 = lattice[BosonicContourIndex(a, branch)], lattice[BosonicContourIndex(b, branch)]
         t = ADTTerm((pos1, pos2), U)
         apply!(t, gmps)
         canonicalize!(gmps, alg=alg)			
@@ -119,7 +119,7 @@ function _sysdynamics_util!(gmps::ADT, lattice::AbstractADTLattice, model::Impur
 	alg = Orthogonalize(SVD(), trunc)
 	for j in 1:N
 		a, b = (branch == :-) ? (j, j+1) : (j+1, j)
-        pos1, pos2 = index(lattice, a, branch=branch), index(lattice, b, branch=branch)
+        pos1, pos2 = lattice[BosonicContourIndex(a, branch)], lattice[BosonicContourIndex(b, branch)]
         U′ = _get_U_prime(lattice, U, j, branch, cts)
         t = ADTTerm((pos1, pos2), U′)
         apply!(t, gmps)
@@ -136,7 +136,7 @@ function _sysdynamics_util!(gmps::ADT, lattice::AbstractADTLattice, model::Abstr
 	for j in 1:N
 		U = propagator(model, lattice, branch, j, N)
 		a, b = (branch == :-) ? (j, j+1) : (j+1, j)
-		pos1, pos2 = index(lattice, a, branch=branch), index(lattice, b, branch=branch)
+		pos1, pos2 = lattice[BosonicContourIndex(a, branch)], lattice[BosonicContourIndex(b, branch)]
 		t = ADTTerm((pos1, pos2), U)
 		apply!(t, gmps)
 		canonicalize!(gmps, alg=alg)
@@ -146,7 +146,7 @@ end
 
 function _get_U_prime(lattice, U, j::Int, bh::Symbol, cts::ContourOperator)
 	idx, ops = cts.indices, cts.ops
-	a = ContourIndex(j, bh)
+	a = BosonicContourIndex(j, bh)
 	k = findfirst(x->x==a, idx)
 
 	U′ = U

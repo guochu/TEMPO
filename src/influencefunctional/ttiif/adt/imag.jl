@@ -93,18 +93,18 @@ function _fit_to_lattice(lattice::ImagADTLattice1Order, mpstensors)
 	L = length(lattice)
 	data = similar(mpstensors, L)
 	j = lattice.k
-	pos = index(lattice, j)
+	pos = lattice[BosonicContourIndex(j, :τ)]
 	@assert pos == 1
 	data[pos] = mpstensors[1]
 	for j in lattice.k-1:-1:3
-		pos = index(lattice, j)
+		pos = lattice[BosonicContourIndex(j, :τ)]
 		data[pos] = mpstensors[2]
 	end
 	j = 2
-	pos = index(lattice, j)
+	pos = lattice[BosonicContourIndex(j, :τ)]
 	data[pos] = mpstensors[3]
 	j = 1
-	pos = index(lattice, j)
+	pos = lattice[BosonicContourIndex(j, :τ)]
 	@assert pos == L
 	data[pos] = ones(1, phydim(lattice), 1)
 	return ADT(data)

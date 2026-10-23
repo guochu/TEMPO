@@ -26,8 +26,8 @@
 	orth = Orthogonalize(SVD(), trunc)
 	mpo2 = nothing
 	for i in 1:lattice.N, j in 1:lattice.N
-		ind1, ind2 = ContourIndex(i+1), ContourIndex(j+1)
-		coef = index(corr, i, j)
+		ind1, ind2 = BosonicContourIndex(i+1), BosonicContourIndex(j+1)
+		coef = corr[BosonicContourIndex(i, :τ), BosonicContourIndex(j, :τ)]
 		if coef != 0
 			if ind1 == ind2
 				t = ADTTerm(lattice[ind1], coef .* z2)
@@ -83,8 +83,8 @@
 	function manual_if(b1, b2)
 		mps = nothing
 		for i in 1:lattice.N, j in 1:lattice.N
-			ind1, ind2 = ContourIndex(i, b1), ContourIndex(j, b2)
-			coef = index(corr, i, j, b1=b1, b2=b2)
+			ind1, ind2 = BosonicContourIndex(i, b1), BosonicContourIndex(j, b2)
+			coef = corr[BosonicContourIndex(i, b1), BosonicContourIndex(j, b2)]
 			if coef != 0
 				if ind1 == ind2
 					t = ADTTerm(lattice[ind1], coef .* z2)
@@ -157,12 +157,12 @@ end
 
 		mpo2 = nothing
 		for i in 1:lattice.N, j in 1:lattice.N
-			ind1, ind2 = ContourIndex(i), ContourIndex(j)
+			ind1, ind2 = BosonicContourIndex(i), BosonicContourIndex(j)
 			if ind1 == ind2
 				m = __ti_localop(corr.data, op1, op2)
 				t = FockTermS(lattice[ind1], m)
 			else
-				coef = index(corr, i, j)
+				coef = corr[BosonicContourIndex(i, :τ), BosonicContourIndex(j, :τ)]
 				m = coef .* kron(op2, op1)
 				t = FockTermS((lattice[ind1], lattice[ind2]), reshape(m, (d, d, d, d)))
 			end
@@ -229,7 +229,7 @@ end
 		function manual_if(b1, b2)
 			mps = nothing
 			for i in 1:lattice.N, j in 1:lattice.N
-				ind1, ind2 = ContourIndex(i, b1), ContourIndex(j, b2)
+				ind1, ind2 = BosonicContourIndex(i, b1), BosonicContourIndex(j, b2)
 				t = __get_contour_op(lattice, ind1, ind2, op1, op2, corr)
 				if isnothing(mps)
 					mps = apply!(t, vacuumstate(scalartype(hyb), lattice))

@@ -94,9 +94,9 @@ for (name, alg) in algs
 		Zval = integrate(lattice, mps)
 
 		corrs = ComplexF64[]
-		c2 = ContourIndex(1)
+		c2 = BosonicContourIndex(1)
 		for i in 1:Nτ
-			c1 = ContourIndex(i)
+			c1 = BosonicContourIndex(i)
 			ct = (i == 1) ? ContourOperator(c1, op1 * op2) : ContourOperator([c1, c2], [op1, op2])
 			push!(corrs, integrate(lattice, apply!(ct, lattice, deepcopy(mps))) / Zval)
 		end
@@ -154,9 +154,9 @@ for (name, alg) in algs
 		Zval = integrate(lattice, initialstate!(deepcopy(mps), lattice, ρ_imp))
 
 		corrs = ComplexF64[]
-		c2 = ContourIndex(1, branch=:+)
+		c2 = BosonicContourIndex(1, branch=:+)
 		for i in 1:Nt
-			c1 = ContourIndex(i, branch=:+)
+			c1 = BosonicContourIndex(i, branch=:+)
 			ct = (i == 1) ? ContourOperator(c1, op1 * op2) : ContourOperator([c1, c2], [op1, op2])
 			mps2 = apply!(ct, lattice, deepcopy(mps))
 			push!(corrs, integrate(lattice, initialstate!(mps2, lattice, ρ_imp)) / Zval)

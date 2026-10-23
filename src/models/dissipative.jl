@@ -14,8 +14,8 @@ function sysdynamics!(mps::ADT, lattice::RealADTLattice1Order, model::ImpurityLi
 	alg = Orthogonalize(SVD(), trunc)
 	U = _get_dissipative_adt_propagator(model.m, lattice.δt)
 	for j in 1:lattice.N
-		pos1, pos2 = index(lattice, j+1, branch=:+), index(lattice, j, branch=:+)
-		pos3, pos4 = index(lattice, j, branch=:-), index(lattice, j+1, branch=:-)
+		pos1, pos2 = lattice[BosonicContourIndex(j+1, :+)], lattice[BosonicContourIndex(j, :+)]
+		pos3, pos4 = lattice[BosonicContourIndex(j, :-)], lattice[BosonicContourIndex(j+1, :-)]
 		t = ADTTerm((pos1, pos2, pos3, pos4), U)
 		apply!(t, mps)
 		canonicalize!(mps, alg=alg)	
@@ -32,8 +32,8 @@ function sysdynamics!(mps::ADT, lattice::RealADTLattice1Order, model::ImpurityLi
 	alg = Orthogonalize(SVD(), trunc)
 	U = _get_dissipative_adt_propagator(model.m, lattice.δt)
 	for j in 1:lattice.N
-		pos1, pos2 = index(lattice, j+1, branch=:+), index(lattice, j, branch=:+)
-		pos3, pos4 = index(lattice, j, branch=:-), index(lattice, j+1, branch=:-)
+		pos1, pos2 = lattice[BosonicContourIndex(j+1, :+)], lattice[BosonicContourIndex(j, :+)]
+		pos3, pos4 = lattice[BosonicContourIndex(j, :-)], lattice[BosonicContourIndex(j+1, :-)]
 		U′ = _get_L_prime(U, j, op)
 		t = ADTTerm((pos1, pos2, pos3, pos4), U′)
 		apply!(t, mps)
@@ -84,7 +84,7 @@ function sysdynamics!(mps::ProcessTensor, lattice::RealPTLattice1Order, model::I
 	alg = Orthogonalize(SVD(), trunc)
 	U = _get_dissipative_pt_propagator(model.m, lattice.δt)
 	for j in 1:lattice.N
-		ind1, ind2 = ContourIndex(j, :+), ContourIndex(j, :-)
+		ind1, ind2 = BosonicContourIndex(j, :+), BosonicContourIndex(j, :-)
 		# t = ContourOperator((ind1, ind2), U)
 		# apply!(t, lattice, mps)	
 		t = FockTermS((lattice[ind1], lattice[ind2]), U)
@@ -121,7 +121,7 @@ function _get_L_prime(U, j::Int, cts::ContourOperator)
 	idx, ops = cts.indices, cts.ops
 	U′ = U
 	for bh in (:+, :-)
-		a = ContourIndex(j, bh)
+		a = BosonicContourIndex(j, bh)
 		k = findfirst(x->x==a, idx)
 
 		if !isnothing(k)

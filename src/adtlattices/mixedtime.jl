@@ -39,7 +39,7 @@ Although the imaginary-time evolution only has `Nτ` steps, the lattice stores `
 the `τ=β` point at lattice index `kτ` is glued to the `:+` branch start); likewise each real-time branch stores
 `kt = Nt + 1` points (the extra one is the `t=0` boundary point at lattice index 1, glued to the imaginary-time branch
 ends). On the mixed contour, the correlation-function index `i` on **every** branch (`:τ`, `:+`, `:-`) maps to the
-lattice index `i+1` — the same `index(lattice, i+1)` convention as the imaginary-time-only lattice: the lattice index 1
+lattice index `i+1` — the same `lattice[BosonicContourIndex(i+1, branch)]` convention as the imaginary-time-only lattice: the lattice index 1
 of each branch is the boundary/junction point and receives no influence-functional gates, while the lattice indices
 `2..kτ` (`2..kt`) carry the correlation indices `1..Nτ` (`1..Nt`).
 
@@ -107,22 +107,28 @@ end
 Base.length(x::MixedADTLattice1Order) = 2 * x.kt + x.kτ
 
 # acending order for real branch, descending order for imag time
-function index(x::MixedADTLattice1Order{<:M2M1_m1M1m2M2}, i::Int; branch::Symbol=:+, band::Int=1)
+"""
+    getindex(x::MixedADTLattice1Order{<:M2M1_m1M1m2M2}, a::BosonicContourIndex)
+
+Map the contour index `a` (time step `a.j`, branch `:+`, `:-` or `:τ`) to the global lattice position.
+"""
+function Base.getindex(x::MixedADTLattice1Order{<:M2M1_m1M1m2M2}, a::BosonicContourIndex)
+	b = branch(a)
 	@boundscheck begin
-		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
-		if branch == :τ
-			(1 <= i <= x.kτ) || throw(BoundsError(1:x.kτ, i))
+		(b in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
+		if b == :τ
+			(1 <= a.j <= x.kτ) || throw(BoundsError(1:x.kτ, a.j))
 		else
-			(1 <= i <= x.kt) || throw(BoundsError(1:x.kt, i))
+			(1 <= a.j <= x.kt) || throw(BoundsError(1:x.kt, a.j))
 		end
 	end
 
-	if branch == :+
-		2*(i-1)+2 + x.kτ
-	elseif branch == :-
-		2*(i-1)+1 + x.kτ
+	if b == :+
+		2*(a.j-1)+2 + x.kτ
+	elseif b == :-
+		2*(a.j-1)+1 + x.kτ
 	else
-		x.kτ-i + 1
+		x.kτ-a.j + 1
 	end
 end
 
@@ -138,11 +144,11 @@ function indexmappings(lattice::MixedADTLattice1Order)
 	r = Dict{Tuple{Int, Symbol}, Int}()
 	for i in 1:lattice.kτ
 		f = :τ
-		r[(i, f)] = index(lattice, i, branch=f)
+		r[(i, f)] = lattice[BosonicContourIndex(i, f)]
 	end
 	for i in 1:lattice.kt
 		for f in (:+, :-)
-			r[(i, f)] = index(lattice, i, branch=f)
+			r[(i, f)] = lattice[BosonicContourIndex(i, f)]
 		end
 	end
 	return r

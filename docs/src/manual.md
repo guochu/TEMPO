@@ -48,8 +48,8 @@ Commonly used properties and functions:
 - `length(lattice)`: total number of sites; `phydim(lattice)`: local dimension `d`;
 - `lattice.d`, `lattice.N` / `Nt` / `Nτ`, `lattice.δt` / `δτ`, `lattice.t`, `lattice.β` (`N*δτ` for imaginary time);
 - `branches(lattice)`: returns the branches, e.g. `(:+, :-)` (real time) or `(:τ,)` (imaginary time);
-- `index(lattice, i, branch=:+)`: maps a (time step, branch) pair to a site position;
-- `ContourIndex(i, :+)`: a contour index object;
+- `lattice[BosonicContourIndex(i, :+)]`: maps a (time step, branch) pair to a site position;
+- `BosonicContourIndex(i, :+)`: a contour index object;
 - `vacuumstate(lattice)`: initializes the vacuum-state ADT/PT.
 
 !!! note "Mind the grid endpoints"
@@ -167,14 +167,14 @@ Insert the operator (which can be any matrix) into the system dynamics as a `Con
 
 ```julia
 # Single point: ⟨op(t_i)⟩
-ct   = ContourOperator(ContourIndex(i), op)
+ct   = ContourOperator(BosonicContourIndex(i), op)
 mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
 mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp)    # real time requires ρ₀; imaginary time does not
 mps2 = mult!(mpsK, mpsI, trunc=trunc)
 v    = integrate(mps2) / integrate(mps)
 
 # Two-point correlation: ⟨op2(t_i) op1(t_j)⟩
-ct   = ContourOperator([ContourIndex(i), ContourIndex(j)], [op2, op1])
+ct   = ContourOperator([BosonicContourIndex(i), BosonicContourIndex(j)], [op2, op1])
 mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
 # ... likewise: boundarycondition! → mult! → integrate/integrate
 ```
@@ -186,11 +186,11 @@ Build the cache once, then measure point by point (already normalized):
 ```julia
 # PT framework (off-diagonal coupling, or off-diagonal observables needed)
 cache = environments(lattice, mps, ρ₀=ρimp)
-v = expectationvalue(ContourOperator(ContourIndex(i, :+), op), cache)
+v = expectationvalue(ContourOperator(BosonicContourIndex(i, :+), op), cache)
 
 # ADT framework (diagonal coupling, diagonal observables)
 cache = environments(lattice, mpsK, mpsI)
-v = expectationvalue(ADTTerm(index(lattice, i, branch=:+), zdiag), cache)
+v = expectationvalue(ADTTerm(lattice[BosonicContourIndex(i, :+)], zdiag), cache)
 ```
 
 Imaginary time / mixed contours are supported as well (PT uses `environments(lattice, mps)`, ADT uses `environments(lattice, mpsK, mpsI)`). The multi-point ADT form `ADTTerm((pos2, pos1), (v2, v1))` can measure diagonal two-point correlations.
@@ -238,7 +238,6 @@ src/
 ├── tensorops/                  # basic tools for truncation, tensor operations, orthogonalization, etc. (algorithms.jl contains DMRG multiplication / MPS algorithms)
 ├── defaults.jl                 # default hyperparameters
 ├── mpohamiltonian/             # MPO Hamiltonians (SchurMPO, long-range terms, time-evolution steppers)
-├── contourindices.jl           # ContourIndex, branch
 ├── adt/  pt/                   # augmented density tensor (MPS) and process tensor (MPO) data structures and operations
 ├── conversions.jl              # PT ↔ ADT conversion helpers (copy tensors etc.)
 ├── adtterms.jl / fockterms.jl  # local terms such as ADTTerm / FockTerm / ProdFockTerm

@@ -1,11 +1,11 @@
 """
-	partialif_naive(lattice::AbstractADTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=Defaults.alg_trunc_if())
+	partialif_naive(lattice::AbstractADTLattice, rowind::BosonicContourIndex, corr::AbstractCorrelationFunction, hyb::AdditiveHyb; trunc::TruncationScheme=Defaults.alg_trunc_if())
 
 Naively construct the partial influence functional (partial IF) associated with the single contour index `rowind`: apply the exp(ηᵢⱼ op⊗op) gates successively for each column index, orthogonalizing/truncating along the way.
 
 # Arguments
 - `lattice::AbstractADTLattice`: ADT contour lattice.
-- `rowind::ContourIndex`: contour index (row) associated with the partial IF.
+- `rowind::BosonicContourIndex`: contour index (row) associated with the partial IF.
 - `corr::AbstractCorrelationFunction`: bath correlation function.
 - `hyb::AdditiveHyb`: additive (diagonal) system-bath coupling.
 - `trunc::TruncationScheme=Defaults.alg_trunc_if()`: truncation scheme used during orthogonalization.
@@ -13,13 +13,13 @@ Naively construct the partial influence functional (partial IF) associated with 
 # Returns
 The partial IF, represented as an `ADT`.
 """
-function partialif_naive(lattice::AbstractADTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::AdditiveHyb; 
+function partialif_naive(lattice::AbstractADTLattice, rowind::BosonicContourIndex, corr::AbstractCorrelationFunction, hyb::AdditiveHyb; 
 						trunc::TruncationScheme=Defaults.alg_trunc_if())
 	ds = [lattice.d for i in 1:length(lattice)]
 	b1 = branch(rowind)
 	i = rowind.j
 	i′ = (b1 == :τ || lattice isa MixedADTLattice) ? i+1 : i
-	pos1 = index(lattice, i′, branch=b1)
+	pos1 = lattice[BosonicContourIndex(i′, b1)]
 
 	z = hyb.op
 	(lattice.d == length(z)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
@@ -32,8 +32,8 @@ function partialif_naive(lattice::AbstractADTLattice, rowind::ContourIndex, corr
 		k2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt
 		for j in 1:k2
 			j′ = (b2 == :τ || lattice isa MixedADTLattice) ? j+1 : j
-			pos2 = index(lattice, j′, branch=b2)
-			coef = index(corr, i, j, b1=b1, b2=b2)
+			pos2 = lattice[BosonicContourIndex(j′, b2)]
+			coef = corr[BosonicContourIndex(i, b1), BosonicContourIndex(j, b2)]
 
 			if pos1 == pos2
 				m = exp.(coef .* z2)
@@ -50,27 +50,27 @@ function partialif_naive(lattice::AbstractADTLattice, rowind::ContourIndex, corr
 end
 
 """
-	partialif(lattice::AbstractADTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::AdditiveHyb)
+	partialif(lattice::AbstractADTLattice, rowind::BosonicContourIndex, corr::AbstractCorrelationFunction, hyb::AdditiveHyb)
 
 Construct the partial influence functional (partial IF) associated with the contour index `rowind`, with bond dimension 2, using the algorithm of Strathearn et al. (2018) (see `partialif_densemps`).
 
 # Returns
 The partial IF, represented as an `ADT`.
 """
-function partialif(lattice::AbstractADTLattice, rowind::ContourIndex, corr::AbstractCorrelationFunction, hyb::AdditiveHyb)
+function partialif(lattice::AbstractADTLattice, rowind::BosonicContourIndex, corr::AbstractCorrelationFunction, hyb::AdditiveHyb)
 	ds = [lattice.d for i in 1:length(lattice)]
 	b1 = branch(rowind)
 	i = rowind.j
 	i′ = (b1 == :τ || lattice isa MixedADTLattice) ? i+1 : i
-	pos1 = index(lattice, i′, branch=b1)
+	pos1 = lattice[BosonicContourIndex(i′, b1)]
 	pos2s = Int[]
 	coefs = scalartype(lattice)[]
 	for b2 in branches(lattice)
 		k2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt
 		for j in 1:k2
 			j′ = (b2 == :τ || lattice isa MixedADTLattice) ? j+1 : j
-			pos2 = index(lattice, j′, branch=b2)
-			coef = index(corr, i, j, b1=b1, b2=b2)
+			pos2 = lattice[BosonicContourIndex(j′, b2)]
+			coef = corr[BosonicContourIndex(i, b1), BosonicContourIndex(j, b2)]
 			push!(pos2s, pos2)
 			push!(coefs, coef)			
 		end

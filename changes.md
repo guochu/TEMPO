@@ -1,3 +1,34 @@
+# 接口调整（2026-10-23）：轮廓指标统一为 QuAPI 的 `BosonicContourIndex`
+
+删除 TEMPO 自带的 `ContourIndex`，格子与关联函数的元素访问统一改用 QuAPI 的
+`BosonicContourIndex`；格子的 `index(lattice, i; branch)` 方法与关联函数的
+`index(corr, i, j; b1, b2)` 调用一并移除。全量测试通过（1356/1356）：
+
+- **删除 `index(x::Lattice, i::Int; branch)`**（`adtlattices/`、`ptlattices/` 的
+  imaginary / real / mixed 三个文件）：原方法体改写为
+  `Base.getindex(x::..., a::BosonicContourIndex)`（越界与分支检查不变，
+  mixed 格子原 `band` 关键字未参与计算，随删除一并去掉）。`indexmappings` 改为
+  `lattice[BosonicContourIndex(i, f)]`；`AbstractADTLattice` /
+  `AbstractPTLattice` 上原本委托 `index` 的 `getindex(::ContourIndex)` 转换方法
+  删除（各具体格子类型的 `getindex(::BosonicContourIndex)` 已覆盖）。
+- **关联函数元素访问**：`partialif/`、`ptpartialif/`、`ttiif/` 等所有
+  `index(corr, i, j, b1=b1, b2=b2)` 改为
+  `corr[BosonicContourIndex(i, b1), BosonicContourIndex(j, b2)]`（QuAPI 已提供该
+  `getindex`，语义与 `index` 完全一致）。
+- **删除 TEMPO 的 `ContourIndex` 定义**：删除 `src/contourindices.jl`（含
+  `ContourIndex` 与 `AbstractFockLatticeIndex`），`TEMPO.jl` 移除对应 include
+  与 `export ContourIndex`，改为 `export BosonicContourIndex`；全包（src / test /
+  docs / performance）的 `ContourIndex(...)` 一律替换为
+  `BosonicContourIndex(...)`。`ContourOperator` 的字段与构造器改为
+  `Vector{BosonicContourIndex}` / `::BosonicContourIndex`；`models/` 中
+  `_get_U_prime`、Lindblad 动力学等处的指标构造同步替换。
+- **测试与文档同步**：`test/api/contour.jl` 改为测试 `BosonicContourIndex`；
+  其余测试的全部指标调用改新写法；README、`docs/src/{api,internals,manual,
+  practice,quickstart}.md`（含删除 `contourindices.jl` 的 API 章节与结构树条目、
+  `index` 公式改为 `lattice[BosonicContourIndex(i, branch)]`）、
+  `docs/tutorials/*`（gen_nb / jctype / rabitype 与生成的 ipynb）以及
+  `performance/TTIIF/*` 脚本全部同步。
+
 # 跟进（2026-10-15）：新增 DMRG2（两站点）乘法后端
 
 `mult` / `mult!`（ADT 与 ProcessTensor）在 `SVDCompression`、`DMRG1` 之外新增

@@ -152,7 +152,7 @@ function main(t; δt = 0.05, Δ = 1., β = 2.5, α=0.1, s=0.5, wc = 5., n=20, k=
 	# local observables
 	obs = ComplexF64[]
 	for i in 1:Nt
-		ind = ContourIndex(i, :+)
+		ind = BosonicContourIndex(i, :+)
 		m = ContourOperator(ind, x)
 		# mps2 = apply!(m, lattice, copy(mps))
 		# mps2 = initialstate!(mps2, lattice, ρimp)

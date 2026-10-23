@@ -21,12 +21,12 @@ function hybriddynamics!(gmps::ADT, lattice::ImagADTLattice1Order, corr::ImagCor
 	(lattice.d == length(op)) || throw(DimensionMismatch("lattice.d mismatch with hyb.d"))
 	ds = [lattice.d for i in 1:length(lattice)]
 	for i in 1:k
-		pos1 = index(lattice, i+1)
+		pos1 = lattice[BosonicContourIndex(i+1, :τ)]
 		pos2s = Int[]
 		coefs = scalartype(lattice)[]
 		for j in 1:k
-			pos2 = index(lattice, j+1)
-			coef = index(corr, i, j)
+			pos2 = lattice[BosonicContourIndex(j+1, :τ)]
+			coef = corr[BosonicContourIndex(i, :τ), BosonicContourIndex(j, :τ)]
 			push!(pos2s, pos2)
 			push!(coefs, coef)
 		end

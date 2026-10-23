@@ -60,7 +60,7 @@ cache = environments(lattice, mpsK, mpsI)
 # 7. Compute local observables (e.g., ⟨σ_z(t)⟩)
 obs = ComplexF64[]
 for i in 1:Nt
-    pos = index(lattice, i, branch=:+)
+    pos = lattice[BosonicContourIndex(i, :+)]
     m   = ADTTerm(pos, zdiag)
     v   = expectationvalue(m, cache)            # already divided by Z, giving the normalized expectation value
     push!(obs, v)
@@ -75,11 +75,11 @@ end
 
     ```julia
     # Single-point operator (can be any matrix, including off-diagonal entries)
-    ct = ContourOperator(ContourIndex(1), op)          # op is any matrix
+    ct = ContourOperator(BosonicContourIndex(1), op)          # op is any matrix
     mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
 
     # Two-point correlation ⟨op2(t_i) op1(t_1)⟩: insert one operator at each of the two positions
-    ct = ContourOperator([ContourIndex(i), ContourIndex(1)], [op2, op1])
+    ct = ContourOperator([BosonicContourIndex(i), BosonicContourIndex(1)], [op2, op1])
     mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
 
     mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp)  # real time requires ρ₀
@@ -119,7 +119,7 @@ cache = environments(lattice, mps, ρ₀=ρimp)
 
 obs = ComplexF64[]
 for i in 1:Nt
-    ind = ContourIndex(i, :+)
+    ind = BosonicContourIndex(i, :+)
     m   = ContourOperator(ind, x)               # any system operator x
     v   = expectationvalue(m, cache)
     push!(obs, v)
@@ -152,7 +152,7 @@ Zval  = integrate(mpsK, mpsI)                        # impurity partition functi
 
 # Two-point correlation function: insert operators into the system dynamics
 op1, op2 = [0 0; 1 0], [0 1; 0 0]
-c1, c2   = ContourIndex(1), ContourIndex(1)
+c1, c2   = BosonicContourIndex(1), BosonicContourIndex(1)
 ct       = ContourOperator([c1, c2], [op1, op2])
 mpsK2    = sysdynamics(lattice, model, ct, trunc=trunc)
 v        = integrate(mpsK2, mpsI) / Zval

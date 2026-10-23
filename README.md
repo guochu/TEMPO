@@ -16,7 +16,7 @@ In contrast to the original TEMPO, which only supports diagonal system-bath coup
 
 ## Installation
 
-Julia ≥ 1.10 is required. The package depends on three companion packages, all open-sourced on [GitHub (guochu)](https://github.com/guochu): `ImpurityModelBase` (basic objects such as spectral densities, baths, and bosonic operators), `QuAPI` (contour basic types such as `ContourIndex`), and `ExpExp` (Prony exponential expansion of hybridization functions).
+Julia ≥ 1.10 is required. The package depends on three companion packages, all open-sourced on [GitHub (guochu)](https://github.com/guochu): `ImpurityModelBase` (basic objects such as spectral densities, baths, and bosonic operators), `QuAPI` (contour basic types such as `BosonicContourIndex`), and `ExpExp` (Prony exponential expansion of hybridization functions).
 
 ```bash
 git clone <this repo>            # place it in the same parent directory as ImpurityModelBase and QuAPI
@@ -59,7 +59,7 @@ mpsK  = boundarycondition!(sysdynamics(lattice, model, trunc=trunc), lattice, ρ
 
 # 5. environment cache and observables ⟨σ_z(t_i)⟩
 cache = environments(lattice, mpsK, mpsI)
-sz = [expectationvalue(ADTTerm(index(lattice, i, branch=:+), [z[1,1], z[2,2]]), cache) for i in 1:100]
+sz = [expectationvalue(ADTTerm(lattice[BosonicContourIndex(i, :+)], [z[1,1], z[2,2]]), cache) for i in 1:100]
 ```
 
 Every computation follows the same template:

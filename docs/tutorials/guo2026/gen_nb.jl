@@ -99,7 +99,7 @@ function tempo_nt(; α, β, δt=0.025, tmax=2.5, wc=5.0, s=0.5, chi=30, d=4, k=6
     mpsK = sysdynamics(lattice, model, trunc=trunc)
     mps = mult!(mpsK, mpsI, trunc=trunc)
     cache = environments(lattice, mps, ρ₀=ρimp)
-    nt = [real(expectationvalue(ContourOperator(ContourIndex(i, :+), n_op), cache)) for i in 1:Nt]
+    nt = [real(expectationvalue(ContourOperator(BosonicContourIndex(i, :+), n_op), cache)) for i in 1:Nt]
     return [(i-1)*δt for i in 1:Nt], nt
 end
 

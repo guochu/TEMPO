@@ -145,7 +145,7 @@ function main(t; δt = 0.05, Δ = 1., β = 2.5, α=0.1, s=0.5, wc = 5., chi = 10
 	# local observables, measure the local magnetization
 	obs = ComplexF64[]
 	for i in 1:Nt
-		pos = index(lattice, i, branch=:+)
+		pos = lattice[BosonicContourIndex(i, :+)]
 		m = ADTTerm(pos, zdiag)
 		# mps2 = apply!(m, copy(mps))
 		# v = integrate(mps2) / Zval

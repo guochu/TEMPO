@@ -88,8 +88,8 @@ function tempo_pc(; α, s=-0.5, δt=0.05, tmax=5.15, wc=10.0, chi=40, k=7, n=20)
     mpsK = sysdynamics(lattice, model, trunc=trunc)
     mps = mult!(mpsK, mpsI, trunc=trunc)
     cache = environments(lattice, mps, ρ₀=ρimp)
-    p = [real(expectationvalue(ContourOperator(ContourIndex(i, :+), z), cache)) for i in 1:Nt]
-    c = [real(expectationvalue(ContourOperator(ContourIndex(i, :+), x), cache)) for i in 1:Nt]
+    p = [real(expectationvalue(ContourOperator(BosonicContourIndex(i, :+), z), cache)) for i in 1:Nt]
+    c = [real(expectationvalue(ContourOperator(BosonicContourIndex(i, :+), x), cache)) for i in 1:Nt]
     return [(i-1)*δt for i in 1:Nt], p, c
 end
 """

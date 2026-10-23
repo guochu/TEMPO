@@ -63,7 +63,7 @@ println("------------------------------------")
 	## diagonal observables
 	op = [-0.73 0; 0 0.5]
 
-	ind1 = ContourIndex(1, branch=:+)
+	ind1 = BosonicContourIndex(1, branch=:+)
 	m = ContourOperator(ind1, op * op )
 	mps2 = apply!(m, lattice, deepcopy(mps))
 	mps2 = initialstate!(mps2, lattice, ρimp)
@@ -73,7 +73,7 @@ println("------------------------------------")
 	ids2N = [k for k in sampleidx(N) if k > 1]
 	idsallN = [1; ids2N]
 	for i in ids2N
-		ind2 = ContourIndex(i, branch=:+)
+		ind2 = BosonicContourIndex(i, branch=:+)
 		m = ContourOperator([ind2,ind1], [op, op])
 		mps2 = apply!(m, lattice, deepcopy(mps))
 		mps2 = initialstate!(mps2, lattice, ρimp)
@@ -96,7 +96,7 @@ println("------------------------------------")
 	A2 = kron(op2, Ib)
 
 
-	c1 = ContourIndex(1, branch=:+)
+	c1 = BosonicContourIndex(1, branch=:+)
 
 	ct = ContourOperator(c1, op1 * op2)
 	mps2 = apply!(ct, lattice, deepcopy(mps))
@@ -104,11 +104,11 @@ println("------------------------------------")
 	v = integrate(lattice, mps2) / Zval
 
 	corrs = [v]
-	c2 = ContourIndex(1, branch=:+)
+	c2 = BosonicContourIndex(1, branch=:+)
 	ids2N = [k for k in sampleidx(N) if k > 1]
 	idsallN = [1; ids2N]
 	for i in ids2N
-		c1 = ContourIndex(i, branch=:+)
+		c1 = BosonicContourIndex(i, branch=:+)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
 		mps2 = apply!(ct, lattice, deepcopy(mps))
@@ -130,7 +130,7 @@ println("------------------------------------")
 	A1 = kron(op1, Ib)
 	A2 = kron(op2, Ib)
 
-	c1 = ContourIndex(1, branch=:-)
+	c1 = BosonicContourIndex(1, branch=:-)
 
 	ct = ContourOperator(c1, op1 * op2)
 	mps2 = apply!(ct, lattice, deepcopy(mps))
@@ -141,7 +141,7 @@ println("------------------------------------")
 	ids2N = [k for k in sampleidx(N) if k > 1]
 	idsallN = [1; ids2N]
 	for i in ids2N
-		c2 = ContourIndex(i, branch=:+)
+		c2 = BosonicContourIndex(i, branch=:+)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
 		mps2 = apply!(ct, lattice, deepcopy(mps))

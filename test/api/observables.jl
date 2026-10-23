@@ -74,8 +74,8 @@ end
 	op2 = randn(Float64, phydim(lattice))
 	# sampled subset of two-point terms
 	for i in (1, 2), b1 in branches(lattice), j in (1, 4), b2 in branches(lattice)
-		pos1 = index(lattice, i, branch=b1)
-		pos2 = index(lattice, j, branch=b2)
+		pos1 = lattice[BosonicContourIndex(i, b1)]
+		pos2 = lattice[BosonicContourIndex(j, b2)]
 		(pos1 != pos2) || continue
 		t = ADTTerm((pos1, pos2), (op1, op2))
 		v1 = integrate(apply!(t, copy(mps))) / Zval
@@ -104,8 +104,8 @@ end
 	op1 = randn(Float64, phydim(lattice), phydim(lattice))
 	op2 = randn(Float64, phydim(lattice), phydim(lattice))
 	for i in (1, 2), b1 in branches(lattice), j in (1, 4), b2 in branches(lattice)
-		pos1 = index(lattice, i, branch=b1)
-		pos2 = index(lattice, j, branch=b2)
+		pos1 = lattice[BosonicContourIndex(i, b1)]
+		pos2 = lattice[BosonicContourIndex(j, b2)]
 		(pos1 != pos2) || continue
 		t = ProdFockTerm([pos1, pos2], [op1, op2])
 		mps′ = apply!(t, copy(mps))
@@ -136,9 +136,9 @@ end
 	op2 = randn(Float64, phydim(lattice))
 	for b1 in branches(lattice), i in (1, 2), b2 in branches(lattice)
 		N2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt
-		pos1 = index(lattice, i, branch=b1)
+		pos1 = lattice[BosonicContourIndex(i, b1)]
 		for j in (1, N2)
-			pos2 = index(lattice, j, branch=b2)
+			pos2 = lattice[BosonicContourIndex(j, b2)]
 			(pos1 != pos2) || continue
 			t = ADTTerm((pos1, pos2), (op1, op2))
 			v1 = integrate(apply!(t, copy(mps))) / Zval
@@ -164,9 +164,9 @@ end
 	op2 = randn(ComplexF64, phydim(lattice), phydim(lattice))
 	for b1 in branches(lattice), i in (1, 2), b2 in branches(lattice)
 		N2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt
-		pos1 = index(lattice, i, branch=b1)
+		pos1 = lattice[BosonicContourIndex(i, b1)]
 		for j in (1, N2)
-			pos2 = index(lattice, j, branch=b2)
+			pos2 = lattice[BosonicContourIndex(j, b2)]
 			(pos1 != pos2) || continue
 			t = ProdFockTerm([pos1, pos2], [op1, op2])
 			v1 = integrate(lattice, apply!(t, copy(mps))) / Zval
@@ -202,7 +202,7 @@ end
 	@test length(m12j) == 1
 
 	op = randn(Float64, 2)
-	pos = index(lattice, 1, branch=:+)
+	pos = lattice[BosonicContourIndex(1, :+)]
 	t = ADTTerm(pos, op)
 	e1 = expectation(t, cache)
 	@test e1 ≈ expectationvalue(t, cache) * Zvalue(cache)

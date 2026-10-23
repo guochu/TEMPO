@@ -4,10 +4,10 @@ This document describes the internals of the `TEMPO` toolkit in depth: data stru
 
 ## 1. Overview and module structure
 
-The toolkit implements the TEMPO algorithm on top of `ImpurityModelBase` (system model definitions) and `QuAPI` (basic tensor-network types `Dense1DTN`, `DenseMPSTensor`, `AbstractContourIndex`, `branch`/`index`, etc.). The loading order is defined in `src/TEMPO.jl`:
+The toolkit implements the TEMPO algorithm on top of `ImpurityModelBase` (system model definitions) and `QuAPI` (basic tensor-network types `Dense1DTN`, `DenseMPSTensor`, `AbstractContourIndex`, `branch`/`BosonicContourIndex`, etc.). The loading order is defined in `src/TEMPO.jl`:
 
 ```
-tensorops ──→ defaults ──→ mpohamiltonian ──→ contourindices
+tensorops ──→ defaults ──→ mpohamiltonian
       └─→ adt ──→ pt ──→ conversions ──→ adtterms / fockterms
       └─→ adtlattices ──→ ptlattices ──→ contouroperators
       └─→ correlationfunction ──→ influencefunctional ──→ tdinfluencefunctional
@@ -71,7 +71,7 @@ This keeps the bond tensors at O(1) magnitude and avoids overflow/underflow from
 - Real time (Keldysh): branches `:+` and `:-`, interval $[0, t]$, scalar type `ComplexF64`;
 - Mixed (Kadanoff-Baym): the imaginary-time branch plus the upper and lower real-time branches.
 
-`branch`/`index` are provided by `QuAPI` and imported (`src/TEMPO.jl`). Each lattice is also associated with a `TimeOrderingStyle` (`TimeAscending`/`TimeDscending`) and a `LayoutStyle` (currently only `TimeLocalLayout`, i.e., the state is locally arranged at each time step, which makes it easy to apply time-local operators).
+`branch` and the contour-index types (`BosonicContourIndex`) are provided by `QuAPI` and imported (`src/TEMPO.jl`); lattice positions are addressed as `lattice[BosonicContourIndex(i, branch)]`. Each lattice is also associated with a `TimeOrderingStyle` (`TimeAscending`/`TimeDscending`) and a `LayoutStyle` (currently only `TimeLocalLayout`, i.e., the state is locally arranged at each time step, which makes it easy to apply time-local operators).
 
 ### 3.2 Fock orderings (FockOrdering)
 
@@ -96,18 +96,18 @@ end
 Derived properties: `t = N*δt`, `Nt = N`, `k = kt = N+1`, `length = 2k`. Index mapping (descending, with `+1` reserving room for the boundary Grassmann numbers):
 
 ```julia
-index(i, branch=:+) = TL - 2i + 1    # TL = 2(N+1)
-index(i, branch=:-) = TL - 2i + 2
+lattice[BosonicContourIndex(i, :+)] = TL - 2i + 1    # TL = 2(N+1)
+lattice[BosonicContourIndex(i, :-)] = TL - 2i + 2
 ```
 
 That is, the physical sites are arranged as `(N,+) (N,−) (N−1,+) (N−1,−) … (1,+) (1,−)`, with positions 1 and 2 reserved for the initial-state boundary.
 
-Imaginary-time ADT: `length = k = N+1`, `index(i) = k+1-i` (descending), with the vacuum boundary at the rightmost end (i=1).
+Imaginary-time ADT: `length = k = N+1`, `lattice[BosonicContourIndex(i, :τ)] = k+1-i` (descending), with the vacuum boundary at the rightmost end (i=1).
 
 PT lattices (`src/ptlattices/`):
-- `ImagPTLattice1Order`: `length = N`, `index(i) = N-i+1`, only the `:τ` branch, scalar type `Float64`;
-- `RealPTLattice1Order`: `length = 2N`, `index(i, :+) = 2(N-i)+1`, `index(i, :-) = 2(N-i)+2` (descending, with `index(N, :+)=1` and `index(1, :-)=2N`);
-- `MixedPTLattice1Order`: `Nt` real-time steps + `Nτ` imaginary-time steps, with `index` interleaved between the real and imaginary branches.
+- `ImagPTLattice1Order`: `length = N`, `lattice[BosonicContourIndex(i, :τ)] = N-i+1`, only the `:τ` branch, scalar type `Float64`;
+- `RealPTLattice1Order`: `length = 2N`, `lattice[BosonicContourIndex(i, :+)] = 2(N-i)+1`, `lattice[BosonicContourIndex(i, :-)] = 2(N-i)+2` (descending, with `lattice[BosonicContourIndex(N, :+)] = 1` and `lattice[BosonicContourIndex(1, :-)] = 2N`);
+- `MixedPTLattice1Order`: `Nt` real-time steps + `Nτ` imaginary-time steps, with the lattice positions interleaved between the real and imaginary branches.
 
 `indexmappings(lattice)` returns a Dict{(timestep, branch) => global_index}, and `vacuumstate(T, lattice)` constructs an all-ones vacuum ADT.
 
@@ -117,9 +117,9 @@ On the mixed (Kadanoff-Baym) contour, the mapping from "correlation-function/ope
 
 **ADT path (`MixedADTLattice1Order`, `src/adtlattices/mixedtime.jl`) — shifted by one on all branches.** The lattice stores `kτ = Nτ + 1` imaginary-time points and `kt = Nt + 1` real-time points per branch: lattice index 1 of each branch is the boundary/junction point (`τ=0` glued to the start of the `:-` branch, `τ=β` glued to the start of the `:+` branch, `t=0` glued to the end of the imaginary-time branch), handled by `boundarycondition!` and **receiving no influence-functional gates at all**; the correlation-function index `i` is mapped to the lattice index `i+1` uniformly on **all** branches (`:τ`, `:+`, `:-`), i.e., the lattice indices `2..kτ` (`2..kt`) carry the correlation indices `1..Nτ` (`1..Nt`). This convention is implemented consistently in `partialif`, `partialif_naive` (`src/influencefunctional/partialif/util.jl`) and `hybriddynamics!` (`src/influencefunctional/partialif/mixedtime.jl`) (in the form `i′ = (b == :τ || lattice isa MixedADTLattice) ? i+1 : i`). For comparison with the pure contours: the imaginary-time ADT lattice shifts only the `:τ` branch by one; the real-time ADT lattice maps directly without shifting.
 
-**PT path (`MixedPTLattice1Order`, `src/ptlattices/mixedtime.jl`) — direct mapping, no shifting.** Unlike the mixed ADT lattice, the mixed PT lattice has no extra boundary points; it stores exactly `Nτ` imaginary-time points and `Nt` real-time points per branch (`length = 2Nt + Nτ`). Therefore `ContourIndex(i, branch)` directly addresses the lattice site at contour time `(i-1)δ` on the corresponding branch — the same direct mapping as for the pure imaginary/real-time PT lattices; `partialif_naive` (`src/influencefunctional/ptpartialif/`) and the `apply!` of `ContourOperator` are both implemented this way.
+**PT path (`MixedPTLattice1Order`, `src/ptlattices/mixedtime.jl`) — direct mapping, no shifting.** Unlike the mixed ADT lattice, the mixed PT lattice has no extra boundary points; it stores exactly `Nτ` imaginary-time points and `Nt` real-time points per branch (`length = 2Nt + Nτ`). Therefore `BosonicContourIndex(i, branch)` directly addresses the lattice site at contour time `(i-1)δ` on the corresponding branch — the same direct mapping as for the pure imaginary/real-time PT lattices; `partialif_naive` (`src/influencefunctional/ptpartialif/`) and the `apply!` of `ContourOperator` are both implemented this way.
 
-**Time alignment of operator insertions.** On either path, the `ContourIndex(i, branch)` of an inserted operator corresponds to the contour time `(i-1)δ` (`(i-1)δτ` on the `:τ` branch, `(i-1)δt` on the real branches): when the system dynamics applies the propagators row by row, `_get_U_prime` detects `ContourIndex(i, branch)` on the propagator of step `i` and multiplies the operator in. Therefore, when comparing Green's functions against an ED reference, the results for `ContourIndex(i)` must be aligned with the reference values at time `(i-1)δ`. For the verification of imaginary-time/real-time/mixed Green's functions with a single-mode bath + ED, see the mixed-time test sets in `test/models/rabimodel.jl` (ADT) and `test/ptmodels/toymodel.jl` (PT).
+**Time alignment of operator insertions.** On either path, the `BosonicContourIndex(i, branch)` of an inserted operator corresponds to the contour time `(i-1)δ` (`(i-1)δτ` on the `:τ` branch, `(i-1)δt` on the real branches): when the system dynamics applies the propagators row by row, `_get_U_prime` detects `BosonicContourIndex(i, branch)` on the propagator of step `i` and multiplies the operator in. Therefore, when comparing Green's functions against an ED reference, the results for `BosonicContourIndex(i)` must be aligned with the reference values at time `(i-1)δ`. For the verification of imaginary-time/real-time/mixed Green's functions with a single-mode bath + ED, see the mixed-time test sets in `test/models/rabimodel.jl` (ADT) and `test/ptmodels/toymodel.jl` (PT).
 
 ## 4. Bath correlation functions and exponential expansion
 
@@ -154,14 +154,14 @@ The naive version: for each column index in turn, `apply!` the exponential gate 
 
 ```julia
 for i in 1:Nt, b1 in branches(lattice)
-    pos1 = index(lattice, i, branch=b1)
+    pos1 = lattice[BosonicContourIndex(i, b1)]
     # collect the coefficients of this row against all columns
     tmp = partialif_densemps(ds, pos1, pos2s, op, coefs)
     mult!(gmps, tmp, trunc=trunc)
 end
 ```
 
-The partial IF of each `(i, b1)` row is multiplied into the global `gmps` and compressed by SVD (`DefaultITruncation`). This is the ADT implementation of Eqs. (2)-(8) of the paper. Note: the snippet above is the pure real-time lattice version (direct mapping); imaginary-time lattices (for the `:τ` branch) and mixed lattices (`MixedADTLattice1Order`, for **all** branches) must shift the correlation index `i` to the lattice index `i+1` (`pos1 = index(lattice, i+1, branch=b1)`); see §3.4 for details.
+The partial IF of each `(i, b1)` row is multiplied into the global `gmps` and compressed by SVD (`DefaultITruncation`). This is the ADT implementation of Eqs. (2)-(8) of the paper. Note: the snippet above is the pure real-time lattice version (direct mapping); imaginary-time lattices (for the `:τ` branch) and mixed lattices (`MixedADTLattice1Order`, for **all** branches) must shift the correlation index `i` to the lattice index `i+1` (`pos1 = lattice[BosonicContourIndex(i+1, b1)]`); see §3.4 for details.
 
 ## 6. Translationally invariant influence functional (XTRG-IF)
 

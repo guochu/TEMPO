@@ -51,7 +51,7 @@ println("------------------------------------")
 	op = [-0.73 0; 0 0.5]
 	zdiag = [op[i,i] for i in 1:size(z, 1)]
 
-	pos1 = index(lattice, 1)
+	pos1 = lattice[BosonicContourIndex(1, :τ)]
 	t = ADTTerm(pos1, zdiag .* zdiag )
 	mps2 = apply!(t, copy(mps))
 	v = integrate(mps2) / integrate(mps)
@@ -60,7 +60,7 @@ println("------------------------------------")
 	ids2N = [k for k in sampleidx(N) if k > 1]
 	idsallN = [1; ids2N]
 	for i in ids2N
-		pos2 = index(lattice, i)
+		pos2 = lattice[BosonicContourIndex(i, :τ)]
 		t = ADTTerm((pos2,pos1), (zdiag, zdiag))
 		# t = ADTTerm((i,1), reshape(kron(zdiag, zdiag), 2, 2))
 		mps2 = apply!(t, copy(mps))
@@ -81,7 +81,7 @@ println("------------------------------------")
 	op1 = [0 0; 0.7 0]
 	op2 = [0 0.8;0 0 ]
 
-	c1 = ContourIndex(1)
+	c1 = BosonicContourIndex(1)
 
 	ct = ContourOperator(c1, op1 * op2)
 	mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
@@ -90,9 +90,9 @@ println("------------------------------------")
 	v = integrate(mps2) / integrate(mps)
 
 	corrs = [v]
-	c2 = ContourIndex(1)
+	c2 = BosonicContourIndex(1)
 	for i in ids2N
-		c1 = ContourIndex(i)
+		c1 = BosonicContourIndex(i)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
 		mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
@@ -166,7 +166,7 @@ end
 		op = [-0.73 0; 0 0.5]
 		zdiag = [op[i,i] for i in 1:size(z, 1)]
 
-		pos1 = index(lattice, 1, branch=:+)
+		pos1 = lattice[BosonicContourIndex(1, :+)]
 		m = ADTTerm(pos1, zdiag .* zdiag )
 		mps2 = apply!(m, copy(mps))
 		v = integrate(mps2) / integrate(mps)
@@ -175,7 +175,7 @@ end
 		ids2N = [k for k in sampleidx(N) if k > 1]
 		idsallN = [1; ids2N]
 		for i in ids2N
-			pos2 = index(lattice, i, branch=:+)
+			pos2 = lattice[BosonicContourIndex(i, :+)]
 			m = ADTTerm((pos2,pos1), (zdiag, zdiag))
 			mps2 = apply!(m, copy(mps))
 			v = integrate(mps2) / integrate(mps)
@@ -197,7 +197,7 @@ end
 		A2 = kron(op2, Ib)
 
 
-		c1 = ContourIndex(1, branch=:+)
+		c1 = BosonicContourIndex(1, branch=:+)
 
 		ct = ContourOperator(c1, op1 * op2)
 		mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
@@ -206,9 +206,9 @@ end
 		v = integrate(mps2) / integrate(mps)
 
 		corrs = [v]
-		c2 = ContourIndex(1, branch=:+)
+		c2 = BosonicContourIndex(1, branch=:+)
 		for i in ids2N
-			c1 = ContourIndex(i, branch=:+)
+			c1 = BosonicContourIndex(i, branch=:+)
 			ct = ContourOperator([c1, c2], [op1, op2])
 
 			mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
@@ -231,7 +231,7 @@ end
 		A1 = kron(op1, Ib)
 		A2 = kron(op2, Ib)
 
-		c1 = ContourIndex(1, branch=:-)
+		c1 = BosonicContourIndex(1, branch=:-)
 
 		ct = ContourOperator(c1, op1 * op2)
 		mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
@@ -241,7 +241,7 @@ end
 
 		corrs = [v]
 		for i in ids2N
-			c2 = ContourIndex(i, branch=:+)
+			c2 = BosonicContourIndex(i, branch=:+)
 			ct = ContourOperator([c1, c2], [op1, op2])
 
 			mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
@@ -314,7 +314,7 @@ end
 
 	# off-diagonal observables
 
-	c1 = ContourIndex(1, branch=:+)
+	c1 = BosonicContourIndex(1, branch=:+)
 
 	ct = ContourOperator(c1, op1 * op2)
 	mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
@@ -323,11 +323,11 @@ end
 	v = integrate(mps2) / integrate(mps)
 
 	corrs = [v]
-	c2 = ContourIndex(1, branch=:+)
+	c2 = BosonicContourIndex(1, branch=:+)
 	ids2Nt = [k for k in sampleidx(Nt) if k > 1]
 	idsallNt = [1; ids2Nt]
 	for i in ids2Nt
-		c1 = ContourIndex(i, branch=:+)
+		c1 = BosonicContourIndex(i, branch=:+)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
 		mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
@@ -344,7 +344,7 @@ end
 	@test norm(corrs - corrs2) / norm(corrs2) < tol
 
 
-	c1 = ContourIndex(1, branch=:-)
+	c1 = BosonicContourIndex(1, branch=:-)
 
 	ct = ContourOperator(c1, op2 * op1)
 	mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
@@ -354,7 +354,7 @@ end
 
 	corrs = [v]
 	for i in ids2Nt
-		c2 = ContourIndex(i, branch=:+)
+		c2 = BosonicContourIndex(i, branch=:+)
 		ct = ContourOperator([c1, c2], [op2, op1])
 
 		mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
@@ -374,8 +374,8 @@ end
 	zval = integrate(mps)
 
 	## 虚时格林函数 G(τ) = <op1(τ) op2(0)>：两个算符均插入 τ 分支
-	c2 = ContourIndex(1, branch=:τ)
-	c1 = ContourIndex(1, branch=:τ)
+	c2 = BosonicContourIndex(1, branch=:τ)
+	c1 = BosonicContourIndex(1, branch=:τ)
 	ct = ContourOperator(c1, op1 * op2)
 	mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
 	mpsK = boundarycondition!(mpsK, lattice)
@@ -386,7 +386,7 @@ end
 	ids2Nτ = [k for k in sampleidx(Nτ) if k > 1]
 	idsallNτ = [1; ids2Nτ]
 	for i in ids2Nτ
-		c1 = ContourIndex(i, branch=:τ)
+		c1 = BosonicContourIndex(i, branch=:τ)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
 		mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
@@ -418,8 +418,8 @@ end
 			corrs2 = [tr(op1τ * Bt * ρed) / zed for Bt in op2ts]
 			corrs2 = corrs2[1:Nt]
 
-			c1 = ContourIndex(i, branch=:τ)
-			c2 = ContourIndex(1, branch=br)
+			c1 = BosonicContourIndex(i, branch=:τ)
+			c2 = BosonicContourIndex(1, branch=br)
 			ct = ContourOperator([c1, c2], [op1, op2])
 			mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
 			mpsK = boundarycondition!(mpsK, lattice)
@@ -428,7 +428,7 @@ end
 
 			corrs = [v]
 			for j in 2:Nt
-				c2 = ContourIndex(j, branch=br)
+				c2 = BosonicContourIndex(j, branch=br)
 				ct = ContourOperator([c1, c2], [op1, op2])
 
 				mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
@@ -504,7 +504,7 @@ println("------------------------------------")
 	op = [-0.73 0; 0 0.5]
 	zdiag = [op[i,i] for i in 1:size(z, 1)]
 
-	pos1 = index(lattice, 1, branch=:+)
+	pos1 = lattice[BosonicContourIndex(1, :+)]
 	m = ADTTerm(pos1, zdiag .* zdiag )
 	mps2 = apply!(m, copy(mps))
 	v = integrate(mps2) / integrate(mps)
@@ -513,7 +513,7 @@ println("------------------------------------")
 	ids2N = [k for k in sampleidx(N) if k > 1]
 	idsallN = [1; ids2N]
 	for i in ids2N
-		pos2 = index(lattice, i, branch=:+)
+		pos2 = lattice[BosonicContourIndex(i, :+)]
 		m = ADTTerm((pos2,pos1), (zdiag, zdiag))
 		mps2 = apply!(m, copy(mps))
 		v = integrate(mps2) / integrate(mps)
@@ -535,7 +535,7 @@ println("------------------------------------")
 	A2 = kron(op2, Ib)
 
 
-	c1 = ContourIndex(1, branch=:+)
+	c1 = BosonicContourIndex(1, branch=:+)
 
 	ct = ContourOperator(c1, op1 * op2)
 	mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
@@ -544,9 +544,9 @@ println("------------------------------------")
 	v = integrate(mps2) / integrate(mps)
 
 	corrs = [v]
-	c2 = ContourIndex(1, branch=:+)
+	c2 = BosonicContourIndex(1, branch=:+)
 	for i in ids2N
-		c1 = ContourIndex(i, branch=:+)
+		c1 = BosonicContourIndex(i, branch=:+)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
 		mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
@@ -569,7 +569,7 @@ println("------------------------------------")
 	A1 = kron(op1, Ib)
 	A2 = kron(op2, Ib)
 
-	c1 = ContourIndex(1, branch=:-)
+	c1 = BosonicContourIndex(1, branch=:-)
 
 	ct = ContourOperator(c1, op1 * op2)
 	mpsK = sysdynamics(lattice, model, ct, trunc=trunc)
@@ -579,7 +579,7 @@ println("------------------------------------")
 
 	corrs = [v]
 	for i in ids2N
-		c2 = ContourIndex(i, branch=:+)
+		c2 = BosonicContourIndex(i, branch=:+)
 		ct = ContourOperator([c1, c2], [op1, op2])
 
 		mpsK = sysdynamics(lattice, model, ct, trunc=trunc)

@@ -66,7 +66,7 @@ function hybriddynamics_naive!(gmps::ADT, lattice::AbstractADTLattice, corr::Abs
 	for b1 in branches(lattice)
 		k1 = (b1 == :τ) ? lattice.Nτ : lattice.Nt
 		for i in 1:k1
-			ind1 = ContourIndex(i, branch=b1)
+			ind1 = BosonicContourIndex(i, branch=b1)
 			tmp = partialif_naive(lattice, ind1, corr, hyb, trunc=trunc)
 			gmps = mult!(gmps, tmp, trunc=trunc)			
 		end

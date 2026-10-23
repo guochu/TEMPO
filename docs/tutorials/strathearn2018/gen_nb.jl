@@ -61,7 +61,7 @@ function tempo_sz(; α, δt=0.1, tmax=12.0, β=20.0, Δ=1.0, ωc=5.0, chi=50)
     mpsK = sysdynamics(lattice, model, trunc=trunc)
     mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp)
     cache = environments(lattice, mpsK, mpsI)
-    sz = [real(expectationvalue(ADTTerm(index(lattice, i, branch=:+), [0.5, -0.5]), cache)) for i in 1:Nt]
+    sz = [real(expectationvalue(ADTTerm(lattice[BosonicContourIndex(i, :+)], [0.5, -0.5]), cache)) for i in 1:Nt]
     return [(i-1)*δt for i in 1:Nt], sz
 end
 """
@@ -173,7 +173,7 @@ function tempo_sz1(; α, δt=0.1, tmax=20.0, β=20.0, ωc=5.0, chi=50, k=7, n=20
     mpsK = sysdynamics(lattice, model, trunc=trunc)
     mpsK = boundarycondition!(mpsK, lattice, ρ₀=ρimp)
     cache = environments(lattice, mpsK, mpsI)
-    sz = [real(expectationvalue(ADTTerm(index(lattice, i, branch=:+), Sz1diag), cache)) for i in 1:Nt]
+    sz = [real(expectationvalue(ADTTerm(lattice[BosonicContourIndex(i, :+)], Sz1diag), cache)) for i in 1:Nt]
     return [(i-1)*δt for i in 1:Nt], sz
 end
 """

@@ -12,7 +12,7 @@ boundarycondition(x::ADT, lattice::AbstractADTLattice; kwargs...) = boundarycond
 Apply the boundary condition in place on an imaginary-time ADT lattice: connect the lattice points at the two ends of the imaginary-time contour with the identity matrix.
 """
 function boundarycondition!(x::ADT, lattice::ImagADTLattice1Order)
-	pos1, pos2 = index(lattice, 1), index(lattice, lattice.k)
+	pos1, pos2 = lattice[BosonicContourIndex(1, :τ)], lattice[BosonicContourIndex(lattice.k, :τ)]
 	d = lattice.d
 	return apply!(ADTTerm((pos1, pos2), isometry(d)), x)
 	# canonicalize!(x, alg=Orthogonalize(trunc=trunc))
@@ -31,7 +31,7 @@ By default `ρ₀` is the maximally mixed state (a vector of ones).
 function boundarycondition!(x::ADT, lattice::RealADTLattice1Order; ρ₀::VecOrMat=ones(lattice.d))
 	d = lattice.d
 	Is = isometry(d)
-	pos1, pos2 = index(lattice, lattice.k, branch=:+), index(lattice, lattice.k, branch=:-)
+	pos1, pos2 = lattice[BosonicContourIndex(lattice.k, :+)], lattice[BosonicContourIndex(lattice.k, :-)]
 	apply!(ADTTerm((pos1, pos2), Is), x)
 	# canonicalize!(x, alg=Orthogonalize(trunc=trunc))
 	return initialstate!(x, lattice, ρ₀)
@@ -58,7 +58,7 @@ Apply the initial density matrix `ρ0` (normalized to `ρ0/tr(ρ0)`) in place to
 """
 function initialstate!(x::ADT, lattice::RealADTLattice1Order, ρ0::AbstractMatrix)
 	(size(ρ0, 1) == size(ρ0, 2) == lattice.d) || throw(DimensionMismatch("diagonal element size mismatch with phydim"))
-	pos1, pos2 = index(lattice, 1, branch=:+), index(lattice, 1, branch=:-)
+	pos1, pos2 = lattice[BosonicContourIndex(1, :+)], lattice[BosonicContourIndex(1, :-)]
 	return apply!(ADTTerm((pos1, pos2), ρ0/tr(ρ0)), x)
 	# canonicalize!(x, alg=Orthogonalize(trunc=trunc))
 	# return x	
@@ -73,7 +73,7 @@ Apply the initial density matrix `ρ0` (normalized to `ρ0/tr(ρ0)`) in place to
 function initialstate!(x::ProcessTensor, lattice::RealPTLattice1Order, ρ0::AbstractMatrix)
 	(size(ρ0, 1) == size(ρ0, 2) == lattice.d) || throw(DimensionMismatch("diagonal element size mismatch with phydim"))
 	ρ0 = ρ0 / tr(ρ0)   # normalize the initial density matrix
-	pos1, pos2 = index(lattice, 1, branch=:+), index(lattice, 1, branch=:-)
+	pos1, pos2 = lattice[BosonicContourIndex(1, :+)], lattice[BosonicContourIndex(1, :-)]
 	@assert pos1 + 1 == pos2
 	@tensor tmp[3,4,6,7] := ρ0[1,2] * x[pos1][3,4,5,1] * x[pos2][5,6,7,2] 
 	u, s, v = tsvd!(tmp, (1,2), (3,4), trunc=Defaults.alg_trunc_sys())
@@ -98,13 +98,13 @@ function boundarycondition!(x::ADT, lattice::MixedADTLattice1Order)
 	d = lattice.d
 	Is = isometry(d)
 
-	pos1, pos2 = index(lattice, lattice.kt, branch=:-), index(lattice, lattice.kt, branch=:+)
+	pos1, pos2 = lattice[BosonicContourIndex(lattice.kt, :-)], lattice[BosonicContourIndex(lattice.kt, :+)]
 	apply!(ADTTerm((pos1, pos2), Is), x)
 
-	pos1, pos2 = index(lattice, 1, branch=:τ), index(lattice, 1, branch=:-)
+	pos1, pos2 = lattice[BosonicContourIndex(1, :τ)], lattice[BosonicContourIndex(1, :-)]
 	apply!(ADTTerm((pos1, pos2), Is), x)
 	
-	pos1, pos2 = index(lattice, 1, branch=:+), index(lattice, lattice.kτ, branch=:τ)
+	pos1, pos2 = lattice[BosonicContourIndex(1, :+)], lattice[BosonicContourIndex(lattice.kτ, :τ)]
 	return apply!(ADTTerm((pos1, pos2), Is), x)
 	# canonicalize!(x, alg=Orthogonalize(trunc=trunc))
 	# return x

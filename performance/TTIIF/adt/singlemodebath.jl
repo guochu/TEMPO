@@ -106,9 +106,9 @@ for (name, alg) in algs
 		Zval = integrate(adt)
 
 		corrs = ComplexF64[]
-		c2 = ContourIndex(1)
+		c2 = BosonicContourIndex(1)
 		for i in 1:Nτ
-			c1 = ContourIndex(i)
+			c1 = BosonicContourIndex(i)
 			ct = (i == 1) ? ContourOperator(c1, op1 * op2) : ContourOperator([c1, c2], [op1, op2])
 			mpsK2 = sysdynamics(lattice, model, ct, trunc=trunc)
 			mpsK2 = boundarycondition!(mpsK2, lattice)
@@ -170,9 +170,9 @@ for (name, alg) in algs
 		Zval = integrate(adt)
 
 		corrs = ComplexF64[]
-		c2 = ContourIndex(1, branch=:+)
+		c2 = BosonicContourIndex(1, branch=:+)
 		for i in 1:Nt
-			c1 = ContourIndex(i, branch=:+)
+			c1 = BosonicContourIndex(i, branch=:+)
 			ct = (i == 1) ? ContourOperator(c1, op1 * op2) : ContourOperator([c1, c2], [op1, op2])
 			mpsK2 = sysdynamics(lattice, model, ct, trunc=trunc)
 			mpsK2 = boundarycondition!(mpsK2, lattice)

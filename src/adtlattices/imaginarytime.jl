@@ -78,12 +78,17 @@ function Base.getproperty(x::ImagADTLattice1Order, s::Symbol)
 end
 
 
-function index(x::ImagADTLattice{<:M2M1}, i::Int; branch::Symbol=:τ)
+"""
+    getindex(x::ImagADTLattice{<:M2M1}, a::BosonicContourIndex)
+
+Map the contour index `a` (time step `a.j`, branch `:τ`) to the global lattice position.
+"""
+function Base.getindex(x::ImagADTLattice{<:M2M1}, a::BosonicContourIndex)
 	@boundscheck begin
-		(1 <= i <= x.k) || throw(BoundsError(1:x.k, i))
-		(branch == :τ) || throw(ArgumentError("branch must be :τ"))
+		(1 <= a.j <= x.k) || throw(BoundsError(1:x.k, a.j))
+		(branch(a) == :τ) || throw(ArgumentError("branch must be :τ"))
 	end
-	return x.k-i+1
+	return x.k-a.j+1
 end
 
 
@@ -96,7 +101,7 @@ Return a `Dict{Tuple{Int, Symbol}, Int}` mapping `(time step, branch)` to the gl
 function indexmappings(lattice::ImagADTLattice)
 	r = Dict{Tuple{Int, Symbol}, Int}()
 	for i in 1:lattice.k
-		r[(i, :τ)] = index(lattice, i)
+		r[(i, :τ)] = lattice[BosonicContourIndex(i, :τ)]
 	end
 	return r
 end

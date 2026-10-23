@@ -14,7 +14,7 @@
 		op = rand(d)
 		hyb = AdditiveHyb(op)
 		for i in 1:lattice.N
-			ind1 = ContourIndex(i)
+			ind1 = BosonicContourIndex(i)
 			p1 = partialif(lattice, ind1, corr, hyb)
 			p2 = partialif_naive(lattice, ind1, corr, hyb)
 			@test distance(p1, p2) / norm(p1) < tol
@@ -30,7 +30,7 @@
 	lattice = ADTLattice(N=N, δt=δt, d=d, contour=:real)
 	hyb = AdditiveHyb(rand(d))
 	for i in 1:lattice.N, b1 in branches(lattice)
-		ind1 = ContourIndex(i, branch=b1)
+		ind1 = BosonicContourIndex(i, branch=b1)
 		p1 = partialif(lattice, ind1, corr, hyb)
 		p2 = partialif_naive(lattice, ind1, corr, hyb)
 		@test distance(p1, p2) / norm(p1) < tol
@@ -49,7 +49,7 @@
 	for b1 in branches(lattice)
 		M = (b1 == :τ) ? lattice.Nτ : lattice.Nt
 		for i in 1:M
-			ind1 = ContourIndex(i, branch=b1)
+			ind1 = BosonicContourIndex(i, branch=b1)
 			p1 = partialif(lattice, ind1, corr, hyb)
 			p2 = partialif_naive(lattice, ind1, corr, hyb)
 			@test distance(p1, p2) / norm(p1) < tol
@@ -71,7 +71,7 @@ end
 		op = (m = randn(ComplexF64, d, d); m + m')
 		hyb = NonAdditiveHyb(op)
 		for i in 1:lattice.Nτ
-			ind1 = ContourIndex(i)
+			ind1 = BosonicContourIndex(i)
 			p1 = partialif(lattice, ind1, corr, hyb)
 			p2 = partialif_naive(lattice, ind1, corr, hyb)
 			@test distance(p1, p2) / norm(p1) < tol
@@ -90,7 +90,7 @@ end
 		for op in ((m = randn(d, d); m + m'), (m = randn(ComplexF64, d, d); m + m'))
 			hyb = NonAdditiveHyb(op)
 			for i in 1:lattice.Nt, b1 in branches(lattice)
-				ind1 = ContourIndex(i, branch=b1)
+				ind1 = BosonicContourIndex(i, branch=b1)
 				p1 = partialif(lattice, ind1, corr, hyb)
 				p2 = partialif_naive(lattice, ind1, corr, hyb)
 				@test distance(p1, p2) / norm(p1) < tol
@@ -113,7 +113,7 @@ end
 		for b1 in branches(lattice)
 			M = (b1 == :τ) ? lattice.Nτ : lattice.Nt
 			for i in 1:M
-				ind1 = ContourIndex(i, branch=b1)
+				ind1 = BosonicContourIndex(i, branch=b1)
 				p1 = partialif(lattice, ind1, corr, hyb)
 				p2 = partialif_naive(lattice, ind1, corr, hyb)
 				@test distance(p1, p2) / norm(p1) < tol

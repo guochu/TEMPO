@@ -104,13 +104,13 @@ function _fit_to_lattice_diag(lattice::RealADTLattice1Order, mpotensors, f1::Sym
 
 	leftspace = 1
 	j = lattice.k
-	pos1, pos2 = index(lattice, j, branch=:+), index(lattice, j, branch=:-)
+	pos1, pos2 = lattice[BosonicContourIndex(j, :+)], lattice[BosonicContourIndex(j, :-)]
 	@assert pos1 + 1 == pos2 == 2
 	data2[pos1] = ones(T, 1,d,1)
 	data2[pos2] = ones(T, 1,d,1)
 
 	j = lattice.N
-	pos1, pos2 = index(lattice, j, branch=:+), index(lattice, j, branch=:-)
+	pos1, pos2 = lattice[BosonicContourIndex(j, :+)], lattice[BosonicContourIndex(j, :-)]
 	# @assert pos1 + 1 == pos2 == 2
 	if f1 == :+
 		data2[pos1] = mpotensors[1]
@@ -124,7 +124,7 @@ function _fit_to_lattice_diag(lattice::RealADTLattice1Order, mpotensors, f1::Sym
 	end
 	leftspace = space_r(data2[pos2])
 	for j in lattice.N-1:-1:2
-		pos1, pos2 = index(lattice, j, branch=:+), index(lattice, j, branch=:-)
+		pos1, pos2 = lattice[BosonicContourIndex(j, :+)], lattice[BosonicContourIndex(j, :-)]
 		@assert pos1 + 1 == pos2
 		if f1 == :+
 			data2[pos1] = mpotensors[2]
@@ -139,7 +139,7 @@ function _fit_to_lattice_diag(lattice::RealADTLattice1Order, mpotensors, f1::Sym
 		leftspace = space_r(data2[pos2])
 	end
 	j = 1
-	pos1, pos2 = index(lattice, j, branch=:+), index(lattice, j, branch=:-)
+	pos1, pos2 = lattice[BosonicContourIndex(j, :+)], lattice[BosonicContourIndex(j, :-)]
 	@assert pos1 + 1 == pos2 == L
 	if f1 == :+
 		data2[pos1] = mpotensors[3]
@@ -180,7 +180,7 @@ function _fit_to_lattice_offdiag(lattice::RealADTLattice1Order, mpotensors, f1::
 	end
 
 	j = lattice.N
-	pos1, pos2 = index(lattice, j, branch=f1), index(lattice, j, branch=f2)
+	pos1, pos2 = lattice[BosonicContourIndex(j, f1)], lattice[BosonicContourIndex(j, f2)]
 	if pos1 > pos2 # this sign has already been taken care of
 		# println("here----xxxxx", f1, " ", f2)
 		pos1, pos2 = pos2, pos1
@@ -207,7 +207,7 @@ function _fit_to_lattice_offdiag(lattice::RealADTLattice1Order, mpotensors, f1::
 	end
 	for j in lattice.N-1:-1:2
 		posa, posb = band_boundary(lattice, j)
-		pos1, pos2 = index(lattice, j, branch=f1), index(lattice, j, branch=f2)
+		pos1, pos2 = lattice[BosonicContourIndex(j, f1)], lattice[BosonicContourIndex(j, f2)]
 		if pos1 > pos2 # this sign has already been taken care of
 			pos1, pos2 = pos2, pos1
 		end
@@ -231,7 +231,7 @@ function _fit_to_lattice_offdiag(lattice::RealADTLattice1Order, mpotensors, f1::
 	end
 	j = 1
 	posa, posb = band_boundary(lattice, j)
-	pos1, pos2 = index(lattice, j, branch=f1), index(lattice, j, branch=f2)
+	pos1, pos2 = lattice[BosonicContourIndex(j, f1)], lattice[BosonicContourIndex(j, f2)]
 	if pos1 > pos2 # this sign has already been taken care of
 		pos1, pos2 = pos2, pos1
 	end
@@ -260,7 +260,7 @@ function _fit_to_lattice_offdiag(lattice::RealADTLattice1Order, mpotensors, f1::
 	return ADT(data2)
 end
 
-band_boundary(lattice::RealADTLattice1Order, j::Int) = index(lattice, j, branch=:+), index(lattice, j, branch=:-)
+band_boundary(lattice::RealADTLattice1Order, j::Int) = lattice[BosonicContourIndex(j, :+)], lattice[BosonicContourIndex(j, :-)]
 
 function _get_signed_corr(lattice::RealADTLattice1Order, corr::RealCorrelationFunction)
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = branch(corr, :+, :+), branch(corr, :+, :-), branch(corr, :-, :+), branch(corr, :-, :-)

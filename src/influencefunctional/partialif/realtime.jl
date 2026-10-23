@@ -9,12 +9,12 @@ function hybriddynamics!(gmps::ADT, lattice::RealADTLattice, corr::RealCorrelati
 	ds = [lattice.d for i in 1:length(lattice)]
 
 	for i in 1:lattice.Nt, b1 in branches(lattice)
-		pos1 = index(lattice, i, branch=b1)
+		pos1 = lattice[BosonicContourIndex(i, b1)]
 		pos2s = Int[]
 		coefs = scalartype(lattice)[]
 		for j in 1:lattice.Nt, b2 in branches(lattice)
-			pos2 = index(lattice, j, branch=b2)
-			coef = index(corr, i, j, b1=b1, b2=b2)
+			pos2 = lattice[BosonicContourIndex(j, b2)]
+			coef = corr[BosonicContourIndex(i, b1), BosonicContourIndex(j, b2)]
 			push!(pos2s, pos2)
 			push!(coefs, coef)
 		end

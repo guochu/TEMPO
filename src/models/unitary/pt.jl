@@ -69,7 +69,7 @@ function _sysdynamics_util!(gmps::ProcessTensor, lattice::AbstractPTLattice, mod
 	# data = decompose_to_mps(U)
 	alg = Orthogonalize(SVD(), trunc)
 	for j in 1:N
-        t = ContourOperator(ContourIndex(j, branch), U)
+        t = ContourOperator(BosonicContourIndex(j, branch), U)
         apply!(t, lattice, gmps)			
 	end
 	canonicalize!(gmps, alg=alg)
@@ -82,7 +82,7 @@ function _sysdynamics_util!(gmps::ProcessTensor, lattice::AbstractPTLattice, mod
 	alg = Orthogonalize(SVD(), trunc)
 	for j in 1:N
 		U = propagator(model, lattice, branch, j, N)
-		t = ContourOperator(ContourIndex(j, branch), U)
+		t = ContourOperator(BosonicContourIndex(j, branch), U)
 		apply!(t, lattice, gmps)
 	end
 	canonicalize!(gmps, alg=alg)

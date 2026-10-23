@@ -5,8 +5,8 @@ export TruncationScheme, NoTruncation, TruncateDimCutoff, truncdimcutoff, truncd
 export TruncateDim, TruncateRelError
 export SVDCompression
 export OrthogonalFactorizationAlgorithm, leftorth!, rightorth!, leftorth, rightorth, tsvd!, tsvd, permute, isometry
-# ContourIndex
-export ContourIndex, branch, scalartype
+# BosonicContourIndex (provided by QuAPI)
+export BosonicContourIndex, branch, scalartype
 # MPOHamiltonian
 export MPOHamiltonian, MPO, tompotensors, timeevompo, WI, WII, ComplexStepper, FirstOrderStepper, complex_stepper
 export SchurMPOTensor, GenericDecayTerm, PowerlawDecayTerm, ExpDecayOpTerm, ExpDecayOpSum
@@ -97,8 +97,6 @@ include("defaults.jl")
 # mpo hamiltonian
 include("mpohamiltonian/mpohamiltonian.jl")
 
-
-include("contourindices.jl")
 
 # adt
 include("adt/adt.jl")

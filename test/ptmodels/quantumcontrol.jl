@@ -33,7 +33,7 @@ end
 	for i in 1:N
 		lattice = PTLattice(N = i, δt=δt, contour=:real)
 		adt = sysdynamics(lattice, model, trunc=trunc)
-		inds = [[ContourIndex(j, :+) for j in 1:i]; [ContourIndex(j, :-) for j in 1:i]]
+		inds = [[BosonicContourIndex(j, :+) for j in 1:i]; [BosonicContourIndex(j, :-) for j in 1:i]]
 		ddseq = seq[1:i]
 		# ddseq2 = [Matrix(item') for item in ddseq]
 		op = ContourOperator(inds, [ddseq; adjoint.(ddseq)]) 
@@ -94,7 +94,7 @@ end
 		corr = correlationfunction(bath, lattice)
 		mpsI = hybriddynamics_naive(lattice, corr, hyb, trunc=trunc)
 		adt = mult!(mpsK, mpsI, trunc=trunc)
-		inds = [[ContourIndex(j, :+) for j in 1:i]; [ContourIndex(j, :-) for j in 1:i]]
+		inds = [[BosonicContourIndex(j, :+) for j in 1:i]; [BosonicContourIndex(j, :-) for j in 1:i]]
 		ddseq = seq[1:i]
 		op = ContourOperator(inds, [ddseq; adjoint.(ddseq)]) 
 		apply!(op, lattice, adt)

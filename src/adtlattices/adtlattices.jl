@@ -2,7 +2,6 @@ include("fockordering.jl")
 
 abstract type AbstractADTLattice{O <: FockOrdering} end
 
-index(x::AbstractADTLattice, args...; kwargs...) = error("index not implemented for fock lattice type $(typeof(x))")
 """
     OrderingStyle(::Type{<:AbstractADTLattice{O}}) where O
 
@@ -73,8 +72,6 @@ function ADTLattice(; contour::Symbol, kwargs...)
 		return MixedADTLattice(; kwargs...)
 	end
 end
-
-Base.getindex(lat::AbstractADTLattice, a::ContourIndex) = index(lat, a.j, branch=branch(a))
 
 """
     vacuumstate(::Type{T}, x::AbstractADTLattice) where {T<:Number}

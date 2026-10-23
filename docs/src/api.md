@@ -7,7 +7,7 @@ using TEMPO, ImpurityModelBase, LinearAlgebra
 ```
 
 Notes:
-- `branch` and `index` are provided by `QuAPI`, and `scalartype`, `space_l`, `space_r` by `TensorOperations`; all are reexported through TEMPO;
+- `branch`, `BosonicContourIndex` and `index` are provided by `QuAPI`, and `scalartype`, `space_l`, `space_r` by `TensorOperations`; all are reexported through TEMPO;
 - The exponential-expansion functions (`OverDeterminedProny`, `DeterminedProny`, `exponential_expansion`, `expansion_error`) are provided by the `ExpExp` package and reexported; see the signature quick reference in the [Exponential expansion (`ExpExp`, reexported)](@ref) section at the end of this page;
 - `phydim`, `spectrum`, `bosonicbath`, etc. are defined in `ImpurityModelBase`.
 
@@ -31,13 +31,6 @@ Pages = ["tensorops/matrixalgebra.jl", "tensorops/tensorfactorizations.jl", "ten
 ```@autodocs; canonical = false
 Modules = [TEMPO]
 Pages = ["algorithms.jl"]
-```
-
-## Contour indices
-
-```@autodocs; canonical = false
-Modules = [TEMPO]
-Pages = ["contourindices.jl"]
 ```
 
 ## MPO Hamiltonians
