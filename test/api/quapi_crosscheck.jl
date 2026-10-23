@@ -55,13 +55,13 @@ end
     IF = hybriddynamics(lat, corr, AdditiveHyb(λ); trunc=NoTruncation())
     corrq = bosonic_Δτ(spec; β=β, N=N)
     @test Array(selectdim(_tempo_adt_array(IF), N + 1, 1)) ≈
-          reshape(BosonicIF(corrq, λ).data, ntuple(_ -> 2, N)...) rtol = rtol
+          reshape(BosonicIF(BosonicHybridizationMatrix(corrq), λ).data, ntuple(_ -> 2, N)...) rtol = rtol
 
     latP = PTLattice(N=N, δτ=δτ, contour=:imag, d=2)
     IFP = hybriddynamics(latP, correlationfunction(bath, latP), NonAdditiveHyb(op);
                          trunc=NoTruncation())
     AP = _tempo_pt_array(IFP)
-    @test AP ≈ reshape(BosonicIF(corrq, op).data, ntuple(_ -> 2, 2N)...) rtol = rtol
+    @test AP ≈ reshape(BosonicIF(BosonicHybridizationMatrix(corrq; split=true), op).data, ntuple(_ -> 2, 2N)...) rtol = rtol
     QP = BosonicPT(_pt_basis(latP), 2, vec(AP))
     @test QuAPI.Dense.Zvalue(QP) ≈ integrate(latP, IFP) rtol = 1.0e-10
 
@@ -73,13 +73,13 @@ end
                          trunc=NoTruncation())
     Ar = _tempo_adt_array(IFr)
     @test Array(Ar[1, 1, :, :, :, :, :, :]) ≈
-          reshape(BosonicIF(corrq, λ).data, ntuple(_ -> 2, 2Nr)...) rtol = rtol
+          reshape(BosonicIF(BosonicHybridizationMatrix(corrq), λ).data, ntuple(_ -> 2, 2Nr)...) rtol = rtol
 
     latrP = PTLattice(N=Nr, δt=δt, contour=:real, d=2)
     IFrP = hybriddynamics(latrP, correlationfunction(bath, latrP), NonAdditiveHyb(op);
                           trunc=NoTruncation())
     ArP = _tempo_pt_array(IFrP)
-    @test ArP ≈ reshape(BosonicIF(corrq, op).data, ntuple(_ -> 2, 4Nr)...) rtol = rtol
+    @test ArP ≈ reshape(BosonicIF(BosonicHybridizationMatrix(corrq; split=true), op).data, ntuple(_ -> 2, 4Nr)...) rtol = rtol
     QPr = BosonicPT(_pt_basis(latrP), 2, vec(ArP))
     @test QuAPI.Dense.Zvalue(QPr) ≈ integrate(latrP, IFrP) rtol = 1.0e-10
 
@@ -95,7 +95,7 @@ end
     # TEMPO's real-branch order is (i,-), (i,+); QuAPI's is (i,+), (i,-)
     peri = (1, 2, 3, 5, 4, 7, 6)
     @test Array(Amg) ≈
-          permutedims(reshape(BosonicIF(corrq, λ).data,
+          permutedims(reshape(BosonicIF(BosonicHybridizationMatrix(corrq), λ).data,
                               ntuple(_ -> 2, Nτ + 2Nt)...), peri) rtol = rtol
 
     latmP = PTLattice(Nt=Nt, δt=δtm, Nτ=Nτ, δτ=δτm, contour=:mixed, d=2)
@@ -104,7 +104,7 @@ end
     AmP = _tempo_pt_array(IFmP)
     ax = vcat([[2p - 1, 2p] for p in peri]...)
     @test AmP ≈
-          permutedims(reshape(BosonicIF(corrq, op).data,
+          permutedims(reshape(BosonicIF(BosonicHybridizationMatrix(corrq; split=true), op).data,
                               ntuple(_ -> 2, 2 * (Nτ + 2Nt))...), ax) rtol = rtol
     QPm = BosonicPT(_pt_basis(latmP), 2, vec(AmP))
     @test QuAPI.Dense.Zvalue(QPm) ≈ integrate(latmP, IFmP) rtol = 1.0e-10
