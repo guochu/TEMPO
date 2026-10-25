@@ -1,0 +1,33 @@
+NonDiagonalHyb (手征耦合) IF 严格性判定 report
+================================================
+模型: H = H_S + ω b†b + G(σ⁺⊗b + σ⁻⊗b†), H_S = .37σx+.19σy+.23σz
+      单模浴 ω=1.3, G=0.35, β=1.7;  参考 = 全空间 Lie 链 (A·B)^N
+文件: probe_k_convergence.jl (k 扫描), probe_wick_final.jl (δt 斜率判定)
+
+[1] partialif 路线, NonAdditiveHyb(diag(-0.7,0.9)) —— 与 AdditiveHyb 物理等价
+    ‖PT − Lie‖ = 2.3e-14  → 严格 (与 ADT/AdditiveHyb 一致)
+
+[2] XTRGIF 路线 k 扫描 (同一对角 NonAdditiveHyb), N=4, T=1.2:
+    k=3: 2.0e-4    k=5: 5.0e-5    k=7: 1.3e-5
+    → 每 +2 个 k 偏差 ÷4: 纯微分截断 O((δt/2^k)²), k→∞ 收敛到严格 IF
+
+[3] 最终判定: 固定 k=7, 扫 N (斜率判据: 2 ⇒ 无 Wick 残留; 1 ⇒ O(δt) Wick):
+    σx  (NonAdditiveHyb):  3.58e-5 → 5.10e-5 → 6.07e-5   斜率 −0.38 (压缩/Prony 地板 ~6e-5)
+    σ⁺  (NonDiagonalHyb):  2.77e-4 → 7.18e-5 → 1.84e-5   斜率 1.96 ≈ 2
+    → σ⁺ 残差按 δt² 缩放且穿透对照地板, 无 O(δt) 项
+
+结论
+----
+1. ti_localop 的等时混合序修正 (ηⱼₖ[1]·op1op2 + ηₖⱼ[1]·op2op1) 对手征耦合充分:
+   TEMPO 的 PT 装配 (NonDiagonalHyb, XTRGIF, k 足够大) 对分裂链严格。
+2. 对照: QuAPI.Dense 的 BosonicIF 同胞块为 M1·op1op1+M2·op2op2 (σ⁺ 下两者皆零),
+   缺混合序 → O(G²δt²)/胞 Wick 误差 (QuAPI/performance/nondiagcoupling.jl 附录);
+   补法: 同胞块改 ηⱼₖ[1]·op1op2 + ηₖⱼ[1]·op2op1。
+3. 二阶端点包装 (u=e^{-iδtH_S/2}, 输入 uρ0u†, 输出 u†ρu) 在 ADT/Additive、
+   PT/partialif/NonAdditive、PT/XTRGIF/NonDiagonal 全部耦合类上严格成立;
+   XTRGIF 需 k 足够大 (微分截断 (δt/2^k)² 低于目标精度)。
+
+勘误 (作废的中间结论)
+--------------------
+probe_nondiaghyb / probe_xtrg_bisect 两轮 "σx 偏 0.25, σ⁺ 偏 5.8e-2" 为参考实现
+把耦合写成 kron(op,bb)+kron(op',bb') (厄米时等效 2G) 叠加 k=3 未收敛的假象, 已删除。
