@@ -10,7 +10,7 @@ export BosonicContourIndex, branch, scalartype
 # MPOHamiltonian
 export MPOHamiltonian, MPO, tompotensors, timeevompo, WI, WII, ComplexStepper, FirstOrderStepper, complex_stepper
 export SchurMPOTensor, GenericDecayTerm, PowerlawDecayTerm, ExpDecayOpTerm, ExpDecayOpSum
-export expand_decayterm
+export expand_decayterm, ExactConstructor
 
 # ADT
 export space_l, space_r, bonddim, bonddims, scaling, phydim, phydims

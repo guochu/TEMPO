@@ -3,6 +3,7 @@
 # contours. The dense tensors must agree element by element.
 
 using QuAPI.Dense
+using QuAPI.Dense: BosonicSplitDelta
 using QuAPI: BosonicContourIndex
 using FiniteMPSAlgorithms: NoTruncation
 
@@ -95,6 +96,36 @@ end
     QPr = BosonicPT(_pt_basis(latrP), 2, vec(ArP))
     @test QuAPI.Dense.Zvalue(QPr) ≈ integrate(latrP, IFrP) rtol = 1.0e-10
 
+    # ------- 非对角耦合（op1 ≠ op2）：离散谱与连续 bath 的对齐 -------
+    # 修正后的 TEMPO 非对角 PT 构造应与 QuAPI.Dense 的（已对严格 IF 验证的）张量逐元素一致。
+    # 用 ExactConstructor 消除 Prony 拟合扰动；剩余门限 = QuAPI.Dense 参照自身对
+    # op1≠op2 的 O(G⁴) split-delta 分解残差（随耦合强度按 G⁴ 增长，与 TEMPO 侧构造无关）。
+    for (spec2, tol2) in ((DiscreteSpectrum([1.0, 2.0], [0.25, 0.09]), 5.0e-4),
+                          (Leggett(d=1, ωc=1), 1.5e-3))
+        Nr2 = 5
+        latrP2 = PTLattice(N=Nr2, δt=δt, contour=:real, d=2)
+        bath2 = bosonicbath(spec2, β=β)
+        corrT2 = correlationfunction(bath2, latrP2)
+        for hyb2 in (NonDiagonalHyb([0 1; 0 0]),
+                     NonDiagonalHyb([0.2 + 0.3im 0.7; 0.4 - 0.1im 0.15 + 0.25im]))
+            IF2 = influenceoperatorstepper(latrP2, corrT2, 1.0, hyb2, WII(),
+                                           SVDCompression(trunc=NoTruncation()),
+                                           ExactConstructor())
+            A2 = _tempo_pt_array(IF2)
+            corrq2 = bosonic_Δt(spec2; β=β, N=Nr2, t=Nr2 * δt)
+            hq2 = BosonicHybridizationMatrix(corrq2; split=true)
+            keep2 = trues(2 * (Nr2 + 1)); keep2[1] = keep2[2] = false
+            idx2 = findall(keep2)
+            basisq2 = [BosonicContourIndex(k + 1, b) for k in 1:Nr2 for b in (:+, :-)]
+            h2q2 = BosonicHybridizationMatrix(basisq2,
+                  BosonicSplitDelta(hq2.Δ.M1[idx2, idx2], hq2.Δ.M2[idx2, idx2]))
+            Tq2 = reshape(BosonicIF(h2q2, pairop(hyb2)[1]).data, ntuple(_ -> 2, 4Nr2))
+            perir2 = vcat([[2t - 1, 2t] for t in Nr2:-1:1]...)
+            axr2 = vcat([[2p - 1, 2p] for p in perir2]...)
+            @test maximum(abs.(A2 .- permutedims(Tq2, axr2))) < tol2
+        end
+    end
+
     # ---------------- mixed time ----------------
     Nt, Nτ, δtm = 2, 3, 0.1
     δτm = β / Nτ
@@ -122,4 +153,106 @@ end
                               ntuple(_ -> 2, 2 * (Nτ + 2Nt))...), ax) rtol = rtol
     QPm = BosonicPT(_pt_basis(latmP), 2, vec(AmP))
     @test QuAPI.Dense.Zvalue(QPm) ≈ integrate(latmP, IFmP) rtol = 1.0e-10
+end
+
+@testset "QuAPI dense cross-check: hyb × algorithm × contour matrix" begin
+	# 系统矩阵（每格 = TEMPO IF vs QuAPI.Dense 稠密参照的逐元素对齐）：
+	#   (1) ADTLattice + PartialIF                  —— imag/real/mixed 已由上一测试集覆盖
+	#       （AdditiveHyb(λ)，hybriddynamics kwarg 形式即 PartialIF）
+	#   (2) PTLattice + NonAdditiveHyb + PartialIF  —— imag/real/mixed，随机复厄米耦合
+	#   (3) PTLattice + NonDiagonalHyb(随机复) + TDVPIF + ExactConstructor
+	#                                               —— imag/real；mixed 无 TDVP-IF 方法
+	#                                                 （AbstractTDVPIFAlgorithm 明确不支持，
+	#                                                 PT 的 PartialIF 亦仅收 NonAdditiveHyb）
+	# 附 TDVP2IF 切换抽查（real）。ExactConstructor 消除 Prony 拟合误差；
+	# (3) 的残差由 QuAPI split-Δ 对非厄米算符的 O(G⁴) 分解 + TDVP 流误差主导。
+	β = 1.0
+	d = 2
+	spec = DiscreteSpectrum([1.0, 2.0], [0.25, 0.09])
+	bath = bosonicbath(spec, β=β)
+
+	# ---------- (2) 随机复厄米耦合：PT + NonAdditiveHyb + PartialIF，三种 contour ----------
+	opH = randn(ComplexF64, d, d)
+	opH += opH'                          # 随机复厄米
+	hybH = NonAdditiveHyb(opH)
+	rtolH = 1.0e-9
+
+	# imag
+	N, δτ = 3, β / 3
+	latτ = PTLattice(N=N, δτ=δτ, contour=:imag, d=d)
+	IFτ = hybriddynamics(latτ, correlationfunction(bath, latτ), hybH; trunc=NoTruncation())
+	Aτ = _tempo_pt_array(IFτ)
+	corrqτ = bosonic_Δτ(spec; β=β, N=N)
+	Tτ = reshape(BosonicIF(BosonicHybridizationMatrix(corrqτ; split=true), opH).data,
+	             ntuple(_ -> 2, 2N)...)
+	perim = N:-1:1
+	@test Aτ ≈ permutedims(Tτ, vcat([[2p - 1, 2p] for p in perim]...)) rtol = rtolH
+
+	# real
+	Nr, δt = 3, 0.1
+	latr = PTLattice(N=Nr, δt=δt, contour=:real, d=d)
+	IFr = hybriddynamics(latr, correlationfunction(bath, latr), hybH; trunc=NoTruncation())
+	Ar = _tempo_pt_array(IFr)
+	corrqr = bosonic_Δt(spec; β=β, N=Nr, t=Nr * δt)
+	# real 轮廓：复耦合下 QuAPI.Dense 的 BosonicIF 要求 split=true 的核；split=true
+	# 的稠密 IF 含 2(N+1) 个轮廓点，去掉头部两个辅助点后与 TEMPO 的 2Nr 个物理点对齐
+	hqH = BosonicHybridizationMatrix(corrqr; split=true)
+	keepH = trues(2 * (Nr + 1)); keepH[1] = keepH[2] = false
+	idxH = findall(keepH)
+	basisH = [BosonicContourIndex(k + 1, b) for k in 1:Nr for b in (:+, :-)]
+	h2qH = BosonicHybridizationMatrix(basisH,
+	          BosonicSplitDelta(hqH.Δ.M1[idxH, idxH], hqH.Δ.M2[idxH, idxH]))
+	Tr = reshape(BosonicIF(h2qH, opH).data, ntuple(_ -> 2, 4Nr)...)
+	perir = vcat([[2t - 1, 2t] for t in Nr:-1:1]...)
+	@test Ar ≈ permutedims(Tr, vcat([[2p - 1, 2p] for p in perir]...)) rtol = rtolH
+
+	# mixed
+	Nt, Nτm, δtm = 2, 3, 0.1
+	δτm = β / Nτm
+	latm = PTLattice(Nt=Nt, δt=δtm, Nτ=Nτm, δτ=δτm, contour=:mixed, d=d)
+	IFm = hybriddynamics(latm, correlationfunction(bath, latm), hybH; trunc=NoTruncation())
+	Am = _tempo_pt_array(IFm)
+	corrqm = bosonic_Δm(spec; β=β, Nτ=Nτm, t=(Nt - 1) * δtm, Nt=Nt - 1)
+	Tm = reshape(BosonicIF(BosonicHybridizationMatrix(corrqm; split=true), opH).data,
+	             ntuple(_ -> 2, 2 * (Nτm + 2Nt))...)
+	perimx = vcat(Nτm:-1:1,
+	              [Nτm + 2 * div(r + 1, 2) - (isodd(r) ? 0 : 1) for r in 1:2Nt])
+	@test Am ≈ permutedims(Tm, vcat([[2p - 1, 2p] for p in perimx]...)) rtol = rtolH
+
+	# ---------- (3) 随机复（非厄米）耦合：PT + NonDiagonalHyb + TDVP-IF + ExactConstructor ----------
+	opR = 0.5 * randn(ComplexF64, d, d)   # 随机复矩阵（缩放控制 split-Δ 残差量级）
+	hybR = NonDiagonalHyb(opR)
+	tdvpalg = TDVPIF(alg_expan=ExactConstructor(),
+	                 trunc=truncdimcutoff(D=128, ϵ=1.0e-13, add_back=0), δ=0.02)
+	tolR = 5.0e-3
+
+	# QuAPI split-Δ 参照的公共装配（real：去头部辅助点；imag：全体格点）
+	corrqR = bosonic_Δt(spec; β=β, N=Nr, t=Nr * δt)
+	hqR = BosonicHybridizationMatrix(corrqR; split=true)
+	keepR = trues(2 * (Nr + 1)); keepR[1] = keepR[2] = false
+	idxR = findall(keepR)
+	basisR = [BosonicContourIndex(k + 1, b) for k in 1:Nr for b in (:+, :-)]
+	h2qR = BosonicHybridizationMatrix(basisR,
+	          BosonicSplitDelta(hqR.Δ.M1[idxR, idxR], hqR.Δ.M2[idxR, idxR]))
+	TrR = reshape(BosonicIF(h2qR, opR).data, ntuple(_ -> d, 4Nr))
+	axrR = vcat([[2p - 1, 2p] for p in perir]...)
+
+	# imag
+	IFτ2 = hybriddynamics(latτ, correlationfunction(bath, latτ), hybR, tdvpalg)
+	Aτ2 = _tempo_pt_array(IFτ2)
+	Tτ2 = reshape(BosonicIF(BosonicHybridizationMatrix(corrqτ; split=true), opR).data,
+	              ntuple(_ -> d, 2N))
+	@test maximum(abs.(Aτ2 .- permutedims(Tτ2, vcat([[2p - 1, 2p] for p in perim]...)))) < tolR
+
+	# real
+	IFr2 = hybriddynamics(latr, correlationfunction(bath, latr), hybR, tdvpalg)
+	Ar2 = _tempo_pt_array(IFr2)
+	@test maximum(abs.(Ar2 .- permutedims(TrR, axrR))) < tolR
+
+	# TDVP2IF 切换抽查（real；与 TDVPIF 同一参照）
+	tdvp2alg = TDVP2IF(alg_expan=ExactConstructor(),
+	                   trunc=truncdimcutoff(D=128, ϵ=1.0e-13, add_back=0), δ=0.05)
+	IFr3 = hybriddynamics(latr, correlationfunction(bath, latr), hybR, tdvp2alg)
+	Ar3 = _tempo_pt_array(IFr3)
+	@test maximum(abs.(Ar3 .- permutedims(TrR, axrR))) < tolR
 end

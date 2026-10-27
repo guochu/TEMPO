@@ -56,7 +56,7 @@
 # is exponentially amplified by the flow (IF = e^H), so a loose tolerance
 # would degrade the accuracy of the influence functional.
 function _tdvpif_hamiltonian(lattice, corr, hyb, alg::AbstractTDVPIFAlgorithm)
-	h1, h2, h3, h4 = influenceoperators(lattice, corr, hyb, algexpan=alg.alg_expan)
+	h1, h2, h3, h4 = influenceoperators(lattice, corr, hyb, alg.alg_expan)
 	orth = Orthogonalize(SVD(), Defaults.alg_trunc_sys(); normalize=false)
 	H = h1 + h2
 	canonicalize!(H, alg=orth)
@@ -204,7 +204,7 @@ The modified `gmps`.
 """
 function hybriddynamics!(gmps::ADT, lattice::ImagADTLattice, corr::ImagCorrelationFunction, hyb::AdditiveHyb, alg::AbstractTDVPIFAlgorithm)
 	# influence operator H in MPO (fused-leg MPS) form
-	H = only(influenceoperators(lattice, corr, hyb, algexpan=alg.alg_expan))
+	H = only(influenceoperators(lattice, corr, hyb, alg.alg_expan))
 	return _tdvpif_hybriddynamics_adt!(gmps, H, alg)
 end
 
@@ -281,7 +281,7 @@ The modified `gmps`.
 """
 function hybriddynamics!(gmps::ProcessTensor, lattice::ImagPTLattice, corr::ImagCorrelationFunction, hyb::GeneralHybStyle, alg::AbstractTDVPIFAlgorithm)
 	# influence operator H in MPO form
-	H = only(influenceoperators(lattice, corr, hyb, algexpan=alg.alg_expan))
+	H = only(influenceoperators(lattice, corr, hyb, alg.alg_expan))
 	return _tdvpif_hybriddynamics_pt!(gmps, H, alg)
 end
 

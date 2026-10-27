@@ -21,14 +21,14 @@ Construct the influence functional as a translationally invariant MPO: first bui
 See [SciPost Phys. Core 7, 063 (2024)].
 
 # Fields
-- `alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan()`: exponential (Prony) expansion algorithm for the bath correlation function.
+- `alg_expan=Defaults.alg_expan()`: expansion algorithm for the bath correlation function — a Prony-type `ExponentialExpansionAlgorithm`, or `ExactConstructor()` for the exact (fit-free) FSM-MPO construction.
 - `alg_evo::TimeEvoMPOAlgorithm=Defaults.alg_evo()`: time-evolution algorithm for the differential influence functional (`FirstOrderStepper` or `ComplexStepper`).
 - `alg_mult::MPSAlgorithm=Defaults.alg_mult()`: MPO multiplication (compression) algorithm (`DMRG1`, `DMRG2` or `SVDCompression`).
 - `k::Int=5`: number of tree bipartition iterations, corresponding to 2^k time steps.
 - `fast::Bool=true`: if `true`, use the fast tree bipartition scheme (k multiplications); otherwise use the sequential scheme (2^k-1 multiplications).
 - `verbosity::Int=0`: verbosity level of the output.
 """
-@kwdef struct XTRGIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm, M<:MPSAlgorithm} <: InfluenceFunctionalAlgorithm
+@kwdef struct XTRGIF{T, E<:TimeEvoMPOAlgorithm, M<:MPSAlgorithm} <: InfluenceFunctionalAlgorithm
 	alg_expan::T = Defaults.alg_expan()
 	alg_evo::E = Defaults.alg_evo()
 	alg_mult::M = Defaults.alg_mult()
@@ -68,14 +68,14 @@ Construct the influence functional with a second-order **single-site** TDVP imag
 Each flow step is one forward-backward TDVP sweep: the center tensor is evolved by +δτ/2 (Krylov exponentiation of the local effective map) and the bond matrix by -δτ/2, with a full +δτ step at the turning site. The state is zero-padded to bond dimension `trunc.D` before the flow, so the bond dimension grows with the correlations up to `trunc.D`.
 
 # Fields
-- `alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan()`: exponential (Prony) expansion algorithm for the bath correlation function.
+- `alg_expan=Defaults.alg_expan()`: expansion algorithm for the bath correlation function — a Prony-type `ExponentialExpansionAlgorithm`, or `ExactConstructor()` for the exact (fit-free) FSM-MPO construction.
 - `trunc::TruncateDimCutoff=Defaults.alg_trunc_if()`: bond dimension of the flow manifold / final influence functional.
 - `δ::Float64=0.1`: imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer).
 - `verbosity::Int=0`: verbosity level of the output.
 
 See [`AbstractTDVPIFAlgorithm`](@ref) for the shared conventions (influence operator on real-time lattices, supported contours).
 """
-@kwdef struct TDVPIF{T<:ExponentialExpansionAlgorithm} <: AbstractTDVPIFAlgorithm
+@kwdef struct TDVPIF{T} <: AbstractTDVPIFAlgorithm
 	alg_expan::T = Defaults.alg_expan()
 	trunc::TruncateDimCutoff = Defaults.alg_trunc_if()
 	δ::Float64 = 0.1                      # imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer)
@@ -96,14 +96,14 @@ Construct the influence functional with a second-order **two-site** TDVP imagina
 Unlike the single-site variant the bond dimension **adapts during the flow**: the bond-dimension-1 identity guess is grown by the pair updates themselves up to the cap `trunc.D` (no zero-padding preparation), and trimmed where the spectrum allows. `trunc` is therefore the truncation scheme of the pair re-splits, which both caps and shapes the final bond profile.
 
 # Fields
-- `alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan()`: exponential (Prony) expansion algorithm for the bath correlation function.
+- `alg_expan=Defaults.alg_expan()`: expansion algorithm for the bath correlation function — a Prony-type `ExponentialExpansionAlgorithm`, or `ExactConstructor()` for the exact (fit-free) FSM-MPO construction.
 - `trunc::TruncateDimCutoff=Defaults.alg_trunc_if()`: truncation scheme (carrying the bond cap `D`) of the two-site re-splits; the bond dimension grows during the flow up to `trunc.D`.
 - `δ::Float64=0.1`: imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer).
 - `verbosity::Int=0`: verbosity level of the output.
 
 See [`AbstractTDVPIFAlgorithm`](@ref) for the shared conventions (influence operator on real-time lattices, supported contours).
 """
-@kwdef struct TDVP2IF{T<:ExponentialExpansionAlgorithm} <: AbstractTDVPIFAlgorithm
+@kwdef struct TDVP2IF{T} <: AbstractTDVPIFAlgorithm
 	alg_expan::T = Defaults.alg_expan()
 	trunc::TruncateDimCutoff = Defaults.alg_trunc_if()
 	δ::Float64 = 0.1                      # imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer)

@@ -1,7 +1,7 @@
 
 
 """
-	influenceoperators(lattice, corr, hyb; algexpan=Defaults.alg_expan())
+	influenceoperators(lattice::ImagADTLattice, corr2::ImagCorrelationFunction, hyb::AdditiveHyb, algexpan=Defaults.alg_expan())
 
 Construct the (translation-invariant) influence functional as an MPO. The ADT version supports `ImagADTLattice`/`RealADTLattice` lattices with `AdditiveHyb` coupling; the PT version supports `ImagPTLattice`/`RealPTLattice` lattices with `GeneralHybStyle` (e.g. `NonAdditiveHyb`, `NonDiagonalHyb`) coupling.
 
@@ -9,12 +9,12 @@ Construct the (translation-invariant) influence functional as an MPO. The ADT ve
 - `lattice`: contour lattice (ADT or PT).
 - `corr`: bath correlation function.
 - `hyb`: system-bath coupling.
-- `algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan()`: exponential (Prony) expansion algorithm for the bath correlation function.
+- `algexpan`: exponential (Prony) expansion algorithm for the bath correlation function; positional, defaults to `Defaults.alg_expan()` when omitted.
 
 # Returns
 Tuple of the influence functional MPOs: a 1-tuple in imaginary time; a 4-tuple of branch MPOs ((+,+), (+,−), (−,+), (−,−)) in real time.
 """
-function influenceoperators(lattice::ImagADTLattice, corr2::ImagCorrelationFunction, hyb::AdditiveHyb; algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
+function influenceoperators(lattice::ImagADTLattice, corr2::ImagCorrelationFunction, hyb::AdditiveHyb, algexpan::ExponentialExpansionAlgorithm)
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = adt_ti_mpotensor(corr, op1, op2, algexpan)
@@ -23,7 +23,7 @@ function influenceoperators(lattice::ImagADTLattice, corr2::ImagCorrelationFunct
 end
 
 """
-	influenceoperatorsteppers(lattice, corr, dt, hyb, alg; algexpan=Defaults.alg_expan())
+	influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=Defaults.alg_expan())
 
 Construct the influence-functional exponential-operator MPO of a single time step (width `dt`) and time-evolve it with `alg` (`FirstOrderStepper` or `ComplexStepper`). `ComplexStepper` additionally returns the MPOs before and after evolution, so the returned tuple is twice as long as for `FirstOrderStepper` (1/2 in imaginary time and 4/8 in real time).
 
@@ -33,13 +33,13 @@ Construct the influence-functional exponential-operator MPO of a single time ste
 - `dt::Real`: width of a single time step.
 - `hyb`: system-bath coupling.
 - `alg`: time-evolution algorithm (`FirstOrderStepper` or `ComplexStepper`).
-- `algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan()`: exponential expansion algorithm.
+- `algexpan`: exponential expansion algorithm; positional, defaults to `Defaults.alg_expan()` when omitted.
 
 # Returns
 Tuple of time-evolved influence functional MPOs.
 """
-function influenceoperatorsteppers(lattice::ImagADTLattice, corr2::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper;
-										algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
+function influenceoperatorsteppers(lattice::ImagADTLattice, corr2::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper,
+										algexpan::ExponentialExpansionAlgorithm)
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = adt_ti_mpotensor(corr, op1, op2, algexpan)
@@ -47,8 +47,8 @@ function influenceoperatorsteppers(lattice::ImagADTLattice, corr2::ImagCorrelati
 	mpstensors = _tompsj.(_get_mpo3(mpoj′))
 	return (_fit_to_lattice(lattice, mpstensors), )
 end
-function influenceoperatorsteppers(lattice::ImagADTLattice, corr2::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper;
-										algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
+function influenceoperatorsteppers(lattice::ImagADTLattice, corr2::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper,
+										algexpan::ExponentialExpansionAlgorithm)
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = adt_ti_mpotensor(corr, op1, op2, algexpan)
@@ -59,7 +59,7 @@ end
 
 
 """
-	influenceoperatorstepper(lattice, corr, dt, hyb, alg, algmult; algexpan=Defaults.alg_expan())
+	influenceoperatorstepper(lattice, corr, dt, hyb, alg, algmult, algexpan=Defaults.alg_expan())
 
 Construct the differential influence functional, i.e. the full influence functional of a single time step, returned as an MPO/MPS. In real time, the branch MPOs obtained from `influenceoperatorsteppers` are multiplied in order (with `algmult` controlling multiplication and compression); in imaginary time, the evolved operator is returned directly.
 
@@ -70,23 +70,29 @@ Construct the differential influence functional, i.e. the full influence functio
 - `hyb`: system-bath coupling.
 - `alg`: time-evolution algorithm (`FirstOrderStepper` or `ComplexStepper`).
 - `algmult::MPSAlgorithm`: MPO multiplication (compression) algorithm.
-- `algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan()`: exponential expansion algorithm.
+- `algexpan`: exponential expansion algorithm; positional, defaults to `Defaults.alg_expan()` when omitted.
 
 # Returns
 The differential influence functional (`ADT` or `ProcessTensor`).
 """
 function influenceoperatorstepper(lattice::ImagADTLattice, corr::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper,
-											algmult::MPSAlgorithm;
-											algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
-	mpo1, = influenceoperatorsteppers(lattice, corr, dt, hyb, alg; algexpan=algexpan)
+											algmult::MPSAlgorithm, algexpan::ExponentialExpansionAlgorithm)
+	mpo1, = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan)
 	return mpo1
 end
 function influenceoperatorstepper(lattice::ImagADTLattice, corr::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper,
-											algmult::MPSAlgorithm;
-											algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
-	mpo1, mpo2 = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=algexpan)
+											algmult::MPSAlgorithm, algexpan::ExponentialExpansionAlgorithm)
+	mpo1, mpo2 = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan)
 	return mult(mpo1, mpo2, algmult)
 end
+
+# 缺省回退：不传 algexpan 时用 Defaults.alg_expan()（Prony 类）；algexpan 一律按位置输入
+influenceoperators(lattice::ImagADTLattice, corr2::ImagCorrelationFunction, hyb::AdditiveHyb) =
+	influenceoperators(lattice, corr2, hyb, Defaults.alg_expan())
+influenceoperatorsteppers(lattice::ImagADTLattice, corr2::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::Union{FirstOrderStepper,ComplexStepper}) =
+	influenceoperatorsteppers(lattice, corr2, dt, hyb, alg, Defaults.alg_expan())
+influenceoperatorstepper(lattice::ImagADTLattice, corr::ImagCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::Union{FirstOrderStepper,ComplexStepper}, algmult::MPSAlgorithm) =
+	influenceoperatorstepper(lattice, corr, dt, hyb, alg, algmult, Defaults.alg_expan())
 
 
 function _fit_to_lattice(lattice::ImagADTLattice, mpstensors)

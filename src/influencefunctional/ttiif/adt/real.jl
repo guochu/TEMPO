@@ -1,10 +1,10 @@
 
 """
-	influenceoperators(lattice::RealADTLattice, corr::RealCorrelationFunction, hyb::AdditiveHyb; algexpan=Defaults.alg_expan())
+	influenceoperators(lattice::RealADTLattice, corr::RealCorrelationFunction, hyb::AdditiveHyb, algexpan=Defaults.alg_expan())
 
-`influenceoperators` method on real-time ADT lattices, returning a tuple of 4 branch MPOs ((+,+), (+,−), (−,+), (−,−)).
+`influenceoperators` method on real-time ADT lattices, returning a tuple of 4 branch MPOs ((+,+), (+,−), (−,+), (−,−)). `algexpan` is positional.
 """
-function influenceoperators(lattice::RealADTLattice, corr::RealCorrelationFunction, hyb::AdditiveHyb; algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
+function influenceoperators(lattice::RealADTLattice, corr::RealCorrelationFunction, hyb::AdditiveHyb, algexpan::ExponentialExpansionAlgorithm)
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr)
 	op1, op2 = pairop(hyb)
 	mpoj1 = adt_ti_mpotensor(η⁺⁺, op1, op2, algexpan)
@@ -20,12 +20,12 @@ function influenceoperators(lattice::RealADTLattice, corr::RealCorrelationFuncti
 end
 
 """
-	influenceoperatorsteppers(lattice::RealADTLattice, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::TimeEvoMPOAlgorithm; algexpan=Defaults.alg_expan())
+	influenceoperatorsteppers(lattice::RealADTLattice, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::TimeEvoMPOAlgorithm, algexpan=Defaults.alg_expan())
 
 `influenceoperatorsteppers` method on real-time ADT lattices. `FirstOrderStepper` returns 4 MPOs and `ComplexStepper` returns 8 (one before and one after evolution for each branch).
 """
-function influenceoperatorsteppers(lattice::RealADTLattice, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper;
-										algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
+function influenceoperatorsteppers(lattice::RealADTLattice, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper,
+										algexpan::ExponentialExpansionAlgorithm)
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr)
 	op1, op2 = pairop(hyb)
 	mpoj1 = adt_ti_mpotensor(η⁺⁺, op1, op2, algexpan)
@@ -41,8 +41,8 @@ function influenceoperatorsteppers(lattice::RealADTLattice, corr::RealCorrelatio
 	return mpo1, mpo2, mpo3, mpo4
 end
 
-function influenceoperatorsteppers(lattice::RealADTLattice, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper;
-										algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
+function influenceoperatorsteppers(lattice::RealADTLattice, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper,
+										algexpan::ExponentialExpansionAlgorithm)
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr)
 	op1, op2 = pairop(hyb)
 	mpoj1 = adt_ti_mpotensor(η⁺⁺, op1, op2, algexpan)
@@ -65,21 +65,21 @@ function influenceoperatorsteppers(lattice::RealADTLattice, corr::RealCorrelatio
 end
 
 """
-	influenceoperatorstepper(lattice::RealADTLattice, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::TimeEvoMPOAlgorithm, algmult::MPSAlgorithm; algexpan=Defaults.alg_expan())
+	influenceoperatorstepper(lattice::RealADTLattice, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::TimeEvoMPOAlgorithm, algmult::MPSAlgorithm, algexpan=Defaults.alg_expan())
 
 `influenceoperatorstepper` method on real-time ADT lattices: multiply the branch differential IFs in successively to construct the full differential influence functional.
 """
 function influenceoperatorstepper(lattice::RealADTLattice, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::FirstOrderStepper,
-											algmult::MPSAlgorithm; algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
-	h1, h2, h3, h4 = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=algexpan)
+											algmult::MPSAlgorithm, algexpan::ExponentialExpansionAlgorithm)
+	h1, h2, h3, h4 = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan)
 	mps = mult(h2, h1, algmult)
 	mps = mult(h3, mps, algmult)
 	mps = mult(h4, mps, algmult)
 	return mps
 end
 function influenceoperatorstepper(lattice::RealADTLattice, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::ComplexStepper,
-											algmult::MPSAlgorithm; algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
-	h1a, h1b, h2a, h2b, h3a, h3b, h4a, h4b = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=algexpan)
+											algmult::MPSAlgorithm, algexpan::ExponentialExpansionAlgorithm)
+	h1a, h1b, h2a, h2b, h3a, h3b, h4a, h4b = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan)
 	mps = mult(h1b, h1a, algmult)
 
 	mps = mult(h2a, mps, algmult)
@@ -292,3 +292,11 @@ function split_mpstensor(mpoj::DenseMPSTensor, trunc)
 	@tensor vv[1,3,4] := ss[1,2] * v[2,3,4]
 	return uu, vv
 end
+
+# 缺省回退：不传 algexpan 时用 Defaults.alg_expan()（Prony 类）；algexpan 一律按位置输入
+influenceoperators(lattice::RealADTLattice, corr::RealCorrelationFunction, hyb::AdditiveHyb) =
+	influenceoperators(lattice, corr, hyb, Defaults.alg_expan())
+influenceoperatorsteppers(lattice::RealADTLattice, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::Union{FirstOrderStepper,ComplexStepper}) =
+	influenceoperatorsteppers(lattice, corr, dt, hyb, alg, Defaults.alg_expan())
+influenceoperatorstepper(lattice::RealADTLattice, corr::RealCorrelationFunction, dt::Real, hyb::AdditiveHyb, alg::Union{FirstOrderStepper,ComplexStepper}, algmult::MPSAlgorithm) =
+	influenceoperatorstepper(lattice, corr, dt, hyb, alg, algmult, Defaults.alg_expan())

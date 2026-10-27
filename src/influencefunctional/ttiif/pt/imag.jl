@@ -1,11 +1,11 @@
 # imaginary-time
 
 """
-	influenceoperators(lattice::ImagPTLattice, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle; algexpan=Defaults.alg_expan())
+	influenceoperators(lattice::ImagPTLattice, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle, algexpan=Defaults.alg_expan())
 
 `influenceoperators` method on imaginary-time PT lattices: construct ΣᵢⱼΔᵢⱼ āᵢaⱼ as an MPO (`ProcessTensor`), whose bond dimension is 2n, with n the number of Prony expansion terms. Returned as a 1-tuple.
 """
-function influenceoperators(lattice::ImagPTLattice, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle; algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
+function influenceoperators(lattice::ImagPTLattice, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle, algexpan::ExponentialExpansionAlgorithm)
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = pt_ti_mpotensor(corr, op1, op2, :τ, :τ, algexpan)
@@ -15,12 +15,12 @@ function influenceoperators(lattice::ImagPTLattice, corr2::ImagCorrelationFuncti
 end
 
 """
-	influenceoperatorsteppers(lattice::ImagPTLattice, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm; algexpan=Defaults.alg_expan())
+	influenceoperatorsteppers(lattice::ImagPTLattice, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algexpan=Defaults.alg_expan())
 
 `influenceoperatorsteppers` method on imaginary-time PT lattices. `FirstOrderStepper` returns 1 MPO and `ComplexStepper` returns 2 (one before and one after evolution).
 """
-function influenceoperatorsteppers(lattice::ImagPTLattice, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper;
-										algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
+function influenceoperatorsteppers(lattice::ImagPTLattice, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper,
+										algexpan::ExponentialExpansionAlgorithm)
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = pt_ti_mpotensor(corr, op1, op2, :τ, :τ, algexpan)
@@ -28,8 +28,8 @@ function influenceoperatorsteppers(lattice::ImagPTLattice, corr2::ImagCorrelatio
 	mpotensors = _get_mpo3(mpoj′)
 	return (_fit_to_lattice(lattice, mpotensors),)
 end
-function influenceoperatorsteppers(lattice::ImagPTLattice, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper;
-										algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
+function influenceoperatorsteppers(lattice::ImagPTLattice, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper,
+										algexpan::ExponentialExpansionAlgorithm)
 	corr = corr2.data
 	op1, op2 = pairop(hyb)
 	mpoj = pt_ti_mpotensor(corr, op1, op2, :τ, :τ, algexpan)
@@ -40,20 +40,18 @@ end
 
 
 """
-	influenceoperatorstepper(lattice::ImagPTLattice, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algmult::MPSAlgorithm; algexpan=Defaults.alg_expan())
+	influenceoperatorstepper(lattice::ImagPTLattice, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::TimeEvoMPOAlgorithm, algmult::MPSAlgorithm, algexpan=Defaults.alg_expan())
 
 `influenceoperatorstepper` method on imaginary-time PT lattices.
 """
 function influenceoperatorstepper(lattice::ImagPTLattice, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::FirstOrderStepper,
-											algmult::MPSAlgorithm;
-											algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
-	mpo1, = influenceoperatorsteppers(lattice, corr, dt, hyb, alg; algexpan=algexpan)
+											algmult::MPSAlgorithm, algexpan)
+	mpo1, = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan)
 	return mpo1
 end
 function influenceoperatorstepper(lattice::ImagPTLattice, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::ComplexStepper,
-											algmult::MPSAlgorithm;
-											algexpan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
-	mpo1, mpo2 = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan=algexpan)
+											algmult::MPSAlgorithm, algexpan)
+	mpo1, mpo2 = influenceoperatorsteppers(lattice, corr, dt, hyb, alg, algexpan)
 	return mult(mpo1, mpo2, algmult)
 end
 
@@ -118,9 +116,10 @@ end
 # 	# return SchurMPOTensor(h1, [])
 # end
 
-function pt_ti_mpotensor(corr::CorrelationMatrix, op1::AbstractMatrix, op2::AbstractMatrix, b1::Symbol, b2::Symbol, alg::ExponentialExpansionAlgorithm)
-	# m1 = GenericDecayTerm(op1, op2, corr.ηₖⱼ[2:end])
-	# m2 = GenericDecayTerm(op2, op1, corr.ηⱼₖ[2:end])
+function pt_ti_mpotensor(corr::CorrelationMatrix, op1::AbstractMatrix, op2::AbstractMatrix, b1::Symbol, b2::Symbol, alg::ExponentialExpansionAlgorithm;
+							lop1::AbstractMatrix=op1, lop2::AbstractMatrix=op2)
+	# op1/op2 进入跨步衰减项（GenericDecayTerm），lop1/lop2 进入等时项（ti_localop）。
+	# 实时非对角耦合下二者不同：衰减项需要转置/共轭的行腿形式，等时矩阵积用原算符。
 	m1 = GenericDecayTerm(op1, op2, corr.ηⱼₖ[2:end])
 	m2 = GenericDecayTerm(op2, op1, corr.ηₖⱼ[2:end])
 
@@ -128,7 +127,7 @@ function pt_ti_mpotensor(corr::CorrelationMatrix, op1::AbstractMatrix, op2::Abst
 	m1s = expand_decayterm(m1, alg=alg)
 	m2s = expand_decayterm(m2, alg=alg)
 
-	h1 = ti_localop(corr, op1, op2, b1, b2)
+	h1 = ti_localop(corr, lop1, lop2, b1, b2)
 	# 两个方向的 ExpDecayOpSum 各生成一个 SchurMPOTensor，块对角拼接（D 角相加）
 	return SchurMPOTensor(m1s, h1) + SchurMPOTensor(m2s)
 end
@@ -151,3 +150,13 @@ end
 
 
 
+
+
+# 缺省回退：不传 algexpan 时用 Defaults.alg_expan()（Prony 类）；algexpan 一律按
+# 位置输入（Prony 类 ExponentialExpansionAlgorithm 或 ExactConstructor）
+influenceoperators(lattice::ImagPTLattice, corr2::ImagCorrelationFunction, hyb::GeneralHybStyle) =
+	influenceoperators(lattice, corr2, hyb, Defaults.alg_expan())
+influenceoperatorsteppers(lattice::ImagPTLattice, corr2::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::Union{FirstOrderStepper,ComplexStepper}) =
+	influenceoperatorsteppers(lattice, corr2, dt, hyb, alg, Defaults.alg_expan())
+influenceoperatorstepper(lattice::ImagPTLattice, corr::ImagCorrelationFunction, dt::Real, hyb::GeneralHybStyle, alg::Union{FirstOrderStepper,ComplexStepper}, algmult::MPSAlgorithm) =
+	influenceoperatorstepper(lattice, corr, dt, hyb, alg, algmult, Defaults.alg_expan())

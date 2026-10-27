@@ -1,5 +1,6 @@
 include("imag.jl")
 include("real.jl")
+include("exact.jl")
 # XTRG-IF support for L-shaped is possible for finite MPS, but TTI is destroyed and the algorithm is not elegant, so it is not implemented for now
 
 """
@@ -41,10 +42,10 @@ end
 function _hybriddynamics_fast(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::XTRGIF)
 	algmult = alg.alg_mult
 	if alg.verbosity > 1
-		t = @elapsed mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.alg_evo, algmult, algexpan=alg.alg_expan)
+		t = @elapsed mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.alg_evo, algmult, alg.alg_expan)
 		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bonddim(mps))
 	else
-		mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.alg_evo, algmult, algexpan=alg.alg_expan)
+		mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.alg_evo, algmult, alg.alg_expan)
 	end
 	
 	for i in 1:alg.k
@@ -61,10 +62,10 @@ end
 function _hybriddynamics_slow(lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::XTRGIF)
 	algmult = alg.alg_mult
 	if alg.verbosity > 1
-		t = @elapsed mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.alg_evo, algmult, algexpan=alg.alg_expan)
+		t = @elapsed mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.alg_evo, algmult, alg.alg_expan)
 		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bonddim(mps))
 	else
-		mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.alg_evo, algmult, algexpan=alg.alg_expan)
+		mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), hyb, alg.alg_evo, algmult, alg.alg_expan)
 	end
 	mps = mps0
 
@@ -82,10 +83,10 @@ end
 function _hybriddynamics_slow!(gmps, lattice::AbstractPTLattice, corr::AbstractCorrelationFunction, hyb::GeneralHybStyle, alg::XTRGIF)
 	algmult = alg.alg_mult
 	if alg.verbosity > 1
-		t = @elapsed mps_all = influenceoperatorsteppers(lattice, corr, 1/2^(alg.k), hyb, alg.alg_evo, algexpan=alg.alg_expan)
+		t = @elapsed mps_all = influenceoperatorsteppers(lattice, corr, 1/2^(alg.k), hyb, alg.alg_evo, alg.alg_expan)
 		println("building the initial MPS-IFs takes $t seconds")
 	else
-		mps_all = influenceoperatorsteppers(lattice, corr, 1/2^(alg.k), hyb, alg.alg_evo, algexpan=alg.alg_expan)
+		mps_all = influenceoperatorsteppers(lattice, corr, 1/2^(alg.k), hyb, alg.alg_evo, alg.alg_expan)
 	end
 
 	for i in 1:2^(alg.k)
