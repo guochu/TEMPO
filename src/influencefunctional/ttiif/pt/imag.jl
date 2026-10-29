@@ -116,10 +116,7 @@ end
 # 	# return SchurMPOTensor(h1, [])
 # end
 
-function pt_ti_mpotensor(corr::CorrelationMatrix, op1::AbstractMatrix, op2::AbstractMatrix, b1::Symbol, b2::Symbol, alg::ExponentialExpansionAlgorithm;
-							lop1::AbstractMatrix=op1, lop2::AbstractMatrix=op2)
-	# op1/op2 进入跨步衰减项（GenericDecayTerm），lop1/lop2 进入等时项（ti_localop）。
-	# 实时非对角耦合下二者不同：衰减项需要转置/共轭的行腿形式，等时矩阵积用原算符。
+function pt_ti_mpotensor(corr::CorrelationMatrix, op1::AbstractMatrix, op2::AbstractMatrix, b1::Symbol, b2::Symbol, alg::ExponentialExpansionAlgorithm)
 	m1 = GenericDecayTerm(op1, op2, corr.ηⱼₖ[2:end])
 	m2 = GenericDecayTerm(op2, op1, corr.ηₖⱼ[2:end])
 
@@ -127,7 +124,7 @@ function pt_ti_mpotensor(corr::CorrelationMatrix, op1::AbstractMatrix, op2::Abst
 	m1s = expand_decayterm(m1, alg=alg)
 	m2s = expand_decayterm(m2, alg=alg)
 
-	h1 = ti_localop(corr, lop1, lop2, b1, b2)
+	h1 = ti_localop(corr, op1, op2, b1, b2)
 	# 两个方向的 ExpDecayOpSum 各生成一个 SchurMPOTensor，块对角拼接（D 角相加）
 	return SchurMPOTensor(m1s, h1) + SchurMPOTensor(m2s)
 end

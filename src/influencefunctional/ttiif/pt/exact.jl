@@ -30,83 +30,121 @@ function _exact_branch_ham(fam1::Tuple{AbstractMatrix, AbstractMatrix, AbstractM
 	return H1 + MPOHamiltonian(PairOpTerm(fam2...))
 end
 
-# ---- 实时 PT：四支生成元（与修正后的算符约定一致）----
+# ---- 实时 PT：四支生成元（恢复物理管线验证过的装配约定）----
+#
+# 与 real.jl 的 pt_ti_mpotensor 调用一一同构（免 Prony 拟合）：
+#   · (++): 朴素算符 (op1, op2)——衰减项 op1@晚时配 ηⱼ₊₊ 核、op2@晚时配 ηₖⱼ₊₊ 核，
+#     在位 ηⱼ₊₊[1]·(op1·op2) + ηₖⱼ₊₊[1]·(op2·op1)，内容只挂在 + 站点（− 站点直通）。
+#   · (−−): 转置算符 (op1ᵀ, op2ᵀ)，同构于 (++)，内容只挂在 − 站点。
+#   · (+,−)/(−,+): 跨支项在**时间单元链**（每单元 = fused (b1,b2) 双站点，物理维 d²）
+#     上装配——算符为 fused_op(op1, b1)@行 / fused_op(op2, b2)@列，ηⱼₖ/ηₖⱼ 两族，
+#     等时项 (ηⱼₖ[1]+ηₖⱼ[1])·(fused_op(op1,b1)·fused_op(op2,b2))；装配后逐单元
+#     split 摆位到交错光格（_fit_cross_units_to_lattice，机制同 split_mpotensor）。
+# 该约定由 ptmodels 的 freebosons / JC model 实时精确解验证（见 test/ptmodels）。
+
+# 对角支（同支）：全光格 FSM，朴素 d×d 算符，内容挂在 f 支站点
+function _exact_diag_generators(lattice::RealPTLattice, η::CorrelationMatrix,
+								opA::AbstractMatrix, opB::AbstractMatrix, br::Symbol)
+	N, d, L = lattice.N, lattice.d, length(lattice)
+	poss(j) = lattice[BosonicContourIndex(j, br)]
+	C1, C2 = zeros(ComplexF64, L, L), zeros(ComplexF64, L, L)
+	for i in 1:N, j in 1:N
+		i > j && (C1[poss(i), poss(j)] = η.ηⱼₖ[i - j + 1])
+		i < j && (C2[poss(j), poss(i)] = η.ηₖⱼ[j - i + 1])
+	end
+	h = fill(zeros(ComplexF64, d, d), L)
+	for j in 1:N
+		h[poss(j)] = η.ηⱼₖ[1] .* (opA * opB) .+ η.ηₖⱼ[1] .* (opB * opA)
+	end
+	# fam1 = (opA@晚, opB@早)·ηⱼₖ；fam2 = (opB@晚, opA@早)·ηₖⱼ
+	return _exact_branch_ham((opA, opB, C1), (opB, opA, C2), h)
+end
+
+# 跨支：时间单元链 FSM（N 单元、时间降序、fused d² 物理腿），fused 行/列算符
+function _exact_cross_unit_ham(lattice::RealPTLattice, η::CorrelationMatrix,
+							   op1::AbstractMatrix, op2::AbstractMatrix,
+							   b1::Symbol, b2::Symbol)
+	N, d = lattice.N, lattice.d
+	d2 = d * d
+	pu(j) = N - j + 1                      # 单元链位（时间降序：晚时在前）
+	fA, fB = fused_op(op1, b1), fused_op(op2, b2)
+	C1, C2 = zeros(ComplexF64, N, N), zeros(ComplexF64, N, N)
+	for i in 1:N, j in 1:N
+		i > j && (C1[pu(i), pu(j)] = η.ηⱼₖ[i - j + 1])
+		i < j && (C2[pu(j), pu(i)] = η.ηₖⱼ[j - i + 1])
+	end
+	h = fill(zeros(ComplexF64, d2, d2), N)
+	eqt = η.ηⱼₖ[1] + η.ηₖⱼ[1]
+	for u in 1:N
+		h[u] = eqt .* (fA * fB)
+	end
+	# fam1 = (fused_op(op1,b1)@晚, fused_op(op2,b2)@早)·ηⱼₖ；
+	# fam2 = (fused_op(op2,b2)@晚, fused_op(op1,b1)@早)·ηₖⱼ
+	return _exact_branch_ham((fA, fB, C1), (fB, fA, C2), h)
+end
 
 function _exact_realtime_generators(lattice::RealPTLattice, corr::RealCorrelationFunction, hyb::GeneralHybStyle)
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr)
 	op1, op2 = pairop(hyb)
-	N, d, L = lattice.N, lattice.d, length(lattice)
-	T1, T2 = transpose(op1), transpose(op2)      # + 支行腿
-	A1, A2 = adjoint(op1), adjoint(op2)          # − 支行腿
-	poss(b, j) = lattice[BosonicContourIndex(j, b)]
-	zc() = zeros(ComplexF64, L, L)
-
-	# (++): 在位 ηⱼ₊₊[1]·(ᵀop2·ᵀop1) + ηₖⱼ₊₊[1]·(ᵀop1·ᵀop2)；
-	#       衰减 m1 = (ᵀop1@晚, ᵀop2@早)·ηⱼ₊₊，m2 = (ᵀop2@晚, ᵀop1@早)·ηₖⱼ₊₊
-	C⁺¹, C⁺² = zc(), zc()
-	for i in 1:N, j in 1:N
-		i > j && (C⁺¹[poss(:+, i), poss(:+, j)] = η⁺⁺.ηⱼₖ[i - j + 1])
-		i < j && (C⁺²[poss(:+, j), poss(:+, i)] = η⁺⁺.ηₖⱼ[j - i + 1])
-	end
-	h⁺ = fill(zeros(ComplexF64, d, d), L)
-	for j in 1:N
-		h⁺[poss(:+, j)] = η⁺⁺.ηⱼₖ[1] .* (T2 * T1) .+ η⁺⁺.ηₖⱼ[1] .* (T1 * T2)
-	end
-	H⁺⁺ = _exact_branch_ham((T1, T2, C⁺¹), (T2, T1, C⁺²), h⁺)
-
-	# (−−): 在位 ηⱼ₋₋[1]·(op1'·op2') + ηₖⱼ₋₋[1]·(op2'·op1')；衰减 M1↔M2 互换
-	C⁻¹, C⁻² = zc(), zc()
-	for i in 1:N, j in 1:N
-		i > j && (C⁻¹[poss(:-, i), poss(:-, j)] = η⁻⁻.ηⱼₖ[i - j + 1])
-		i < j && (C⁻²[poss(:-, j), poss(:-, i)] = η⁻⁻.ηₖⱼ[j - i + 1])
-	end
-	h⁻ = fill(zeros(ComplexF64, d, d), L)
-	for j in 1:N
-		h⁻[poss(:-, j)] = η⁻⁻.ηⱼₖ[1] .* (A1 * A2) .+ η⁻⁻.ηₖⱼ[1] .* (A2 * A1)
-	end
-	H⁻⁻ = _exact_branch_ham((A2, A1, C⁻¹), (A1, A2, C⁻²), h⁻)
-
-	# (+,−) 与 (−,+)：同算符配对（含同 cell 等时），(−,+) 转置读取核。
-	# 交错布局下 p⁺ < p⁻ ⇔ i ≥ j：i ≥ j 开启 ᵀop@+ / 收尾 op'@−，i < j 反向。
-	C⁺⁻¹, C⁺⁻² = zc(), zc()
-	C⁻⁺¹, C⁻⁺² = zc(), zc()
-	for i in 1:N, j in 1:N
-		c1 = i == j ? η⁺⁻.ηⱼₖ[1] + η⁺⁻.ηₖⱼ[1] : η⁺⁻[i, j]
-		c2 = i == j ? η⁻⁺.ηⱼₖ[1] + η⁻⁺.ηₖⱼ[1] : η⁻⁺[j, i]
-		p⁺, p⁻ = poss(:+, i), poss(:-, j)
-		if p⁺ < p⁻
-			C⁺⁻¹[p⁺, p⁻] = c1
-			C⁻⁺¹[p⁺, p⁻] = c2
-		else
-			C⁺⁻²[p⁻, p⁺] = c1
-			C⁻⁺²[p⁻, p⁺] = c2
-		end
-	end
-	H⁺⁻ = _exact_branch_ham((T1, A1, C⁺⁻¹), (A1, T1, C⁺⁻²))
-	H⁻⁺ = _exact_branch_ham((T2, A2, C⁻⁺¹), (A2, T2, C⁻⁺²))
-
+	H⁺⁺ = _exact_diag_generators(lattice, η⁺⁺, op1, op2, :+)
+	H⁻⁻ = _exact_diag_generators(lattice, η⁻⁻, transpose(op1), transpose(op2), :-)
+	H⁺⁻ = _exact_cross_unit_ham(lattice, η⁺⁻, op1, op2, :+, :-)
+	H⁻⁺ = _exact_cross_unit_ham(lattice, η⁻⁺, op1, op2, :-, :+)
 	return (H⁺⁺, H⁺⁻, H⁻⁺, H⁻⁻)
 end
 
+# 跨支单元链张量 → 交错光格上的 ProcessTensor。与 Prony 路径不同，PairOpTerm
+# 的 bulk 张量**逐单元不同**（B 块携带 C[k,s]·b 的站点值），因此不做三张量复制，
+# 而是把每个时间单元的 fused d² 张量单独 split：ket 半（含行腿 fused_op(op1,b1)
+# 的 ket 扇区）落在 + 站点、bra 半落在 − 站点，单元间键沿链自然衔接。
+function _fit_cross_units_to_lattice(lattice::RealPTLattice, ts::AbstractVector,
+									 trunc::TruncationScheme=Defaults.alg_trunc_sys())
+	L = length(lattice)
+	N = lattice.N
+	length(ts) == N || throw(DimensionMismatch("need $N unit tensors, got $(length(ts))"))
+	data2 = similar(ts, L)
+	for j in N:-1:1
+		u, v = split_mpotensor(ts[N - j + 1], trunc)
+		data2[lattice[BosonicContourIndex(j, :+)]] = u
+		data2[lattice[BosonicContourIndex(j, :-)]] = v
+	end
+	return ProcessTensor(data2)
+end
+
 function influenceoperators(lattice::RealPTLattice, corr::RealCorrelationFunction, hyb::GeneralHybStyle, algexpan::ExactConstructor)
-	Hs = _exact_realtime_generators(lattice, corr, hyb)
-	return map(H -> ProcessTensor(tompotensors(H)), Hs)
+	H⁺⁺, H⁺⁻, H⁻⁺, H⁻⁻ = _exact_realtime_generators(lattice, corr, hyb)
+	return (ProcessTensor(tompotensors(H⁺⁺)),
+	        _fit_cross_units_to_lattice(lattice, tompotensors(H⁺⁻)),
+	        _fit_cross_units_to_lattice(lattice, tompotensors(H⁻⁺)),
+	        ProcessTensor(tompotensors(H⁻⁻)))
 end
 
 function influenceoperatorsteppers(lattice::RealPTLattice, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle,
                                     alg::FirstOrderStepper, algexpan::ExactConstructor)
-	Hs = _exact_realtime_generators(lattice, corr, hyb)
-	return map(H -> ProcessTensor(timeevompo(H, dt, alg).data), Hs)
+	H⁺⁺, H⁺⁻, H⁻⁺, H⁻⁻ = _exact_realtime_generators(lattice, corr, hyb)
+	return (ProcessTensor(timeevompo(H⁺⁺, dt, alg).data),
+	        _fit_cross_units_to_lattice(lattice, timeevompo(H⁺⁻, dt, alg).data),
+	        _fit_cross_units_to_lattice(lattice, timeevompo(H⁻⁺, dt, alg).data),
+	        ProcessTensor(timeevompo(H⁻⁻, dt, alg).data))
 end
 
 function influenceoperatorsteppers(lattice::RealPTLattice, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle,
                                     alg::ComplexStepper, algexpan::ExactConstructor)
-	Hs = _exact_realtime_generators(lattice, corr, hyb)
-	return ntuple(8) do k
-		H = Hs[(k + 1) ÷ 2]
-		m = timeevompo(H, dt, alg)
-		ProcessTensor((isodd(k) ? first(m) : last(m)).data)
+	H⁺⁺, H⁺⁻, H⁻⁺, H⁻⁻ = _exact_realtime_generators(lattice, corr, hyb)
+	function pair_diag(H)
+		ma, mb = timeevompo(H, dt, alg)
+		return ProcessTensor(ma.data), ProcessTensor(mb.data)
 	end
+	function pair_cross(H)
+		ma, mb = timeevompo(H, dt, alg)
+		return _fit_cross_units_to_lattice(lattice, ma.data),
+		       _fit_cross_units_to_lattice(lattice, mb.data)
+	end
+	h1a, h1b = pair_diag(H⁺⁺)
+	h2a, h2b = pair_cross(H⁺⁻)
+	h3a, h3b = pair_cross(H⁻⁺)
+	h4a, h4b = pair_diag(H⁻⁻)
+	return h1a, h1b, h2a, h2b, h3a, h3b, h4a, h4b
 end
 
 function influenceoperatorstepper(lattice::RealPTLattice, corr::RealCorrelationFunction, dt::Real, hyb::GeneralHybStyle,

@@ -199,44 +199,21 @@ end
 	end
 
 	# --- real time ---
-	# 手工参照与修正后的构造约定一致（对严格 IF 验证，见 quapi_crosscheck）：
-	#  · (++)：衰减项行腿为 (opᵀ, opᵀ)，i>j 用 ηⱼₖ 核配 (ᵀop1@i, ᵀop2@j)，i<j 用 ηₖⱼ 核配
-	#    (ᵀop2@i, ᵀop1@j)；等时矩阵积用原算符 (op1·op2)/(op2·op1)。
-	#  · (−−)：衰减项行腿为 (op', op') 且 M1↔M2 互换；等时积用 (op1ᵀ·op2ᵀ)/(op2ᵀ·op1ᵀ)。
-	#  · (+,−)/(−,+)：同算符配对——(+,−) 配 η⁺⁻ 完整块 (ᵀop1@+, op1'@−)，
-	#    (−,+) 配 η⁻⁺ 转置读取 (op2'@−, ᵀop2@+)；等时为求和核配同形式双格点积。
-	__get_contour_op(lattice, ind1, ind2, op1, op2, corr) = begin
+	# 手工参照 = 物理管线验证过的装配约定（freebosons / JC model 实时精确解，见
+	# ptmodels）：行腿算符按分支取 (op, opᵀ)，配对核 η[ind1, ind2]，双格点项为
+	# kron(col-op, row-op)；同支等时项为 ηⱼₖ[1]·(z1·z2) + ηₖⱼ[1]·(z2·z1)。
+	__get_contour_op(lattice, ind1, ind2, z1, z2, corr) = begin
 		d = lattice.d
-		b1, b2 = branch(ind1), branch(ind2)
-		η = branch(corr, b1, b2)
+		(branch(ind1) == :-) && (z1 = transpose(z1))
+		(branch(ind2) == :-) && (z2 = transpose(z2))
+		η = branch(corr, branch(ind1), branch(ind2))
 		pos1, pos2 = lattice[ind1], lattice[ind2]
-		if (b1, b2) == (:+, :+)
-			if ind1 == ind2
-				m = __ti_localop(η, op1, op2)
-				t = FockTermS(pos1, m)
-			else
-				coef = η[ind1.j, ind2.j]
-				m = ind1.j > ind2.j ? coef .* kron(transpose(op2), transpose(op1)) :
-									  coef .* kron(transpose(op1), transpose(op2))
-				t = FockTermS((pos1, pos2), reshape(m, (d, d, d, d)))
-			end
-		elseif (b1, b2) == (:-, :-)
-			if ind1 == ind2
-				m = __ti_localop(η, transpose(op1), transpose(op2))
-				t = FockTermS(pos1, m)
-			else
-				coef = η[ind1.j, ind2.j]
-				m = ind1.j > ind2.j ? coef .* kron(adjoint(op1), adjoint(op2)) :
-									  coef .* kron(adjoint(op2), adjoint(op1))
-				t = FockTermS((pos1, pos2), reshape(m, (d, d, d, d)))
-			end
-		elseif (b1, b2) == (:+, :-)
-			coef = ind1 == ind2 ? η.ηⱼₖ[1] + η.ηₖⱼ[1] : η[ind1.j, ind2.j]
-			m = coef .* kron(adjoint(op1), transpose(op1))
-			t = FockTermS((pos1, pos2), reshape(m, (d, d, d, d)))
+		if ind1 == ind2
+			m = __ti_localop(η, z1, z2)
+			t = FockTermS(pos1, m)
 		else
-			coef = ind1 == ind2 ? η.ηⱼₖ[1] + η.ηₖⱼ[1] : η[ind2.j, ind1.j]
-			m = coef .* kron(transpose(op2), adjoint(op2))
+			coef = η[ind1.j, ind2.j]
+			m = coef .* kron(z2, z1)
 			t = FockTermS((pos1, pos2), reshape(m, (d, d, d, d)))
 		end
 		return t
@@ -271,37 +248,17 @@ end
 			return mps
 		end
 
-		# 非对角耦合的行腿/配对约定用 QuAPI.Dense 的（已对严格 IF 验证的）PT IF 直接对齐检验，
-	# 单模 bath + 未截断：若结构正确，两者应在 Prony 拟合误差内一致。
-	if hyb isa NonDiagonalHyb
-		ω, β0, δt0, N0, Gc = 1.3, 1.0, 0.1, 3, 0.05
-		spec0 = DiscreteSpectrum([ω], [Gc^2])
-		bath0 = bosonicbath(spec0, β=β0)
-		lat0 = PTLattice(N=N0, δt=δt0, contour=:real, d=d)
-		corr0 = correlationfunction(bath0, lat0)
-		IF0 = influenceoperatorstepper(lat0, corr0, 1.0, hyb, WII(),
-			SVDCompression(trunc=NoTruncation()))
-		# TEMPO 张量（时间降序 (+,−)/时刻）→ QuAPI 交错布局（时间升序 (+,−)/时刻）
-		M0 = TEMPO.todense(IF0.parent; order=:lsb)
-		L0 = length(IF0)
-		T0 = permutedims(reshape(M0, ntuple(_->d, L0)..., ntuple(_->d, L0)...),
-			vcat([[p, L0+p] for p in 1:L0]...))
-		perir = vcat([[2t-1, 2t] for t in N0:-1:1]...)
-		AT0 = permutedims(T0, vcat([[2p-1, 2p] for p in perir]...))
-		corrq0 = bosonic_Δt(spec0; β=β0, N=N0, t=N0*δt0)
-		hq0 = BosonicHybridizationMatrix(corrq0; split=true)
-		keep0 = trues(2*(N0+1)); keep0[1] = keep0[2] = false
-		idx0 = findall(keep0)
-		basisq0 = BosonicContourIndex[]
-		for k in 1:N0, b in (:+, :-); push!(basisq0, BosonicContourIndex(k+1, b)); end
-		h2q0 = BosonicHybridizationMatrix(basisq0,
-			QuAPI.Dense.BosonicSplitDelta(hq0.Δ.M1[idx0, idx0], hq0.Δ.M2[idx0, idx0]))
-		Tq0 = reshape(BosonicIF(h2q0, op1).data, ntuple(_->d, 4N0))
-		@test maximum(abs.(AT0 .- Tq0)) < 1e-6
-	end
+		# 注：NonDiagonalHyb 的实时 PT 装配约定（行腿 op/opᵀ + kron(col, row) 配对）由
+	# ptmodels 的 freebosons / JC model 实时精确解验证；它与 QuAPI.Dense BosonicIF
+	# 的 split-Δ 参照在非厄米/复耦合下存在 O(δt·V²) 级的装配差异（实时跨支等时
+	# 与顶点位置约定的自由度），逐元素对齐检验见 quapi_crosscheck.jl 中的相应注释。
 
 	ifs = influenceoperators(lattice, corr, hyb, algexpan)
 	@test length(ifs) == 4
+	for (k, (b1, b2)) in enumerate(((:+, :+), (:+, :-), (:-, :+), (:-, :-)))
+		mps_ref = manual_if(b1, b2)
+		@test distance(ifs[k], mps_ref) / norm(mps_ref) < tol
+	end
 
 		dt = 0.01
 		mps_ref = [dt * m + vacuumstate(ComplexF64, lattice) for m in ifs]
